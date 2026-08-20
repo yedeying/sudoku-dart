@@ -15,6 +15,7 @@ class SudokuGrid extends StatelessWidget {
   final bool readOnly;
   final Set<int> sameDigitCells;
   final Set<CandidateRef> sameDigitCandidates;
+  final CandidateRef? arrowAnchor;
 
   const SudokuGrid({
     super.key,
@@ -29,6 +30,7 @@ class SudokuGrid extends StatelessWidget {
     this.readOnly = false,
     this.sameDigitCells = const {},
     this.sameDigitCandidates = const {},
+    this.arrowAnchor,
   });
 
   @override
@@ -173,24 +175,29 @@ class SudokuGrid extends StatelessWidget {
           final cColor = markup?.candidateColors[ref];
           final dimmed = filter != null && num != filter;
           final sameDigit = sameDigitCandidates.contains(ref);
+          final isAnchor = arrowAnchor == ref;
           final glyphColor = struck
               ? Colors.red.shade300
               : cColor != null
                   ? (cColor.computeLuminance() > 0.5
                       ? Colors.black87
                       : Colors.white)
-                  : (sameDigit
-                      ? scheme.onSurfaceVariant
-                      : (dimmed
-                          ? Colors.grey.shade300
-                          : (userCands.contains(num)
-                              ? Colors.blue.shade700
-                              : Colors.grey.shade600)));
+                  : (isAnchor
+                      ? Colors.white
+                      : (sameDigit
+                          ? scheme.onSurfaceVariant
+                          : (dimmed
+                              ? Colors.grey.shade300
+                              : (userCands.contains(num)
+                                  ? Colors.blue.shade700
+                                  : Colors.grey.shade600))));
           final text = Text(
             isCandidate ? num.toString() : '',
             style: TextStyle(
               fontSize: 8,
-              fontWeight: cColor != null || userCands.contains(num)
+              fontWeight: cColor != null ||
+                      userCands.contains(num) ||
+                      isAnchor
                   ? FontWeight.bold
                   : FontWeight.normal,
               color: glyphColor,
@@ -198,7 +205,18 @@ class SudokuGrid extends StatelessWidget {
             ),
           );
           Widget digit = text;
-          if (isCandidate && cColor != null) {
+          if (isCandidate && isAnchor) {
+            digit = Container(
+              width: 12,
+              height: 12,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.black,
+              ),
+              child: text,
+            );
+          } else if (isCandidate && cColor != null) {
             digit = Container(
               width: 12,
               height: 12,

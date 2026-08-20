@@ -117,6 +117,20 @@ class _GameScreenState extends State<GameScreen> {
               });
             }
 
+            if (gameState.conjugateNotice != null) {
+              final notice = gameState.conjugateNotice!;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                gameState.clearConjugateNotice();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(notice),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              });
+            }
+
             return Column(
               children: [
                 // 信息栏
@@ -140,6 +154,7 @@ class _GameScreenState extends State<GameScreen> {
                         sameDigitCells: gameState.sameDigitHighlightCells(),
                         sameDigitCandidates:
                             gameState.sameDigitHighlightCandidates(),
+                        arrowAnchor: gameState.arrowAnchor,
                         onCellTap: (row, col) {
                           gameState.onCellTap(row, col);
                         },
@@ -321,6 +336,7 @@ class _GameScreenState extends State<GameScreen> {
             modeChip('强链', MarkupMode.strong),
             modeChip('弱链', MarkupMode.weak),
             modeChip('自动共轭', MarkupMode.autoConjugate),
+            modeChip('关闭', MarkupMode.off),
             ActionChip(
               label: const Text('清除标记'),
               onPressed: () => gameState.clearUserMarkup(),
@@ -354,7 +370,15 @@ class _GameScreenState extends State<GameScreen> {
               ),
           ],
         ),
-        if (gameState.markupMode == MarkupMode.candidateColor) ...[
+        if (gameState.arrowAnchor != null) ...[
+          const SizedBox(height: 6),
+          Text(
+            '已选起点，再点终点',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.black54,
+                ),
+          ),
+        ] else if (gameState.markupMode == MarkupMode.candidateColor) ...[
           const SizedBox(height: 6),
           Text(
             '选格后点数字上色',

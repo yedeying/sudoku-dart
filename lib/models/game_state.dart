@@ -18,9 +18,24 @@ class GameState extends ChangeNotifier {
   MarkupMode markupMode = MarkupMode.off;
   BoardMarkup userMarkup = BoardMarkup();
   BoardMarkup? hintMarkup;
-  ArrowKind? pendingArrowKind;
   CandidateRef? arrowAnchor;
   Color markupColor = const Color(0xFF90CAF9);
+  String? conjugateNotice;
+
+  /// 由强/弱链模式推导，不再单独设置
+  ArrowKind? get pendingArrowKind {
+    switch (markupMode) {
+      case MarkupMode.strong:
+        return ArrowKind.strong;
+      case MarkupMode.weak:
+        return ArrowKind.weak;
+      case MarkupMode.off:
+      case MarkupMode.cellColor:
+      case MarkupMode.candidateColor:
+      case MarkupMode.autoConjugate:
+        return null;
+    }
+  }
 
   // 候选数功能
   bool _showCandidates = false;
@@ -96,8 +111,8 @@ class GameState extends ChangeNotifier {
     _historyIndex = -1;
     userMarkup = BoardMarkup();
     hintMarkup = null;
-    pendingArrowKind = null;
     arrowAnchor = null;
+    conjugateNotice = null;
     markupMode = MarkupMode.off;
   }
 
@@ -399,14 +414,15 @@ class GameState extends ChangeNotifier {
 
   void onCandidateMarkupTap(int row, int col, int num) {
     final ref = CandidateRef(row, col, num);
-    if (pendingArrowKind != null) {
+    final kind = pendingArrowKind;
+    if (kind != null) {
       if (arrowAnchor == null) {
         arrowAnchor = ref;
       } else {
         userMarkup.addArrow(
           arrowAnchor!,
           ref,
-          pendingArrowKind!,
+          kind,
           _board?.candidates ?? [],
         );
         arrowAnchor = null;
@@ -418,9 +434,9 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setPendingArrow(ArrowKind? kind) {
-    pendingArrowKind = kind;
-    arrowAnchor = null;
+  void clearConjugateNotice() {
+    if (conjugateNotice == null) return;
+    conjugateNotice = null;
     notifyListeners();
   }
 
@@ -447,9 +463,29 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void paintConjugates(int digit) {
-    if (_board == null) return;
-    // 行
+  /// 扫描行、列、宫；恰两处则画共轭。返回新增条数。
+  int paintConjugates(int digit) {
+    if (_board == null) return 0;
+    conjugateNotice = null;
+    var added = 0;
+
+    void addPair(List<CandidateRef> hits) {
+      if (hits.length != 2) return;
+      final a = hits[0];
+      final b = hits[1];
+      final duplicate = userMarkup.arrows.any(
+        (arrow) =>
+            arrow.kind == ArrowKind.conjugate &&
+            ((arrow.from == a && arrow.to == b) ||
+                (arrow.from == b && arrow.to == a)),
+      );
+      if (duplicate) return;
+      if (userMarkup.addArrow(
+          a, b, ArrowKind.conjugate, _board!.candidates)) {
+        added++;
+      }
+    }
+
     for (int r = 0; r < 9; r++) {
       final hits = <CandidateRef>[];
       for (int c = 0; c < 9; c++) {
@@ -458,11 +494,42 @@ class GameState extends ChangeNotifier {
           hits.add(CandidateRef(r, c, digit));
         }
       }
-      if (hits.length == 2) {
-        userMarkup.addArrow(hits[0], hits[1], ArrowKind.conjugate, _board!.candidates);
+      addPair(hits);
+    }
+
+    for (int c = 0; c < 9; c++) {
+      final hits = <CandidateRef>[];
+      for (int r = 0; r < 9; r++) {
+        if (_board!.get(r, c) == 0 &&
+            _board!.getCandidates(r, c).contains(digit)) {
+          hits.add(CandidateRef(r, c, digit));
+        }
+      }
+      addPair(hits);
+    }
+
+    for (int br = 0; br < 3; br++) {
+      for (int bc = 0; bc < 3; bc++) {
+        final hits = <CandidateRef>[];
+        for (int i = 0; i < 3; i++) {
+          for (int j = 0; j < 3; j++) {
+            final r = br * 3 + i;
+            final c = bc * 3 + j;
+            if (_board!.get(r, c) == 0 &&
+                _board!.getCandidates(r, c).contains(digit)) {
+              hits.add(CandidateRef(r, c, digit));
+            }
+          }
+        }
+        addPair(hits);
       }
     }
+
+    if (added == 0) {
+      conjugateNotice = '该数字没有共轭对';
+    }
     notifyListeners();
+    return added;
   }
 
   void clearUserMarkup() {
