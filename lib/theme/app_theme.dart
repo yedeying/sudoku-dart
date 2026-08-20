@@ -15,18 +15,8 @@ class AppTheme {
   static ThemeData dark() => _build(Brightness.dark);
 
   static ThemeData _build(Brightness brightness) {
-    // fromSeed remaps near-black to a tinted primary; pin chrome to B&W.
-    final scheme = ColorScheme.fromSeed(
-      seedColor: seed,
-      brightness: brightness,
-    ).copyWith(
-      primary: seed,
-      onPrimary: Colors.white,
-      secondary: seed,
-      onSecondary: Colors.white,
-      tertiary: seed,
-      onTertiary: Colors.white,
-    );
+    // fromSeed remaps near-black to teal/cyan containers; build neutrals explicitly.
+    final scheme = _neutralScheme(brightness);
     final base = ThemeData(useMaterial3: true, colorScheme: scheme);
     final text = base.textTheme;
 
@@ -142,6 +132,58 @@ class AppTheme {
           borderRadius: BorderRadius.circular(14),
         ),
       ),
+    );
+  }
+
+  /// Grayscale Material 3 scheme so chrome cannot pick up seed-derived teal/cyan.
+  static ColorScheme _neutralScheme(Brightness brightness) {
+    final light = brightness == Brightness.light;
+    const onPrimary = Colors.white;
+    final onSurface = light ? seed : const Color(0xFFF5F5F5);
+    final surface = light ? const Color(0xFFFAFAFA) : const Color(0xFF121212);
+    final surfaceLow = light ? const Color(0xFFF2F2F2) : const Color(0xFF1C1C1C);
+    final surfaceMid = light ? const Color(0xFFEBEBEB) : const Color(0xFF242424);
+    final surfaceHigh = light ? const Color(0xFFE3E3E3) : const Color(0xFF2C2C2C);
+    final surfaceHighest =
+        light ? const Color(0xFFD9D9D9) : const Color(0xFF363636);
+    final outline = light ? const Color(0xFFB0B0B0) : const Color(0xFF6E6E6E);
+    final outlineVariant =
+        light ? const Color(0xFFD6D6D6) : const Color(0xFF4A4A4A);
+
+    return ColorScheme(
+      brightness: brightness,
+      primary: seed,
+      onPrimary: onPrimary,
+      primaryContainer: surfaceHighest,
+      onPrimaryContainer: onSurface,
+      secondary: seed,
+      onSecondary: onPrimary,
+      secondaryContainer: surfaceHigh,
+      onSecondaryContainer: onSurface,
+      tertiary: seed,
+      onTertiary: onPrimary,
+      tertiaryContainer: surfaceMid,
+      onTertiaryContainer: onSurface,
+      error: const Color(0xFFB3261E),
+      onError: onPrimary,
+      errorContainer: light ? const Color(0xFFF9DEDC) : const Color(0xFF8C1D18),
+      onErrorContainer: light ? const Color(0xFF410E0B) : const Color(0xFFF9DEDC),
+      surface: surface,
+      onSurface: onSurface,
+      onSurfaceVariant: light ? const Color(0xFF5C5C5C) : const Color(0xFFB0B0B0),
+      surfaceContainerLowest: light ? Colors.white : const Color(0xFF0A0A0A),
+      surfaceContainerLow: surfaceLow,
+      surfaceContainer: surfaceMid,
+      surfaceContainerHigh: surfaceHigh,
+      surfaceContainerHighest: surfaceHighest,
+      outline: outline,
+      outlineVariant: outlineVariant,
+      shadow: Colors.black,
+      scrim: Colors.black,
+      inverseSurface: onSurface,
+      onInverseSurface: surface,
+      inversePrimary: light ? const Color(0xFFCCCCCC) : const Color(0xFF555555),
+      surfaceTint: Colors.transparent,
     );
   }
 }

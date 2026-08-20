@@ -29,4 +29,23 @@ void main() {
     expect(AppTheme.seed.computeLuminance() < 0.05, isTrue);
     expect(theme.colorScheme.primary.computeLuminance() < 0.2, isTrue);
   });
+
+  testWidgets('chrome 容器色为灰度无青绿色彩', (tester) async {
+    await tester.pumpWidget(const SudokuApp());
+    final scheme =
+        tester.widget<MaterialApp>(find.byType(MaterialApp)).theme!.colorScheme;
+
+    bool isNearGray(Color c) {
+      final maxC = [c.r, c.g, c.b].reduce((a, b) => a > b ? a : b);
+      final minC = [c.r, c.g, c.b].reduce((a, b) => a < b ? a : b);
+      return maxC - minC < 0.02;
+    }
+
+    expect(isNearGray(scheme.primaryContainer), isTrue);
+    expect(isNearGray(scheme.secondaryContainer), isTrue);
+    expect(isNearGray(scheme.tertiaryContainer), isTrue);
+    expect(isNearGray(scheme.surface), isTrue);
+    expect(isNearGray(scheme.surfaceContainerHighest), isTrue);
+    expect(scheme.surfaceTint, Colors.transparent);
+  });
 }
