@@ -228,22 +228,24 @@ class _GameScreenState extends State<GameScreen> {
     required String label,
     required String value,
   }) {
+    final scheme = Theme.of(context).colorScheme;
     return Column(
       children: [
-        Icon(icon, size: 20, color: Colors.blue.shade700),
+        Icon(icon, size: 20, color: scheme.onSurfaceVariant),
         const SizedBox(height: 4),
         Text(
           label,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.grey.shade600,
+            color: scheme.onSurfaceVariant,
           ),
         ),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
+            color: scheme.onSurface,
           ),
         ),
       ],
