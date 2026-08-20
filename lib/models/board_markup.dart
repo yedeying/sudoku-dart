@@ -1,5 +1,16 @@
 import 'package:flutter/material.dart';
 
+enum MarkupMode { off, cellColor, candidateColor, strong, weak, autoConjugate }
+
+class MarkupPalette {
+  static const colors = [
+    Color(0xFFC9A227),
+    Color(0xFF2E7D32),
+    Color(0xFF1565C0),
+    Color(0xFFC62828),
+  ];
+}
+
 /// 某个格子上的一个候选数字
 class CandidateRef {
   final int row;

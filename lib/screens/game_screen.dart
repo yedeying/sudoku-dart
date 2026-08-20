@@ -138,10 +138,7 @@ class _GameScreenState extends State<GameScreen> {
                         conflictCells: gameState.getConflictCells(),
                         markup: gameState.displayMarkup,
                         onCellTap: (row, col) {
-                          gameState.selectCell(row, col);
-                          if (gameState.markupEnabled) {
-                            gameState.paintSelectedCell();
-                          }
+                          gameState.onCellTap(row, col);
                         },
                         onCandidateTap: gameState.markupEnabled
                             ? gameState.onCandidateMarkupTap

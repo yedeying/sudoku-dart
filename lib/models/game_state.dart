@@ -15,7 +15,7 @@ class GameState extends ChangeNotifier {
   int? _selectedRow;
   int? _selectedCol;
   bool _justCompleted = false;
-  bool _markupEnabled = false;
+  MarkupMode markupMode = MarkupMode.off;
   BoardMarkup userMarkup = BoardMarkup();
   BoardMarkup? hintMarkup;
   ArrowKind? pendingArrowKind;
@@ -43,7 +43,7 @@ class GameState extends ChangeNotifier {
   bool get showCandidates => _showCandidates;
   bool get candidateMode => _candidateMode;
   bool get justCompleted => _justCompleted;
-  bool get markupEnabled => _markupEnabled;
+  bool get markupEnabled => markupMode != MarkupMode.off;
 
   BoardMarkup get displayMarkup {
     final merged = userMarkup.copy();
@@ -98,7 +98,7 @@ class GameState extends ChangeNotifier {
     hintMarkup = null;
     pendingArrowKind = null;
     arrowAnchor = null;
-    _markupEnabled = false;
+    markupMode = MarkupMode.off;
   }
 
   /// 消费“刚完成”标志（避免重复弹窗）
@@ -251,7 +251,40 @@ class GameState extends ChangeNotifier {
   }
 
   void toggleMarkupEnabled() {
-    _markupEnabled = !_markupEnabled;
+    if (markupMode == MarkupMode.off) {
+      setMarkupMode(MarkupMode.cellColor);
+    } else {
+      setMarkupMode(MarkupMode.off);
+    }
+  }
+
+  void setMarkupMode(MarkupMode mode) {
+    markupMode = mode;
+    arrowAnchor = null;
+    notifyListeners();
+  }
+
+  void setMarkupColor(Color color) {
+    markupColor = color;
+    notifyListeners();
+  }
+
+  /// 选格；仅在格色模式下上色（同色再点取消）
+  void onCellTap(int row, int col) {
+    if (markupMode == MarkupMode.off) {
+      selectCell(row, col);
+      return;
+    }
+    _selectedRow = row;
+    _selectedCol = col;
+    if (markupMode == MarkupMode.cellColor) {
+      final key = BoardMarkup.cellKey(row, col);
+      if (userMarkup.cellColors[key] == markupColor) {
+        userMarkup.cellColors.remove(key);
+      } else {
+        userMarkup.cellColors[key] = markupColor;
+      }
+    }
     notifyListeners();
   }
 
