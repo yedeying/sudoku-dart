@@ -78,4 +78,33 @@ void main() {
       anyOf(HintPhase.ready, HintPhase.failed),
     );
   });
+
+  test('应用填数提示后 hintSession 为 null 且通知发生在清除之后', () {
+    final g = GameState()
+      ..loadCustomGame(
+        '530070000'
+        '600195000'
+        '098000060'
+        '800060003'
+        '400803001'
+        '700020006'
+        '060000280'
+        '000419005'
+        '000080079',
+      );
+    final hint = g.getHint();
+    expect(hint, isNotNull);
+    expect(hint!.isElimination, isFalse);
+    expect(g.hintSession, isNotNull);
+
+    HintSession? lastSeenSession;
+    g.addListener(() {
+      lastSeenSession = g.hintSession;
+    });
+
+    g.applyHint(hint);
+
+    expect(g.hintSession, isNull);
+    expect(lastSeenSession, isNull);
+  });
 }

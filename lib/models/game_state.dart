@@ -295,13 +295,13 @@ class GameState extends ChangeNotifier {
       return;
     }
 
-    // 填数：绕过 candidateMode
+    // 填数：先清 session，再 placeNumber（其 notify 时面板已关闭）
     final wasCandidateMode = _candidateMode;
     _candidateMode = false;
-    placeNumber(hint.value);
-    _candidateMode = wasCandidateMode;
     hintMarkup = null;
     hintSession = null;
+    placeNumber(hint.value);
+    _candidateMode = wasCandidateMode;
   }
 
   void clearHintMarkup() {
