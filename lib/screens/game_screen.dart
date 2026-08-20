@@ -44,18 +44,32 @@ class _GameScreenState extends State<GameScreen> {
           // 计时器
           Consumer<GameState>(
             builder: (context, gameState, child) {
+              final scheme = Theme.of(context).colorScheme;
               return Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: scheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
                   child: Row(
                     children: [
-                      const Icon(Icons.timer_outlined, size: 20),
-                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.timer_outlined,
+                        size: 16,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 6),
                       Text(
                         gameState.getFormattedTime(),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          fontFeatures: const [
+                            FontFeature.tabularFigures(),
+                          ],
                         ),
                       ),
                     ],
@@ -106,7 +120,23 @@ class _GameScreenState extends State<GameScreen> {
         child: Consumer<GameState>(
           builder: (context, gameState, child) {
             if (gameState.board == null) {
-              return const Center(child: Text('请先开始游戏'));
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.grid_off_outlined,
+                      size: 40,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '请先开始游戏',
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ],
+                ),
+              );
             }
 
             if (gameState.justCompleted) {
@@ -131,61 +161,67 @@ class _GameScreenState extends State<GameScreen> {
               });
             }
 
-            return Column(
-              children: [
-                // 信息栏
-                _buildInfoBar(gameState),
-                
-                const SizedBox(height: 16),
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 560),
+                child: Column(
+                  children: [
+                    // 信息栏
+                    _buildInfoBar(gameState),
 
-                // 数独棋盘
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Center(
-                      child: SudokuGrid(
-                        board: gameState.board!,
-                        selectedRow: gameState.selectedRow,
-                        selectedCol: gameState.selectedCol,
-                        showCandidates: gameState.showCandidates ||
-                            gameState.markupEnabled,
-                        conflictCells: gameState.getConflictCells(),
-                        markup: gameState.displayMarkup,
-                        sameDigitCells: gameState.sameDigitHighlightCells(),
-                        sameDigitCandidates:
-                            gameState.sameDigitHighlightCandidates(),
-                        arrowAnchor: gameState.arrowAnchor,
-                        onCellTap: (row, col) {
-                          gameState.onCellTap(row, col);
-                        },
-                        onCandidateTap: gameState.markupEnabled
-                            ? gameState.onCandidateMarkupTap
-                            : null,
+                    const SizedBox(height: 12),
+
+                    // 数独棋盘
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Center(
+                          child: SudokuGrid(
+                            board: gameState.board!,
+                            selectedRow: gameState.selectedRow,
+                            selectedCol: gameState.selectedCol,
+                            showCandidates: gameState.showCandidates ||
+                                gameState.markupEnabled,
+                            conflictCells: gameState.getConflictCells(),
+                            markup: gameState.displayMarkup,
+                            sameDigitCells:
+                                gameState.sameDigitHighlightCells(),
+                            sameDigitCandidates:
+                                gameState.sameDigitHighlightCandidates(),
+                            arrowAnchor: gameState.arrowAnchor,
+                            onCellTap: (row, col) {
+                              gameState.onCellTap(row, col);
+                            },
+                            onCandidateTap: gameState.markupEnabled
+                                ? gameState.onCandidateMarkupTap
+                                : null,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+
+                    const SizedBox(height: 12),
+
+                    if (_hintPanelVisible(gameState)) ...[
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: _buildHintPanel(gameState),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+
+                    // 控制按钮
+                    _buildControlButtons(gameState),
+
+                    const SizedBox(height: 12),
+
+                    // 数字键盘
+                    _buildNumberPad(gameState),
+
+                    const SizedBox(height: 16),
+                  ],
                 ),
-
-                const SizedBox(height: 16),
-
-                if (_hintPanelVisible(gameState)) ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: _buildHintPanel(gameState),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-
-                // 控制按钮
-                _buildControlButtons(gameState),
-
-                const SizedBox(height: 8),
-
-                // 数字键盘
-                _buildNumberPad(gameState),
-
-                const SizedBox(height: 16),
-              ],
+              ),
             );
           },
         ),
@@ -194,32 +230,50 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Widget _buildInfoBar(GameState gameState) {
-    final bg = Theme.of(context).colorScheme.surfaceContainerHighest;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: bg,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildInfoItem(
-            icon: Icons.signal_cellular_alt,
-            label: '难度',
-            value: _getDifficultyName(gameState.difficulty),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildInfoItem(
+                  icon: Icons.signal_cellular_alt,
+                  label: '难度',
+                  value: _getDifficultyName(gameState.difficulty),
+                ),
+              ),
+              _infoDivider(),
+              Expanded(
+                child: _buildInfoItem(
+                  icon: Icons.lightbulb_outline,
+                  label: '提示',
+                  value: '${gameState.hintsUsed}',
+                ),
+              ),
+              _infoDivider(),
+              Expanded(
+                child: _buildInfoItem(
+                  icon: Icons.emoji_events_outlined,
+                  label: '得分',
+                  value: gameState.board!.isComplete()
+                      ? '${gameState.getScore()}'
+                      : '--',
+                ),
+              ),
+            ],
           ),
-          _buildInfoItem(
-            icon: Icons.help_outline,
-            label: '提示',
-            value: '${gameState.hintsUsed}',
-          ),
-          _buildInfoItem(
-            icon: Icons.stars,
-            label: '得分',
-            value: gameState.board!.isComplete()
-                ? '${gameState.getScore()}'
-                : '--',
-          ),
-        ],
+        ),
       ),
+    );
+  }
+
+  Widget _infoDivider() {
+    return Container(
+      width: 1,
+      height: 28,
+      color: Theme.of(context).colorScheme.outlineVariant,
     );
   }
 
@@ -228,24 +282,25 @@ class _GameScreenState extends State<GameScreen> {
     required String label,
     required String value,
   }) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return Column(
       children: [
-        Icon(icon, size: 20, color: Colors.blue.shade700),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey.shade600,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 14, color: scheme.onSurfaceVariant),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        const SizedBox(height: 2),
+        Text(value, style: theme.textTheme.titleMedium),
       ],
     );
   }
@@ -257,7 +312,6 @@ class _GameScreenState extends State<GameScreen> {
         children: [
           // 第一行：基础控制按钮
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildControlButton(
                 icon: Icons.undo,
@@ -270,12 +324,12 @@ class _GameScreenState extends State<GameScreen> {
                 onPressed: gameState.canRedo ? () => gameState.redo() : null,
               ),
               _buildControlButton(
-                icon: Icons.lightbulb,
+                icon: Icons.lightbulb_outline,
                 label: '提示',
                 onPressed: () => _showHint(context, gameState),
               ),
               _buildControlButton(
-                icon: Icons.clear,
+                icon: Icons.backspace_outlined,
                 label: '清除',
                 onPressed: gameState.selectedRow != null
                     ? () => gameState.clearSelected()
@@ -286,21 +340,20 @@ class _GameScreenState extends State<GameScreen> {
           const SizedBox(height: 8),
           // 第二行：候选数功能按钮
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildControlButton(
-                icon: gameState.showCandidates 
-                    ? Icons.visibility 
+                icon: gameState.showCandidates
+                    ? Icons.visibility
                     : Icons.visibility_off,
                 label: gameState.showCandidates ? '隐藏候选' : '显示候选',
                 onPressed: () => gameState.toggleShowCandidates(),
-                color: gameState.showCandidates ? Colors.green : null,
+                active: gameState.showCandidates,
               ),
               _buildControlButton(
                 icon: Icons.edit_note,
                 label: gameState.candidateMode ? '填数模式' : '笔记模式',
                 onPressed: () => gameState.toggleCandidateMode(),
-                color: gameState.candidateMode ? Colors.orange : null,
+                active: gameState.candidateMode,
               ),
               _buildControlButton(
                 icon: gameState.markupEnabled
@@ -308,12 +361,12 @@ class _GameScreenState extends State<GameScreen> {
                     : Icons.palette_outlined,
                 label: gameState.markupEnabled ? '标记中' : '标记',
                 onPressed: () => gameState.toggleMarkupEnabled(),
-                color: gameState.markupEnabled ? Colors.purple : null,
+                active: gameState.markupEnabled,
               ),
             ],
           ),
           if (gameState.markupEnabled) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             _buildMarkupBar(gameState),
           ],
         ],
@@ -325,9 +378,16 @@ class _GameScreenState extends State<GameScreen> {
     Widget modeChip(String label, MarkupMode mode) {
       final selected = gameState.markupMode == mode;
       return FilterChip(
-        label: Text(label),
+        label: Text(
+          label,
+          style: TextStyle(
+            color: selected ? Colors.white : null,
+          ),
+        ),
         selected: selected,
         showCheckmark: false,
+        selectedColor: Colors.black,
+        checkmarkColor: Colors.white,
         onSelected: (_) => gameState.setMarkupMode(mode),
       );
     }
@@ -346,6 +406,7 @@ class _GameScreenState extends State<GameScreen> {
             modeChip('自动共轭', MarkupMode.autoConjugate),
             modeChip('关闭', MarkupMode.off),
             ActionChip(
+              avatar: const Icon(Icons.layers_clear_outlined, size: 16),
               label: const Text('清除标记'),
               onPressed: () => gameState.clearUserMarkup(),
             ),
@@ -368,7 +429,7 @@ class _GameScreenState extends State<GameScreen> {
                       color: color,
                       border: Border.all(
                         color: gameState.markupColor == color
-                            ? Colors.black
+                            ? Theme.of(context).colorScheme.onSurface
                             : Colors.transparent,
                         width: 2,
                       ),
@@ -383,7 +444,7 @@ class _GameScreenState extends State<GameScreen> {
           Text(
             '已选起点，再点终点',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.black54,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
           ),
         ] else if (gameState.markupMode == MarkupMode.candidateColor) ...[
@@ -391,7 +452,7 @@ class _GameScreenState extends State<GameScreen> {
           Text(
             '选格后点数字上色',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.black54,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
           ),
         ],
@@ -403,60 +464,108 @@ class _GameScreenState extends State<GameScreen> {
     required IconData icon,
     required String label,
     required VoidCallback? onPressed,
-    Color? color,
+    bool active = false,
   }) {
-    return Column(
-      children: [
-        IconButton(
-          icon: Icon(icon),
-          onPressed: onPressed,
-          color: color ?? (onPressed != null ? Colors.blue : Colors.grey),
-          iconSize: 28,
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: onPressed != null ? Colors.black : Colors.grey,
+    final scheme = Theme.of(context).colorScheme;
+    final enabled = onPressed != null;
+
+    final Color background;
+    final Color foreground;
+    if (!enabled) {
+      background = scheme.surfaceContainerHighest.withValues(alpha: 0.4);
+      foreground = scheme.onSurfaceVariant.withValues(alpha: 0.38);
+    } else if (active) {
+      background = Colors.black;
+      foreground = Colors.white;
+    } else {
+      background = scheme.surfaceContainerHighest;
+      foreground = scheme.onSurfaceVariant;
+    }
+
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Material(
+          color: background,
+          borderRadius: BorderRadius.circular(14),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onPressed,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Column(
+                children: [
+                  Icon(icon, size: 22, color: foreground),
+                  const SizedBox(height: 4),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: foreground,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
-      ],
+      ),
     );
   }
 
   Widget _buildNumberPad(GameState gameState) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 12.0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: List.generate(9, (index) {
-          int number = index + 1;
-          return _buildNumberButton(number, gameState);
+          return _buildNumberButton(index + 1, gameState);
         }),
       ),
     );
   }
 
   Widget _buildNumberButton(int number, GameState gameState) {
-    bool isEnabled = gameState.isNumberPadEnabled(number);
+    final scheme = Theme.of(context).colorScheme;
+    final isEnabled = gameState.isNumberPadEnabled(number);
+    final noteMode =
+        gameState.markupMode == MarkupMode.off && gameState.candidateMode;
 
-    return InkWell(
-      onTap: isEnabled ? () => gameState.onNumberPad(number) : null,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: isEnabled ? Colors.blue : Colors.grey.shade300,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Center(
-          child: Text(
-            number.toString(),
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: isEnabled ? Colors.white : Colors.grey.shade500,
+    final Color background;
+    final Color foreground;
+    if (!isEnabled) {
+      background = scheme.surfaceContainerHighest.withValues(alpha: 0.4);
+      foreground = scheme.onSurfaceVariant.withValues(alpha: 0.38);
+    } else if (noteMode) {
+      background = scheme.surfaceContainerHighest;
+      foreground = scheme.onSurfaceVariant;
+    } else {
+      background = scheme.primaryContainer;
+      foreground = scheme.onPrimaryContainer;
+    }
+
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 3),
+        child: Material(
+          color: background,
+          borderRadius: BorderRadius.circular(12),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: isEnabled ? () => gameState.onNumberPad(number) : null,
+            child: SizedBox(
+              height: 50,
+              child: Center(
+                child: Text(
+                  number.toString(),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: foreground,
+                  ),
+                ),
+              ),
             ),
           ),
         ),
@@ -571,7 +680,7 @@ class _GameScreenState extends State<GameScreen> {
                 onPressed: () => Navigator.pop(context),
                 child: const Text('取消'),
               ),
-              ElevatedButton(
+              FilledButton(
                 onPressed: () {
                   gameState.resetGame();
                   Navigator.pop(context);
@@ -614,16 +723,14 @@ class _GameScreenState extends State<GameScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('自动填充候选数'),
-        content: const Text(
-          '自动为所有空格填充可能的候选数字。\n\n'
-          '这将覆盖您手动设置的候选数，确定要继续吗？'
-        ),
+        content: const Text('自动为所有空格填充可能的候选数字。\n\n'
+            '这将覆盖您手动设置的候选数，确定要继续吗？'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('取消'),
           ),
-          ElevatedButton(
+          FilledButton(
             onPressed: () {
               gameState.autoFillCandidates();
               Navigator.pop(context);
