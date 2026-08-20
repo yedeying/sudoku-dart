@@ -1,5 +1,16 @@
 import 'package:flutter/material.dart';
 
+enum MarkupMode { off, cellColor, candidateColor, strong, weak, autoConjugate }
+
+class MarkupPalette {
+  static const colors = [
+    Color(0xFFC9A227),
+    Color(0xFF2E7D32),
+    Color(0xFF1565C0),
+    Color(0xFFC62828),
+  ];
+}
+
 /// 某个格子上的一个候选数字
 class CandidateRef {
   final int row;
@@ -86,21 +97,22 @@ class BoardMarkup {
           hits.contains('${b.row},${b.col}');
     }
 
-    if (a.row == b.row) {
-      return twoIn([for (int c = 0; c < 9; c++) [a.row, c]]);
-    }
-    if (a.col == b.col) {
-      return twoIn([for (int r = 0; r < 9; r++) [r, a.col]]);
-    }
-    if (a.row ~/ 3 == b.row ~/ 3 && a.col ~/ 3 == b.col ~/ 3) {
-      final br = (a.row ~/ 3) * 3;
-      final bc = (a.col ~/ 3) * 3;
-      return twoIn([
-        for (int i = 0; i < 3; i++)
-          for (int j = 0; j < 3; j++) [br + i, bc + j]
-      ]);
-    }
-    return false;
+    final sameRow = a.row == b.row &&
+        twoIn([
+          for (int c = 0; c < 9; c++) [a.row, c]
+        ]);
+    final sameCol = a.col == b.col &&
+        twoIn([
+          for (int r = 0; r < 9; r++) [r, a.col]
+        ]);
+    final sameBox = a.row ~/ 3 == b.row ~/ 3 &&
+        a.col ~/ 3 == b.col ~/ 3 &&
+        twoIn([
+          for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+              [(a.row ~/ 3) * 3 + i, (a.col ~/ 3) * 3 + j]
+        ]);
+    return sameRow || sameCol || sameBox;
   }
 
   bool addArrow(

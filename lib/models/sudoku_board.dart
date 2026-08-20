@@ -14,12 +14,10 @@ class SudokuBoard {
   SudokuBoard({
     required this.board,
     required this.initial,
-  }) : candidates = List.generate(
-            9, (_) => List.generate(9, (_) => <int>{})),
-       userCandidates = List.generate(
-            9, (_) => List.generate(9, (_) => <int>{})),
-       eliminated = List.generate(
-            9, (_) => List.generate(9, (_) => <int>{})) {
+  })  : candidates = List.generate(9, (_) => List.generate(9, (_) => <int>{})),
+        userCandidates =
+            List.generate(9, (_) => List.generate(9, (_) => <int>{})),
+        eliminated = List.generate(9, (_) => List.generate(9, (_) => <int>{})) {
     _updateCandidates();
   }
 
@@ -193,6 +191,12 @@ class SudokuBoard {
   Set<int> getUserCandidates(int row, int col) {
     if (board[row][col] != 0) return {};
     return userCandidates[row][col];
+  }
+
+  /// 可见候选：自动候选 ∪ 用户笔记（已填格为空）
+  Set<int> visibleCandidates(int row, int col) {
+    if (board[row][col] != 0) return {};
+    return {...candidates[row][col], ...userCandidates[row][col]};
   }
 
   /// 设置用户候选数字

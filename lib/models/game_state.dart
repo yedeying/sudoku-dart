@@ -4,6 +4,20 @@ import 'board_markup.dart';
 import '../services/sudoku_generator.dart';
 import '../services/sudoku_solver.dart';
 
+enum HintPhase { none, offerDeep, failed, ready }
+
+class HintSession {
+  final SudokuHint? hint;
+  final bool fromDeepSearch;
+  final HintPhase phase;
+
+  const HintSession({
+    this.hint,
+    this.fromDeepSearch = false,
+    required this.phase,
+  });
+}
+
 /// 游戏状态管理
 class GameState extends ChangeNotifier {
   SudokuBoard? _board;
@@ -15,12 +29,28 @@ class GameState extends ChangeNotifier {
   int? _selectedRow;
   int? _selectedCol;
   bool _justCompleted = false;
-  bool _markupEnabled = false;
+  MarkupMode markupMode = MarkupMode.off;
   BoardMarkup userMarkup = BoardMarkup();
   BoardMarkup? hintMarkup;
-  ArrowKind? pendingArrowKind;
+  HintSession? hintSession;
   CandidateRef? arrowAnchor;
-  Color markupColor = const Color(0xFF90CAF9);
+  Color markupColor = MarkupPalette.colors.first;
+  String? conjugateNotice;
+
+  /// 由强/弱链模式推导，不再单独设置
+  ArrowKind? get pendingArrowKind {
+    switch (markupMode) {
+      case MarkupMode.strong:
+        return ArrowKind.strong;
+      case MarkupMode.weak:
+        return ArrowKind.weak;
+      case MarkupMode.off:
+      case MarkupMode.cellColor:
+      case MarkupMode.candidateColor:
+      case MarkupMode.autoConjugate:
+        return null;
+    }
+  }
 
   // 候选数功能
   bool _showCandidates = false;
@@ -43,7 +73,7 @@ class GameState extends ChangeNotifier {
   bool get showCandidates => _showCandidates;
   bool get candidateMode => _candidateMode;
   bool get justCompleted => _justCompleted;
-  bool get markupEnabled => _markupEnabled;
+  bool get markupEnabled => markupMode != MarkupMode.off;
 
   BoardMarkup get displayMarkup {
     final merged = userMarkup.copy();
@@ -96,9 +126,10 @@ class GameState extends ChangeNotifier {
     _historyIndex = -1;
     userMarkup = BoardMarkup();
     hintMarkup = null;
-    pendingArrowKind = null;
+    hintSession = null;
     arrowAnchor = null;
-    _markupEnabled = false;
+    conjugateNotice = null;
+    markupMode = MarkupMode.off;
   }
 
   /// 消费“刚完成”标志（避免重复弹窗）
@@ -188,8 +219,15 @@ class GameState extends ChangeNotifier {
   }
 
   /// 获取提示（不增加提示计数，仅查看）。高级技巧（回溯填数）对用户视为未找到。
+  /// 浅搜写入 [HintPhase.ready] 或 [HintPhase.offerDeep]；
+  /// [deep] 为 true 时写入 ready 或 [HintPhase.failed]。
+  /// 已有非 none 的 session 时忽略浅搜（再次点提示无效）。
   SudokuHint? getHint({bool deep = false}) {
     if (_board == null) return null;
+
+    final active =
+        hintSession != null && hintSession!.phase != HintPhase.none;
+    if (active && !deep) return null;
 
     var hint = SudokuSolver.getHint(_board!);
     if (hint != null && hint.technique == '高级技巧') {
@@ -199,9 +237,28 @@ class GameState extends ChangeNotifier {
       _selectedRow = hint.row;
       _selectedCol = hint.col;
       hintMarkup = markupFromHint(hint);
-      notifyListeners();
+      hintSession = HintSession(
+        hint: hint,
+        fromDeepSearch: deep,
+        phase: HintPhase.ready,
+      );
+    } else if (deep) {
+      hintMarkup = null;
+      hintSession = const HintSession(
+        fromDeepSearch: true,
+        phase: HintPhase.failed,
+      );
+    } else {
+      hintMarkup = null;
+      hintSession = const HintSession(phase: HintPhase.offerDeep);
     }
+    notifyListeners();
     return hint;
+  }
+
+  /// 从 offerDeep 进入深搜：成功 → ready，失败 → failed。
+  void requestDeepSearch() {
+    getHint(deep: true);
   }
 
   static BoardMarkup markupFromHint(SudokuHint hint) {
@@ -233,25 +290,100 @@ class GameState extends ChangeNotifier {
       }
       _showCandidates = true;
       hintMarkup = null;
+      hintSession = null;
       notifyListeners();
       return;
     }
 
-    // 填数：绕过 candidateMode
+    // 填数：先清 session，再 placeNumber（其 notify 时面板已关闭）
     final wasCandidateMode = _candidateMode;
     _candidateMode = false;
+    hintMarkup = null;
+    hintSession = null;
     placeNumber(hint.value);
     _candidateMode = wasCandidateMode;
-    hintMarkup = null;
+    notifyListeners();
   }
 
   void clearHintMarkup() {
     hintMarkup = null;
+    hintSession = null;
     notifyListeners();
   }
 
   void toggleMarkupEnabled() {
-    _markupEnabled = !_markupEnabled;
+    if (markupMode == MarkupMode.off) {
+      setMarkupMode(MarkupMode.cellColor);
+    } else {
+      setMarkupMode(MarkupMode.off);
+    }
+  }
+
+  void setMarkupMode(MarkupMode mode) {
+    markupMode = mode;
+    arrowAnchor = null;
+    notifyListeners();
+  }
+
+  void setMarkupColor(Color color) {
+    markupColor = color;
+    notifyListeners();
+  }
+
+  /// 标记关闭且选中成数时，同数字成数格弱高亮（不写 markup）
+  Set<int> sameDigitHighlightCells() {
+    if (markupMode != MarkupMode.off) return {};
+    if (_board == null || _selectedRow == null || _selectedCol == null) {
+      return {};
+    }
+    final value = _board!.get(_selectedRow!, _selectedCol!);
+    if (value == 0) return {};
+    final keys = <int>{};
+    for (int r = 0; r < 9; r++) {
+      for (int c = 0; c < 9; c++) {
+        if (_board!.get(r, c) == value) {
+          keys.add(BoardMarkup.cellKey(r, c));
+        }
+      }
+    }
+    return keys;
+  }
+
+  /// 标记关闭且选中成数时，同数字可见候选弱高亮（不写 markup）
+  Set<CandidateRef> sameDigitHighlightCandidates() {
+    if (markupMode != MarkupMode.off) return {};
+    if (_board == null || _selectedRow == null || _selectedCol == null) {
+      return {};
+    }
+    final value = _board!.get(_selectedRow!, _selectedCol!);
+    if (value == 0) return {};
+    final refs = <CandidateRef>{};
+    for (int r = 0; r < 9; r++) {
+      for (int c = 0; c < 9; c++) {
+        if (_board!.visibleCandidates(r, c).contains(value)) {
+          refs.add(CandidateRef(r, c, value));
+        }
+      }
+    }
+    return refs;
+  }
+
+  /// 选格；仅在格色模式下上色（同色再点取消）
+  void onCellTap(int row, int col) {
+    if (markupMode == MarkupMode.off) {
+      selectCell(row, col);
+      return;
+    }
+    _selectedRow = row;
+    _selectedCol = col;
+    if (markupMode == MarkupMode.cellColor) {
+      final key = BoardMarkup.cellKey(row, col);
+      if (userMarkup.cellColors[key] == markupColor) {
+        userMarkup.cellColors.remove(key);
+      } else {
+        userMarkup.cellColors[key] = markupColor;
+      }
+    }
     notifyListeners();
   }
 
@@ -262,30 +394,93 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void onCandidateMarkupTap(int row, int col, int num) {
-    final ref = CandidateRef(row, col, num);
-    if (pendingArrowKind != null) {
-      if (arrowAnchor == null) {
-        arrowAnchor = ref;
-      } else {
-        userMarkup.addArrow(
-          arrowAnchor!,
-          ref,
-          pendingArrowKind!,
-          _board?.candidates ?? [],
-        );
-        arrowAnchor = null;
-      }
-      notifyListeners();
-      return;
+  /// 数字键路由：填数 / 笔记 / 候选色 / 链锚点 / 自动共轭
+  void onNumberPad(int number) {
+    if (_board == null) return;
+    switch (markupMode) {
+      case MarkupMode.off:
+        placeNumber(number);
+        return;
+      case MarkupMode.cellColor:
+        return;
+      case MarkupMode.candidateColor:
+        _toggleSelectedCandidateColor(number);
+        return;
+      case MarkupMode.strong:
+      case MarkupMode.weak:
+        if (_selectedRow == null || _selectedCol == null) return;
+        final r = _selectedRow!;
+        final c = _selectedCol!;
+        if (_board!.get(r, c) != 0) return;
+        if (!_board!.visibleCandidates(r, c).contains(number)) return;
+        onCandidateMarkupTap(r, c, number);
+        return;
+      case MarkupMode.autoConjugate:
+        paintConjugates(number);
+        return;
     }
-    userMarkup.candidateColors[ref] = markupColor;
+  }
+
+  bool isNumberPadEnabled(int number) {
+    if (_board == null) return false;
+    switch (markupMode) {
+      case MarkupMode.off:
+        return _selectedRow != null &&
+            _selectedCol != null &&
+            !_board!.isInitial(_selectedRow!, _selectedCol!);
+      case MarkupMode.cellColor:
+        return false;
+      case MarkupMode.candidateColor:
+      case MarkupMode.strong:
+      case MarkupMode.weak:
+        if (_selectedRow == null || _selectedCol == null) return false;
+        final r = _selectedRow!;
+        final c = _selectedCol!;
+        if (_board!.get(r, c) != 0) return false;
+        return _board!.visibleCandidates(r, c).contains(number);
+      case MarkupMode.autoConjugate:
+        return true;
+    }
+  }
+
+  void _toggleSelectedCandidateColor(int number) {
+    if (_selectedRow == null || _selectedCol == null) return;
+    final r = _selectedRow!;
+    final c = _selectedCol!;
+    if (_board!.get(r, c) != 0) return;
+    if (!_board!.visibleCandidates(r, c).contains(number)) return;
+    final ref = CandidateRef(r, c, number);
+    if (userMarkup.candidateColors[ref] == markupColor) {
+      userMarkup.candidateColors.remove(ref);
+    } else {
+      userMarkup.candidateColors[ref] = markupColor;
+    }
     notifyListeners();
   }
 
-  void setPendingArrow(ArrowKind? kind) {
-    pendingArrowKind = kind;
-    arrowAnchor = null;
+  /// 仅强/弱链：点候选设锚点或画箭头。其它模式勿调用（由 UI 不接线）。
+  void onCandidateMarkupTap(int row, int col, int num) {
+    final kind = pendingArrowKind;
+    if (kind == null) return;
+
+    final ref = CandidateRef(row, col, num);
+    if (arrowAnchor == null) {
+      arrowAnchor = ref;
+    } else {
+      userMarkup.addArrow(
+        arrowAnchor!,
+        ref,
+        kind,
+        _board?.candidates ?? [],
+      );
+      arrowAnchor = null;
+    }
+    notifyListeners();
+  }
+
+  void clearConjugateNotice() {
+    if (conjugateNotice == null) return;
+    conjugateNotice = null;
     notifyListeners();
   }
 
@@ -312,9 +507,31 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void paintConjugates(int digit) {
-    if (_board == null) return;
-    // 行
+  /// 扫描行、列、宫；恰两处则画共轭。返回新增条数。
+  int paintConjugates(int digit) {
+    if (_board == null) return 0;
+    conjugateNotice = null;
+    var added = 0;
+    var foundExactTwo = false;
+
+    void addPair(List<CandidateRef> hits) {
+      if (hits.length != 2) return;
+      foundExactTwo = true;
+      final a = hits[0];
+      final b = hits[1];
+      final duplicate = userMarkup.arrows.any(
+        (arrow) =>
+            arrow.kind == ArrowKind.conjugate &&
+            ((arrow.from == a && arrow.to == b) ||
+                (arrow.from == b && arrow.to == a)),
+      );
+      if (duplicate) return;
+      if (userMarkup.addArrow(
+          a, b, ArrowKind.conjugate, _board!.candidates)) {
+        added++;
+      }
+    }
+
     for (int r = 0; r < 9; r++) {
       final hits = <CandidateRef>[];
       for (int c = 0; c < 9; c++) {
@@ -323,11 +540,42 @@ class GameState extends ChangeNotifier {
           hits.add(CandidateRef(r, c, digit));
         }
       }
-      if (hits.length == 2) {
-        userMarkup.addArrow(hits[0], hits[1], ArrowKind.conjugate, _board!.candidates);
+      addPair(hits);
+    }
+
+    for (int c = 0; c < 9; c++) {
+      final hits = <CandidateRef>[];
+      for (int r = 0; r < 9; r++) {
+        if (_board!.get(r, c) == 0 &&
+            _board!.getCandidates(r, c).contains(digit)) {
+          hits.add(CandidateRef(r, c, digit));
+        }
+      }
+      addPair(hits);
+    }
+
+    for (int br = 0; br < 3; br++) {
+      for (int bc = 0; bc < 3; bc++) {
+        final hits = <CandidateRef>[];
+        for (int i = 0; i < 3; i++) {
+          for (int j = 0; j < 3; j++) {
+            final r = br * 3 + i;
+            final c = bc * 3 + j;
+            if (_board!.get(r, c) == 0 &&
+                _board!.getCandidates(r, c).contains(digit)) {
+              hits.add(CandidateRef(r, c, digit));
+            }
+          }
+        }
+        addPair(hits);
       }
     }
+
+    if (!foundExactTwo) {
+      conjugateNotice = '该数字没有共轭对';
+    }
     notifyListeners();
+    return added;
   }
 
   void clearUserMarkup() {

@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/game_state.dart';
 import '../models/board_markup.dart';
 import '../widgets/sudoku_grid.dart';
-import '../services/sudoku_solver.dart';
+import '../widgets/hint_panel.dart';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
@@ -117,6 +117,20 @@ class _GameScreenState extends State<GameScreen> {
               });
             }
 
+            if (gameState.conjugateNotice != null) {
+              final notice = gameState.conjugateNotice!;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                gameState.clearConjugateNotice();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(notice),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              });
+            }
+
             return Column(
               children: [
                 // 信息栏
@@ -137,13 +151,16 @@ class _GameScreenState extends State<GameScreen> {
                             gameState.markupEnabled,
                         conflictCells: gameState.getConflictCells(),
                         markup: gameState.displayMarkup,
+                        sameDigitCells: gameState.sameDigitHighlightCells(),
+                        sameDigitCandidates:
+                            gameState.sameDigitHighlightCandidates(),
+                        arrowAnchor: gameState.arrowAnchor,
                         onCellTap: (row, col) {
-                          gameState.selectCell(row, col);
-                          if (gameState.markupEnabled) {
-                            gameState.paintSelectedCell();
-                          }
+                          gameState.onCellTap(row, col);
                         },
-                        onCandidateTap: gameState.markupEnabled
+                        onCandidateTap: gameState.markupMode ==
+                                    MarkupMode.strong ||
+                                gameState.markupMode == MarkupMode.weak
                             ? gameState.onCandidateMarkupTap
                             : null,
                       ),
@@ -152,6 +169,14 @@ class _GameScreenState extends State<GameScreen> {
                 ),
 
                 const SizedBox(height: 16),
+
+                if (_hintPanelVisible(gameState)) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: _buildHintPanel(gameState),
+                  ),
+                  const SizedBox(height: 12),
+                ],
 
                 // 控制按钮
                 _buildControlButtons(gameState),
@@ -205,22 +230,24 @@ class _GameScreenState extends State<GameScreen> {
     required String label,
     required String value,
   }) {
+    final scheme = Theme.of(context).colorScheme;
     return Column(
       children: [
-        Icon(icon, size: 20, color: Colors.blue.shade700),
+        Icon(icon, size: 20, color: scheme.onSurfaceVariant),
         const SizedBox(height: 4),
         Text(
           label,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.grey.shade600,
+            color: scheme.onSurfaceVariant,
           ),
         ),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
+            color: scheme.onSurface,
           ),
         ),
       ],
@@ -266,18 +293,18 @@ class _GameScreenState extends State<GameScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildControlButton(
-                icon: gameState.showCandidates 
-                    ? Icons.visibility 
+                icon: gameState.showCandidates
+                    ? Icons.visibility
                     : Icons.visibility_off,
                 label: gameState.showCandidates ? '隐藏候选' : '显示候选',
                 onPressed: () => gameState.toggleShowCandidates(),
-                color: gameState.showCandidates ? Colors.green : null,
+                active: gameState.showCandidates,
               ),
               _buildControlButton(
                 icon: Icons.edit_note,
                 label: gameState.candidateMode ? '填数模式' : '笔记模式',
                 onPressed: () => gameState.toggleCandidateMode(),
-                color: gameState.candidateMode ? Colors.orange : null,
+                active: gameState.candidateMode,
               ),
               _buildControlButton(
                 icon: gameState.markupEnabled
@@ -285,60 +312,101 @@ class _GameScreenState extends State<GameScreen> {
                     : Icons.palette_outlined,
                 label: gameState.markupEnabled ? '标记中' : '标记',
                 onPressed: () => gameState.toggleMarkupEnabled(),
-                color: gameState.markupEnabled ? Colors.purple : null,
+                active: gameState.markupEnabled,
               ),
             ],
           ),
           if (gameState.markupEnabled) ...[
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              alignment: WrapAlignment.center,
-              children: [
-                ActionChip(
-                  label: const Text('强箭头'),
-                  onPressed: () => gameState.setPendingArrow(
-                    gameState.pendingArrowKind == ArrowKind.strong
-                        ? null
-                        : ArrowKind.strong,
-                  ),
-                ),
-                ActionChip(
-                  label: const Text('弱箭头'),
-                  onPressed: () => gameState.setPendingArrow(
-                    gameState.pendingArrowKind == ArrowKind.weak
-                        ? null
-                        : ArrowKind.weak,
-                  ),
-                ),
-                ActionChip(
-                  label: const Text('共轭'),
-                  onPressed: () => gameState.setPendingArrow(
-                    gameState.pendingArrowKind == ArrowKind.conjugate
-                        ? null
-                        : ArrowKind.conjugate,
-                  ),
-                ),
-                ActionChip(
-                  label: const Text('画共轭'),
-                  onPressed: () {
-                    final cands = gameState.board?.getCandidates(
-                          gameState.selectedRow ?? 0,
-                          gameState.selectedCol ?? 0,
-                        ) ??
-                        {};
-                    gameState.paintConjugates(cands.isEmpty ? 1 : cands.first);
-                  },
-                ),
-                ActionChip(
-                  label: const Text('清除标记'),
-                  onPressed: () => gameState.clearUserMarkup(),
-                ),
-              ],
-            ),
+            _buildMarkupBar(gameState),
           ],
         ],
       ),
+    );
+  }
+
+  Widget _buildMarkupBar(GameState gameState) {
+    Widget modeChip(String label, MarkupMode mode) {
+      final selected = gameState.markupMode == mode;
+      return FilterChip(
+        label: Text(
+          label,
+          style: TextStyle(
+            color: selected ? Colors.white : null,
+          ),
+        ),
+        selected: selected,
+        showCheckmark: false,
+        selectedColor: Colors.black,
+        checkmarkColor: Colors.white,
+        onSelected: (_) => gameState.setMarkupMode(mode),
+      );
+    }
+
+    return Column(
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          alignment: WrapAlignment.center,
+          children: [
+            modeChip('格色', MarkupMode.cellColor),
+            modeChip('候选色', MarkupMode.candidateColor),
+            modeChip('强链', MarkupMode.strong),
+            modeChip('弱链', MarkupMode.weak),
+            modeChip('自动共轭', MarkupMode.autoConjugate),
+            modeChip('关闭', MarkupMode.off),
+            ActionChip(
+              label: const Text('清除标记'),
+              onPressed: () => gameState.clearUserMarkup(),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (final color in MarkupPalette.colors)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: GestureDetector(
+                  onTap: () => gameState.setMarkupColor(color),
+                  child: Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: color,
+                      border: Border.all(
+                        color: gameState.markupColor == color
+                            ? Colors.black
+                            : Colors.transparent,
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        if (gameState.arrowAnchor != null) ...[
+          const SizedBox(height: 6),
+          Text(
+            '已选起点，再点终点',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.black54,
+                ),
+          ),
+        ] else if (gameState.markupMode == MarkupMode.candidateColor) ...[
+          const SizedBox(height: 6),
+          Text(
+            '选格后点数字上色',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.black54,
+                ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -346,21 +414,37 @@ class _GameScreenState extends State<GameScreen> {
     required IconData icon,
     required String label,
     required VoidCallback? onPressed,
-    Color? color,
+    bool active = false,
   }) {
+    final enabled = onPressed != null;
+    final Color iconColor;
+    if (!enabled) {
+      iconColor = Colors.grey;
+    } else if (active) {
+      iconColor = Colors.white;
+    } else {
+      iconColor = Colors.black87;
+    }
+
     return Column(
       children: [
         IconButton(
           icon: Icon(icon),
           onPressed: onPressed,
-          color: color ?? (onPressed != null ? Colors.blue : Colors.grey),
+          color: iconColor,
+          style: active
+              ? IconButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                )
+              : null,
           iconSize: 28,
         ),
         Text(
           label,
           style: TextStyle(
             fontSize: 12,
-            color: onPressed != null ? Colors.black : Colors.grey,
+            color: enabled ? Colors.black : Colors.grey,
           ),
         ),
       ],
@@ -381,19 +465,31 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Widget _buildNumberButton(int number, GameState gameState) {
-    bool isEnabled = gameState.selectedRow != null &&
-        gameState.selectedCol != null &&
-        !gameState.board!
-            .isInitial(gameState.selectedRow!, gameState.selectedCol!);
+    final isEnabled = gameState.isNumberPadEnabled(number);
+    final noteMode =
+        gameState.markupMode == MarkupMode.off && gameState.candidateMode;
+
+    final Color background;
+    final Color foreground;
+    if (!isEnabled) {
+      background = Colors.grey.shade300;
+      foreground = Colors.grey.shade500;
+    } else if (noteMode) {
+      background = Colors.grey.shade500;
+      foreground = Colors.white;
+    } else {
+      background = Colors.black;
+      foreground = Colors.white;
+    }
 
     return InkWell(
-      onTap: isEnabled ? () => gameState.placeNumber(number) : null,
+      onTap: isEnabled ? () => gameState.onNumberPad(number) : null,
       borderRadius: BorderRadius.circular(8),
       child: Container(
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: isEnabled ? Colors.blue : Colors.grey.shade300,
+          color: background,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Center(
@@ -402,7 +498,7 @@ class _GameScreenState extends State<GameScreen> {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: isEnabled ? Colors.white : Colors.grey.shade500,
+              color: foreground,
             ),
           ),
         ),
@@ -425,118 +521,57 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
-  void _showHint(BuildContext context, GameState gameState) {
-    var hint = gameState.getHint();
-    if (hint == null) {
-      _offerDeepSearch(context, gameState);
-      return;
+  bool _hintPanelVisible(GameState gameState) {
+    final phase = gameState.hintSession?.phase ?? HintPhase.none;
+    return phase != HintPhase.none;
+  }
+
+  Widget _buildHintPanel(GameState gameState) {
+    final session = gameState.hintSession!;
+    switch (session.phase) {
+      case HintPhase.offerDeep:
+        return HintPanel(
+          title: '这一步需要更深的推理',
+          body: '用到目前的全部技巧后，还找不到可以填数或删除的候选。'
+              '可以进行一次更深的搜索（更长的链、更大的假设网），可能会稍慢。是否继续？',
+          cancelLabel: '先自己想',
+          actionLabel: '深度搜索',
+          onCancel: () => gameState.clearHintMarkup(),
+          onApply: () => gameState.requestDeepSearch(),
+        );
+      case HintPhase.failed:
+        return HintPanel(
+          title: '未能找到下一步',
+          body: '在限定深度内没有推出新的填数或删除。可以检查已填数字是否有误，或换一题继续练习。',
+          cancelLabel: '知道了',
+          onCancel: () => gameState.clearHintMarkup(),
+        );
+      case HintPhase.ready:
+        final hint = session.hint!;
+        final isElim = hint.isElimination;
+        final title = session.fromDeepSearch
+            ? '${hint.technique}（深度搜索）'
+            : hint.technique;
+        final detail = isElim
+            ? '将删除 ${hint.eliminations.length} 个候选数'
+            : '位置：第 ${hint.row + 1} 行，第 ${hint.col + 1} 列'
+                '${hint.value > 0 ? '\n数字：${hint.value}' : ''}';
+        return HintPanel(
+          title: title,
+          body: '${hint.explanation}\n\n$detail',
+          actionLabel: isElim ? '应用删除' : '应用本步',
+          onCancel: () => gameState.clearHintMarkup(),
+          onApply: () => gameState.applyHint(hint),
+        );
+      case HintPhase.none:
+        return const SizedBox.shrink();
     }
-    _showHintDialog(context, gameState, hint, fromDeepSearch: false);
   }
 
-  void _offerDeepSearch(BuildContext context, GameState gameState) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('这一步需要更深的推理'),
-        content: const Text(
-          '用到目前的全部技巧后，还找不到可以填数或删除的候选。'
-          '可以进行一次更深的搜索（更长的链、更大的假设网），可能会稍慢。是否继续？',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('先自己想'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              final deep = gameState.getHint(deep: true);
-              if (deep == null) {
-                _showHintFailed(context);
-              } else {
-                _showHintDialog(context, gameState, deep, fromDeepSearch: true);
-              }
-            },
-            child: const Text('深度搜索'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showHintFailed(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('未能找到下一步'),
-        content: const Text(
-          '在限定深度内没有推出新的填数或删除。可以检查已填数字是否有误，或换一题继续练习。',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('知道了'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showHintDialog(
-    BuildContext context,
-    GameState gameState,
-    SudokuHint hint, {
-    required bool fromDeepSearch,
-  }) {
-    final isElim = hint.isElimination;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          fromDeepSearch ? '${hint.technique}（深度搜索）' : hint.technique,
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(hint.explanation),
-            const SizedBox(height: 16),
-            Text(
-              isElim
-                  ? '将删除 ${hint.eliminations.length} 个候选数'
-                  : '位置：第 ${hint.row + 1} 行，第 ${hint.col + 1} 列',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            if (!isElim)
-              Text(
-                '数字：${hint.value}',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue.shade700,
-                  fontSize: 18,
-                ),
-              ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              gameState.clearHintMarkup();
-              Navigator.pop(context);
-            },
-            child: const Text('取消'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              gameState.applyHint(hint);
-              Navigator.pop(context);
-            },
-            child: Text(isElim ? '应用删除' : '应用本步'),
-          ),
-        ],
-      ),
-    );
+  void _showHint(BuildContext context, GameState gameState) {
+    final phase = gameState.hintSession?.phase ?? HintPhase.none;
+    if (phase != HintPhase.none) return;
+    gameState.getHint();
   }
 
   void _handleMenuAction(BuildContext context, String action) {

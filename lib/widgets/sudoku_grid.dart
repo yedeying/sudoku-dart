@@ -13,6 +13,9 @@ class SudokuGrid extends StatelessWidget {
   final bool showCandidates;
   final BoardMarkup? markup;
   final bool readOnly;
+  final Set<int> sameDigitCells;
+  final Set<CandidateRef> sameDigitCandidates;
+  final CandidateRef? arrowAnchor;
 
   const SudokuGrid({
     super.key,
@@ -25,6 +28,9 @@ class SudokuGrid extends StatelessWidget {
     this.showCandidates = false,
     this.markup,
     this.readOnly = false,
+    this.sameDigitCells = const {},
+    this.sameDigitCandidates = const {},
+    this.arrowAnchor,
   });
 
   @override
@@ -81,12 +87,15 @@ class SudokuGrid extends StatelessWidget {
   }
 
   Widget _buildCell(BuildContext context, int row, int col, bool showCands) {
+    final scheme = Theme.of(context).colorScheme;
     bool isInitial = board.isInitial(row, col);
     bool isSelected = selectedRow == row && selectedCol == col;
     bool isRelated = _isRelatedCell(row, col);
     int value = board.get(row, col);
     bool hasConflict = conflictCells.contains(row * 9 + col);
-    final markColor = markup?.cellColors[BoardMarkup.cellKey(row, col)];
+    final cellKey = BoardMarkup.cellKey(row, col);
+    final markColor = markup?.cellColors[cellKey];
+    final sameDigit = sameDigitCells.contains(cellKey);
 
     Color bgColor;
     if (markColor != null) {
@@ -95,6 +104,9 @@ class SudokuGrid extends StatelessWidget {
       bgColor = Colors.red.shade100;
     } else if (isSelected) {
       bgColor = Colors.blue.shade200;
+    } else if (sameDigit) {
+      // Weak same-digit wash — not primary/tertiary
+      bgColor = scheme.surfaceContainerHighest;
     } else if (isRelated) {
       bgColor = Colors.blue.shade50;
     } else if ((row ~/ 3 + col ~/ 3) % 2 == 0) {
@@ -132,18 +144,22 @@ class SudokuGrid extends StatelessWidget {
 
   Widget _buildCandidates(
       BuildContext context, int row, int col, bool showCands) {
-    if (!showCands && (selectedRow != row || selectedCol != col)) {
+    final hasSameDigitCand =
+        sameDigitCandidates.any((r) => r.row == row && r.col == col);
+    if (!showCands &&
+        !hasSameDigitCand &&
+        (selectedRow != row || selectedCol != col)) {
       return const SizedBox.shrink();
     }
 
-    var userCands = board.getUserCandidates(row, col);
-    var candidates =
-        userCands.isNotEmpty ? userCands : board.getCandidates(row, col);
+    final userCands = board.getUserCandidates(row, col);
+    final candidates = board.visibleCandidates(row, col);
 
     if (candidates.isEmpty) {
       return const SizedBox.shrink();
     }
 
+    final scheme = Theme.of(context).colorScheme;
     final filter = markup?.filterDigit;
 
     return Padding(
@@ -158,30 +174,76 @@ class SudokuGrid extends StatelessWidget {
           final struck = markup?.struck.contains(ref) ?? false;
           final cColor = markup?.candidateColors[ref];
           final dimmed = filter != null && num != filter;
+          final sameDigit = sameDigitCandidates.contains(ref);
+          final isAnchor = arrowAnchor == ref;
+          final glyphColor = struck
+              ? Colors.red.shade300
+              : cColor != null
+                  ? (cColor.computeLuminance() > 0.5
+                      ? Colors.black87
+                      : Colors.white)
+                  : (isAnchor
+                      ? Colors.white
+                      : (sameDigit
+                          ? scheme.onSurfaceVariant
+                          : (dimmed
+                              ? Colors.grey.shade300
+                              : (userCands.contains(num)
+                                  ? Colors.blue.shade700
+                                  : Colors.grey.shade600))));
+          final text = Text(
+            isCandidate ? num.toString() : '',
+            style: TextStyle(
+              fontSize: 8,
+              fontWeight: cColor != null ||
+                      userCands.contains(num) ||
+                      isAnchor
+                  ? FontWeight.bold
+                  : FontWeight.normal,
+              color: glyphColor,
+              decoration: struck ? TextDecoration.lineThrough : null,
+            ),
+          );
+          Widget digit = text;
+          if (isCandidate && isAnchor) {
+            digit = Container(
+              width: 12,
+              height: 12,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.black,
+              ),
+              child: text,
+            );
+          } else if (isCandidate && cColor != null) {
+            digit = Container(
+              width: 12,
+              height: 12,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: cColor,
+              ),
+              child: text,
+            );
+          } else if (isCandidate && sameDigit) {
+            digit = Container(
+              width: 12,
+              height: 12,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: scheme.surfaceContainerHighest,
+              ),
+              child: text,
+            );
+          }
           return GestureDetector(
             onTap: !isCandidate || onCandidateTap == null
                 ? null
                 : () => onCandidateTap!(row, col, num),
-            child: Center(
-              child: Text(
-                isCandidate ? num.toString() : '',
-                style: TextStyle(
-                  fontSize: 8,
-                  fontWeight: cColor != null || userCands.isNotEmpty
-                      ? FontWeight.bold
-                      : FontWeight.normal,
-                  color: struck
-                      ? Colors.red.shade300
-                      : cColor ??
-                          (dimmed
-                              ? Colors.grey.shade300
-                              : (userCands.isNotEmpty
-                                  ? Colors.blue.shade700
-                                  : Colors.grey.shade600)),
-                  decoration: struck ? TextDecoration.lineThrough : null,
-                ),
-              ),
-            ),
+            child: Center(child: digit),
           );
         }),
       ),

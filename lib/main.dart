@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/main_shell.dart';
 import 'models/game_state.dart';
+import 'theme/app_theme.dart';
 
 void main() {
   runApp(const SudokuApp());
@@ -16,21 +17,8 @@ class SudokuApp extends StatelessWidget {
       create: (_) => GameState(),
       child: MaterialApp(
         title: '数独游戏',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.blue,
-            brightness: Brightness.light,
-          ),
-        ),
-        darkTheme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.blue,
-            brightness: Brightness.dark,
-          ),
-        ),
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
         home: const MainShell(),
         debugShowCheckedModeBanner: false,
       ),
