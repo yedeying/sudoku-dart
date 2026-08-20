@@ -85,4 +85,37 @@ void main() {
     g.setMarkupMode(MarkupMode.weak);
     expect(g.arrowAnchor, isNull);
   });
+
+  test('宫共轭：同行另有同数字时仍合法', () {
+    final cands = List.generate(9, (_) => List.generate(9, (_) => <int>{}));
+    // Box 8 pair (6,6)-(6,7); third 5 on same row outside the box
+    cands[6][6].add(5);
+    cands[6][7].add(5);
+    cands[6][0].add(5);
+    expect(
+      BoardMarkup.isLegalConjugate(
+        const CandidateRef(6, 6, 5),
+        const CandidateRef(6, 7, 5),
+        cands,
+      ),
+      isTrue,
+    );
+  });
+
+  test('已有共轭箭头再画时不设 conjugateNotice', () {
+    final g = _boardWithDigit7Conjugates();
+    g.setMarkupMode(MarkupMode.autoConjugate);
+    g.onNumberPad(7);
+    expect(g.conjugateNotice, isNull);
+    expect(
+      g.userMarkup.arrows.where((a) => a.kind == ArrowKind.conjugate).length,
+      3,
+    );
+    g.onNumberPad(7);
+    expect(g.conjugateNotice, isNull);
+    expect(
+      g.userMarkup.arrows.where((a) => a.kind == ArrowKind.conjugate).length,
+      3,
+    );
+  });
 }

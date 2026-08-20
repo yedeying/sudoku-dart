@@ -468,9 +468,11 @@ class GameState extends ChangeNotifier {
     if (_board == null) return 0;
     conjugateNotice = null;
     var added = 0;
+    var foundExactTwo = false;
 
     void addPair(List<CandidateRef> hits) {
       if (hits.length != 2) return;
+      foundExactTwo = true;
       final a = hits[0];
       final b = hits[1];
       final duplicate = userMarkup.arrows.any(
@@ -525,7 +527,7 @@ class GameState extends ChangeNotifier {
       }
     }
 
-    if (added == 0) {
+    if (!foundExactTwo) {
       conjugateNotice = '该数字没有共轭对';
     }
     notifyListeners();
