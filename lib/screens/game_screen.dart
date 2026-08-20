@@ -291,54 +291,79 @@ class _GameScreenState extends State<GameScreen> {
           ),
           if (gameState.markupEnabled) ...[
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              alignment: WrapAlignment.center,
-              children: [
-                ActionChip(
-                  label: const Text('强箭头'),
-                  onPressed: () => gameState.setPendingArrow(
-                    gameState.pendingArrowKind == ArrowKind.strong
-                        ? null
-                        : ArrowKind.strong,
-                  ),
-                ),
-                ActionChip(
-                  label: const Text('弱箭头'),
-                  onPressed: () => gameState.setPendingArrow(
-                    gameState.pendingArrowKind == ArrowKind.weak
-                        ? null
-                        : ArrowKind.weak,
-                  ),
-                ),
-                ActionChip(
-                  label: const Text('共轭'),
-                  onPressed: () => gameState.setPendingArrow(
-                    gameState.pendingArrowKind == ArrowKind.conjugate
-                        ? null
-                        : ArrowKind.conjugate,
-                  ),
-                ),
-                ActionChip(
-                  label: const Text('画共轭'),
-                  onPressed: () {
-                    final cands = gameState.board?.getCandidates(
-                          gameState.selectedRow ?? 0,
-                          gameState.selectedCol ?? 0,
-                        ) ??
-                        {};
-                    gameState.paintConjugates(cands.isEmpty ? 1 : cands.first);
-                  },
-                ),
-                ActionChip(
-                  label: const Text('清除标记'),
-                  onPressed: () => gameState.clearUserMarkup(),
-                ),
-              ],
-            ),
+            _buildMarkupBar(gameState),
           ],
         ],
       ),
+    );
+  }
+
+  Widget _buildMarkupBar(GameState gameState) {
+    Widget modeChip(String label, MarkupMode mode) {
+      final selected = gameState.markupMode == mode;
+      return FilterChip(
+        label: Text(label),
+        selected: selected,
+        showCheckmark: false,
+        onSelected: (_) => gameState.setMarkupMode(mode),
+      );
+    }
+
+    return Column(
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          alignment: WrapAlignment.center,
+          children: [
+            modeChip('格色', MarkupMode.cellColor),
+            modeChip('候选色', MarkupMode.candidateColor),
+            modeChip('强链', MarkupMode.strong),
+            modeChip('弱链', MarkupMode.weak),
+            modeChip('自动共轭', MarkupMode.autoConjugate),
+            ActionChip(
+              label: const Text('清除标记'),
+              onPressed: () => gameState.clearUserMarkup(),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (final color in MarkupPalette.colors)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: GestureDetector(
+                  onTap: () => gameState.setMarkupColor(color),
+                  child: Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: color,
+                      border: Border.all(
+                        color: gameState.markupColor == color
+                            ? Colors.black
+                            : Colors.transparent,
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        if (gameState.markupMode == MarkupMode.candidateColor) ...[
+          const SizedBox(height: 6),
+          Text(
+            '选格后点数字上色',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.black54,
+                ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -381,13 +406,10 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Widget _buildNumberButton(int number, GameState gameState) {
-    bool isEnabled = gameState.selectedRow != null &&
-        gameState.selectedCol != null &&
-        !gameState.board!
-            .isInitial(gameState.selectedRow!, gameState.selectedCol!);
+    bool isEnabled = gameState.isNumberPadEnabled(number);
 
     return InkWell(
-      onTap: isEnabled ? () => gameState.placeNumber(number) : null,
+      onTap: isEnabled ? () => gameState.onNumberPad(number) : null,
       borderRadius: BorderRadius.circular(8),
       child: Container(
         width: 36,

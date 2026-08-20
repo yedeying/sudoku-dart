@@ -333,6 +333,70 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 数字键路由：填数 / 笔记 / 候选色 / 链锚点 / 自动共轭
+  void onNumberPad(int number) {
+    if (_board == null) return;
+    switch (markupMode) {
+      case MarkupMode.off:
+        placeNumber(number);
+        return;
+      case MarkupMode.cellColor:
+        return;
+      case MarkupMode.candidateColor:
+        _toggleSelectedCandidateColor(number);
+        return;
+      case MarkupMode.strong:
+      case MarkupMode.weak:
+        if (_selectedRow == null || _selectedCol == null) return;
+        final r = _selectedRow!;
+        final c = _selectedCol!;
+        if (_board!.get(r, c) != 0) return;
+        if (!_board!.visibleCandidates(r, c).contains(number)) return;
+        onCandidateMarkupTap(r, c, number);
+        return;
+      case MarkupMode.autoConjugate:
+        paintConjugates(number);
+        return;
+    }
+  }
+
+  bool isNumberPadEnabled(int number) {
+    if (_board == null) return false;
+    switch (markupMode) {
+      case MarkupMode.off:
+        return _selectedRow != null &&
+            _selectedCol != null &&
+            !_board!.isInitial(_selectedRow!, _selectedCol!);
+      case MarkupMode.cellColor:
+        return false;
+      case MarkupMode.candidateColor:
+      case MarkupMode.strong:
+      case MarkupMode.weak:
+        if (_selectedRow == null || _selectedCol == null) return false;
+        final r = _selectedRow!;
+        final c = _selectedCol!;
+        if (_board!.get(r, c) != 0) return false;
+        return _board!.visibleCandidates(r, c).contains(number);
+      case MarkupMode.autoConjugate:
+        return true;
+    }
+  }
+
+  void _toggleSelectedCandidateColor(int number) {
+    if (_selectedRow == null || _selectedCol == null) return;
+    final r = _selectedRow!;
+    final c = _selectedCol!;
+    if (_board!.get(r, c) != 0) return;
+    if (!_board!.visibleCandidates(r, c).contains(number)) return;
+    final ref = CandidateRef(r, c, number);
+    if (userMarkup.candidateColors[ref] == markupColor) {
+      userMarkup.candidateColors.remove(ref);
+    } else {
+      userMarkup.candidateColors[ref] = markupColor;
+    }
+    notifyListeners();
+  }
+
   void onCandidateMarkupTap(int row, int col, int num) {
     final ref = CandidateRef(row, col, num);
     if (pendingArrowKind != null) {

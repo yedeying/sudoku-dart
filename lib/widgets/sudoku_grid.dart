@@ -175,8 +175,11 @@ class SudokuGrid extends StatelessWidget {
           final sameDigit = sameDigitCandidates.contains(ref);
           final glyphColor = struck
               ? Colors.red.shade300
-              : cColor ??
-                  (sameDigit
+              : cColor != null
+                  ? (cColor.computeLuminance() > 0.5
+                      ? Colors.black87
+                      : Colors.white)
+                  : (sameDigit
                       ? scheme.onSurfaceVariant
                       : (dimmed
                           ? Colors.grey.shade300
@@ -194,24 +197,35 @@ class SudokuGrid extends StatelessWidget {
               decoration: struck ? TextDecoration.lineThrough : null,
             ),
           );
+          Widget digit = text;
+          if (isCandidate && cColor != null) {
+            digit = Container(
+              width: 12,
+              height: 12,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: cColor,
+              ),
+              child: text,
+            );
+          } else if (isCandidate && sameDigit) {
+            digit = Container(
+              width: 12,
+              height: 12,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: scheme.surfaceContainerHighest,
+              ),
+              child: text,
+            );
+          }
           return GestureDetector(
             onTap: !isCandidate || onCandidateTap == null
                 ? null
                 : () => onCandidateTap!(row, col, num),
-            child: Center(
-              child: sameDigit && isCandidate
-                  ? Container(
-                      width: 12,
-                      height: 12,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: scheme.surfaceContainerHighest,
-                      ),
-                      child: text,
-                    )
-                  : text,
-            ),
+            child: Center(child: digit),
           );
         }),
       ),
