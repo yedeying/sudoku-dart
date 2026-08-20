@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/game_state.dart';
 import '../models/board_markup.dart';
 import '../widgets/sudoku_grid.dart';
-import '../services/sudoku_solver.dart';
+import '../widgets/hint_panel.dart';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
@@ -167,6 +167,14 @@ class _GameScreenState extends State<GameScreen> {
                 ),
 
                 const SizedBox(height: 16),
+
+                if (_hintPanelVisible(gameState)) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: _buildHintPanel(gameState),
+                  ),
+                  const SizedBox(height: 12),
+                ],
 
                 // 控制按钮
                 _buildControlButtons(gameState),
@@ -471,118 +479,57 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
-  void _showHint(BuildContext context, GameState gameState) {
-    var hint = gameState.getHint();
-    if (hint == null) {
-      _offerDeepSearch(context, gameState);
-      return;
+  bool _hintPanelVisible(GameState gameState) {
+    final phase = gameState.hintSession?.phase ?? HintPhase.none;
+    return phase != HintPhase.none;
+  }
+
+  Widget _buildHintPanel(GameState gameState) {
+    final session = gameState.hintSession!;
+    switch (session.phase) {
+      case HintPhase.offerDeep:
+        return HintPanel(
+          title: '这一步需要更深的推理',
+          body: '用到目前的全部技巧后，还找不到可以填数或删除的候选。'
+              '可以进行一次更深的搜索（更长的链、更大的假设网），可能会稍慢。是否继续？',
+          cancelLabel: '先自己想',
+          actionLabel: '深度搜索',
+          onCancel: () => gameState.clearHintMarkup(),
+          onApply: () => gameState.requestDeepSearch(),
+        );
+      case HintPhase.failed:
+        return HintPanel(
+          title: '未能找到下一步',
+          body: '在限定深度内没有推出新的填数或删除。可以检查已填数字是否有误，或换一题继续练习。',
+          cancelLabel: '知道了',
+          onCancel: () => gameState.clearHintMarkup(),
+        );
+      case HintPhase.ready:
+        final hint = session.hint!;
+        final isElim = hint.isElimination;
+        final title = session.fromDeepSearch
+            ? '${hint.technique}（深度搜索）'
+            : hint.technique;
+        final detail = isElim
+            ? '将删除 ${hint.eliminations.length} 个候选数'
+            : '位置：第 ${hint.row + 1} 行，第 ${hint.col + 1} 列'
+                '${hint.value > 0 ? '\n数字：${hint.value}' : ''}';
+        return HintPanel(
+          title: title,
+          body: '${hint.explanation}\n\n$detail',
+          actionLabel: isElim ? '应用删除' : '应用本步',
+          onCancel: () => gameState.clearHintMarkup(),
+          onApply: () => gameState.applyHint(hint),
+        );
+      case HintPhase.none:
+        return const SizedBox.shrink();
     }
-    _showHintDialog(context, gameState, hint, fromDeepSearch: false);
   }
 
-  void _offerDeepSearch(BuildContext context, GameState gameState) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('这一步需要更深的推理'),
-        content: const Text(
-          '用到目前的全部技巧后，还找不到可以填数或删除的候选。'
-          '可以进行一次更深的搜索（更长的链、更大的假设网），可能会稍慢。是否继续？',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('先自己想'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              final deep = gameState.getHint(deep: true);
-              if (deep == null) {
-                _showHintFailed(context);
-              } else {
-                _showHintDialog(context, gameState, deep, fromDeepSearch: true);
-              }
-            },
-            child: const Text('深度搜索'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showHintFailed(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('未能找到下一步'),
-        content: const Text(
-          '在限定深度内没有推出新的填数或删除。可以检查已填数字是否有误，或换一题继续练习。',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('知道了'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showHintDialog(
-    BuildContext context,
-    GameState gameState,
-    SudokuHint hint, {
-    required bool fromDeepSearch,
-  }) {
-    final isElim = hint.isElimination;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          fromDeepSearch ? '${hint.technique}（深度搜索）' : hint.technique,
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(hint.explanation),
-            const SizedBox(height: 16),
-            Text(
-              isElim
-                  ? '将删除 ${hint.eliminations.length} 个候选数'
-                  : '位置：第 ${hint.row + 1} 行，第 ${hint.col + 1} 列',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            if (!isElim)
-              Text(
-                '数字：${hint.value}',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue.shade700,
-                  fontSize: 18,
-                ),
-              ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              gameState.clearHintMarkup();
-              Navigator.pop(context);
-            },
-            child: const Text('取消'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              gameState.applyHint(hint);
-              Navigator.pop(context);
-            },
-            child: Text(isElim ? '应用删除' : '应用本步'),
-          ),
-        ],
-      ),
-    );
+  void _showHint(BuildContext context, GameState gameState) {
+    final phase = gameState.hintSession?.phase ?? HintPhase.none;
+    if (phase != HintPhase.none) return;
+    gameState.getHint();
   }
 
   void _handleMenuAction(BuildContext context, String action) {

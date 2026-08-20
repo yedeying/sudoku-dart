@@ -4,6 +4,20 @@ import 'board_markup.dart';
 import '../services/sudoku_generator.dart';
 import '../services/sudoku_solver.dart';
 
+enum HintPhase { none, offerDeep, failed, ready }
+
+class HintSession {
+  final SudokuHint? hint;
+  final bool fromDeepSearch;
+  final HintPhase phase;
+
+  const HintSession({
+    this.hint,
+    this.fromDeepSearch = false,
+    required this.phase,
+  });
+}
+
 /// 游戏状态管理
 class GameState extends ChangeNotifier {
   SudokuBoard? _board;
@@ -18,6 +32,7 @@ class GameState extends ChangeNotifier {
   MarkupMode markupMode = MarkupMode.off;
   BoardMarkup userMarkup = BoardMarkup();
   BoardMarkup? hintMarkup;
+  HintSession? hintSession;
   CandidateRef? arrowAnchor;
   Color markupColor = const Color(0xFF90CAF9);
   String? conjugateNotice;
@@ -111,6 +126,7 @@ class GameState extends ChangeNotifier {
     _historyIndex = -1;
     userMarkup = BoardMarkup();
     hintMarkup = null;
+    hintSession = null;
     arrowAnchor = null;
     conjugateNotice = null;
     markupMode = MarkupMode.off;
@@ -203,8 +219,15 @@ class GameState extends ChangeNotifier {
   }
 
   /// 获取提示（不增加提示计数，仅查看）。高级技巧（回溯填数）对用户视为未找到。
+  /// 浅搜写入 [HintPhase.ready] 或 [HintPhase.offerDeep]；
+  /// [deep] 为 true 时写入 ready 或 [HintPhase.failed]。
+  /// 已有非 none 的 session 时忽略浅搜（再次点提示无效）。
   SudokuHint? getHint({bool deep = false}) {
     if (_board == null) return null;
+
+    final active =
+        hintSession != null && hintSession!.phase != HintPhase.none;
+    if (active && !deep) return null;
 
     var hint = SudokuSolver.getHint(_board!);
     if (hint != null && hint.technique == '高级技巧') {
@@ -214,9 +237,28 @@ class GameState extends ChangeNotifier {
       _selectedRow = hint.row;
       _selectedCol = hint.col;
       hintMarkup = markupFromHint(hint);
-      notifyListeners();
+      hintSession = HintSession(
+        hint: hint,
+        fromDeepSearch: deep,
+        phase: HintPhase.ready,
+      );
+    } else if (deep) {
+      hintMarkup = null;
+      hintSession = const HintSession(
+        fromDeepSearch: true,
+        phase: HintPhase.failed,
+      );
+    } else {
+      hintMarkup = null;
+      hintSession = const HintSession(phase: HintPhase.offerDeep);
     }
+    notifyListeners();
     return hint;
+  }
+
+  /// 从 offerDeep 进入深搜：成功 → ready，失败 → failed。
+  void requestDeepSearch() {
+    getHint(deep: true);
   }
 
   static BoardMarkup markupFromHint(SudokuHint hint) {
@@ -248,6 +290,7 @@ class GameState extends ChangeNotifier {
       }
       _showCandidates = true;
       hintMarkup = null;
+      hintSession = null;
       notifyListeners();
       return;
     }
@@ -258,10 +301,12 @@ class GameState extends ChangeNotifier {
     placeNumber(hint.value);
     _candidateMode = wasCandidateMode;
     hintMarkup = null;
+    hintSession = null;
   }
 
   void clearHintMarkup() {
     hintMarkup = null;
+    hintSession = null;
     notifyListeners();
   }
 
