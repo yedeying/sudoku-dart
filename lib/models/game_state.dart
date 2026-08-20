@@ -34,7 +34,7 @@ class GameState extends ChangeNotifier {
   BoardMarkup? hintMarkup;
   HintSession? hintSession;
   CandidateRef? arrowAnchor;
-  Color markupColor = const Color(0xFF90CAF9);
+  Color markupColor = MarkupPalette.colors.first;
   String? conjugateNotice;
 
   /// 由强/弱链模式推导，不再单独设置
@@ -302,6 +302,7 @@ class GameState extends ChangeNotifier {
     hintSession = null;
     placeNumber(hint.value);
     _candidateMode = wasCandidateMode;
+    notifyListeners();
   }
 
   void clearHintMarkup() {
@@ -457,25 +458,23 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 仅强/弱链：点候选设锚点或画箭头。其它模式勿调用（由 UI 不接线）。
   void onCandidateMarkupTap(int row, int col, int num) {
-    final ref = CandidateRef(row, col, num);
     final kind = pendingArrowKind;
-    if (kind != null) {
-      if (arrowAnchor == null) {
-        arrowAnchor = ref;
-      } else {
-        userMarkup.addArrow(
-          arrowAnchor!,
-          ref,
-          kind,
-          _board?.candidates ?? [],
-        );
-        arrowAnchor = null;
-      }
-      notifyListeners();
-      return;
+    if (kind == null) return;
+
+    final ref = CandidateRef(row, col, num);
+    if (arrowAnchor == null) {
+      arrowAnchor = ref;
+    } else {
+      userMarkup.addArrow(
+        arrowAnchor!,
+        ref,
+        kind,
+        _board?.candidates ?? [],
+      );
+      arrowAnchor = null;
     }
-    userMarkup.candidateColors[ref] = markupColor;
     notifyListeners();
   }
 

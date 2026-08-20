@@ -158,7 +158,9 @@ class _GameScreenState extends State<GameScreen> {
                         onCellTap: (row, col) {
                           gameState.onCellTap(row, col);
                         },
-                        onCandidateTap: gameState.markupEnabled
+                        onCandidateTap: gameState.markupMode ==
+                                    MarkupMode.strong ||
+                                gameState.markupMode == MarkupMode.weak
                             ? gameState.onCandidateMarkupTap
                             : null,
                       ),

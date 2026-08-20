@@ -66,4 +66,27 @@ void main() {
     expect(g.board!.get(0, 2), 0);
     expect(g.userMarkup.candidateColors, isEmpty);
   });
+
+  test('格色模式模拟候选点不写 candidateColors，点格仍上色', () {
+    final g = _classicWithVisible8();
+    g.setMarkupColor(MarkupPalette.colors.first);
+    g.setMarkupMode(MarkupMode.cellColor);
+    g.onCandidateMarkupTap(0, 2, 8);
+    expect(g.userMarkup.candidateColors, isEmpty);
+    g.onCellTap(0, 2);
+    expect(
+      g.userMarkup.cellColors[BoardMarkup.cellKey(0, 2)],
+      MarkupPalette.colors.first,
+    );
+  });
+
+  test('自动共轭模式网格候选点不上色', () {
+    final g = _classicWithVisible8();
+    g.setMarkupColor(MarkupPalette.colors.first);
+    g.setMarkupMode(MarkupMode.autoConjugate);
+    g.onCandidateMarkupTap(0, 2, 8);
+    expect(g.userMarkup.candidateColors, isEmpty);
+    expect(g.userMarkup.arrows, isEmpty);
+    expect(g.arrowAnchor, isNull);
+  });
 }
