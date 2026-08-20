@@ -137,6 +137,9 @@ class _GameScreenState extends State<GameScreen> {
                             gameState.markupEnabled,
                         conflictCells: gameState.getConflictCells(),
                         markup: gameState.displayMarkup,
+                        sameDigitCells: gameState.sameDigitHighlightCells(),
+                        sameDigitCandidates:
+                            gameState.sameDigitHighlightCandidates(),
                         onCellTap: (row, col) {
                           gameState.onCellTap(row, col);
                         },

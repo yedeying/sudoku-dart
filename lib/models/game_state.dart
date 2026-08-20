@@ -269,6 +269,44 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 标记关闭且选中成数时，同数字成数格弱高亮（不写 markup）
+  Set<int> sameDigitHighlightCells() {
+    if (markupMode != MarkupMode.off) return {};
+    if (_board == null || _selectedRow == null || _selectedCol == null) {
+      return {};
+    }
+    final value = _board!.get(_selectedRow!, _selectedCol!);
+    if (value == 0) return {};
+    final keys = <int>{};
+    for (int r = 0; r < 9; r++) {
+      for (int c = 0; c < 9; c++) {
+        if (_board!.get(r, c) == value) {
+          keys.add(BoardMarkup.cellKey(r, c));
+        }
+      }
+    }
+    return keys;
+  }
+
+  /// 标记关闭且选中成数时，同数字可见候选弱高亮（不写 markup）
+  Set<CandidateRef> sameDigitHighlightCandidates() {
+    if (markupMode != MarkupMode.off) return {};
+    if (_board == null || _selectedRow == null || _selectedCol == null) {
+      return {};
+    }
+    final value = _board!.get(_selectedRow!, _selectedCol!);
+    if (value == 0) return {};
+    final refs = <CandidateRef>{};
+    for (int r = 0; r < 9; r++) {
+      for (int c = 0; c < 9; c++) {
+        if (_board!.visibleCandidates(r, c).contains(value)) {
+          refs.add(CandidateRef(r, c, value));
+        }
+      }
+    }
+    return refs;
+  }
+
   /// 选格；仅在格色模式下上色（同色再点取消）
   void onCellTap(int row, int col) {
     if (markupMode == MarkupMode.off) {
