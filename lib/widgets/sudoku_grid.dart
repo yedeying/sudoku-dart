@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/sudoku_board.dart';
 import '../models/board_markup.dart';
+import '../theme/app_theme.dart';
 import 'board_arrows_painter.dart';
 
 class SudokuGrid extends StatelessWidget {
@@ -29,6 +30,7 @@ class SudokuGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final showCands = showCandidates ||
         (markup != null &&
             (markup!.candidateColors.isNotEmpty ||
@@ -37,70 +39,110 @@ class SudokuGrid extends StatelessWidget {
 
     return AspectRatio(
       aspectRatio: 1,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final cellSize = (constraints.maxWidth - 12) / 9;
+          return Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerLowest,
+              borderRadius: BorderRadius.circular(AppTheme.radius),
+              border: Border.all(color: scheme.outlineVariant),
             ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            GridView.builder(
-              physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(4),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 9,
-                mainAxisSpacing: 1,
-                crossAxisSpacing: 1,
-              ),
-              itemCount: 81,
-              itemBuilder: (context, index) {
-                int row = index ~/ 9;
-                int col = index % 9;
-                return _buildCell(context, row, col, showCands);
-              },
-            ),
-            if (markup != null && markup!.arrows.isNotEmpty)
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: CustomPaint(
-                    painter: BoardArrowsPainter(markup: markup!),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(AppTheme.radius - 8),
+              child: Stack(
+                children: [
+                  Column(
+                    children: List.generate(9, (row) {
+                      return Expanded(
+                        child: Row(
+                          children: List.generate(9, (col) {
+                            return Expanded(
+                              child: _buildCell(
+                                context,
+                                row,
+                                col,
+                                showCands,
+                                cellSize,
+                              ),
+                            );
+                          }),
+                        ),
+                      );
+                    }),
                   ),
-                ),
+                  if (markup != null && markup!.arrows.isNotEmpty)
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: CustomPaint(
+                          painter: BoardArrowsPainter(
+                            markup: markup!,
+                            padding: 0,
+                            strongColor: scheme.primary,
+                            weakColor: scheme.onSurfaceVariant,
+                            conjugateColor: scheme.tertiary,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
-          ],
-        ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildCell(BuildContext context, int row, int col, bool showCands) {
-    bool isInitial = board.isInitial(row, col);
-    bool isSelected = selectedRow == row && selectedCol == col;
-    bool isRelated = _isRelatedCell(row, col);
-    int value = board.get(row, col);
-    bool hasConflict = conflictCells.contains(row * 9 + col);
+  Widget _buildCell(
+    BuildContext context,
+    int row,
+    int col,
+    bool showCands,
+    double cellSize,
+  ) {
+    final scheme = Theme.of(context).colorScheme;
+    final isInitial = board.isInitial(row, col);
+    final isSelected = selectedRow == row && selectedCol == col;
+    final isRelated = _isRelatedCell(row, col);
+    final value = board.get(row, col);
+    final hasConflict = conflictCells.contains(row * 9 + col);
     final markColor = markup?.cellColors[BoardMarkup.cellKey(row, col)];
+    final samePeerValue = value != 0 &&
+        selectedRow != null &&
+        selectedCol != null &&
+        board.get(selectedRow!, selectedCol!) == value;
 
     Color bgColor;
     if (markColor != null) {
       bgColor = markColor;
     } else if (hasConflict) {
-      bgColor = Colors.red.shade100;
+      bgColor = scheme.errorContainer;
     } else if (isSelected) {
-      bgColor = Colors.blue.shade200;
+      bgColor = scheme.primaryContainer;
+    } else if (samePeerValue) {
+      bgColor = scheme.tertiaryContainer.withValues(alpha: 0.55);
     } else if (isRelated) {
-      bgColor = Colors.blue.shade50;
+      bgColor = scheme.primaryContainer.withValues(alpha: 0.28);
     } else if ((row ~/ 3 + col ~/ 3) % 2 == 0) {
-      bgColor = Colors.grey.shade50;
+      bgColor = scheme.surfaceContainerLow;
     } else {
-      bgColor = Colors.white;
+      bgColor = scheme.surfaceContainerLowest;
+    }
+
+    final Color valueColor;
+    if (markColor != null) {
+      valueColor =
+          ThemeData.estimateBrightnessForColor(markColor) == Brightness.dark
+              ? Colors.white
+              : Colors.black87;
+    } else if (hasConflict) {
+      valueColor = scheme.error;
+    } else if (isInitial) {
+      valueColor = scheme.onSurface;
+    } else {
+      valueColor = scheme.primary;
     }
 
     return GestureDetector(
@@ -108,21 +150,18 @@ class SudokuGrid extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: bgColor,
-          border: _getBorder(row, col),
+          border: _getBorder(context, row, col),
         ),
         child: Center(
           child: value == 0
-              ? _buildCandidates(context, row, col, showCands)
+              ? _buildCandidates(context, row, col, showCands, cellSize)
               : Text(
                   value.toString(),
                   style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: isInitial ? FontWeight.bold : FontWeight.normal,
-                    color: isInitial
-                        ? Colors.black
-                        : hasConflict
-                            ? Colors.red
-                            : Colors.blue.shade700,
+                    fontSize: cellSize * 0.52,
+                    height: 1,
+                    fontWeight: isInitial ? FontWeight.w700 : FontWeight.w500,
+                    color: valueColor,
                   ),
                 ),
         ),
@@ -131,56 +170,75 @@ class SudokuGrid extends StatelessWidget {
   }
 
   Widget _buildCandidates(
-      BuildContext context, int row, int col, bool showCands) {
+    BuildContext context,
+    int row,
+    int col,
+    bool showCands,
+    double cellSize,
+  ) {
     if (!showCands && (selectedRow != row || selectedCol != col)) {
       return const SizedBox.shrink();
     }
 
-    var userCands = board.getUserCandidates(row, col);
-    var candidates =
-        userCands.isNotEmpty ? userCands : board.getCandidates(row, col);
+    // ignore: unused_local_variable
+    final autoCands = board.getCandidates(row, col);
+    final userCands = board.getUserCandidates(row, col);
+    final candidates = board.visibleCandidates(row, col);
 
     if (candidates.isEmpty) {
       return const SizedBox.shrink();
     }
 
+    final scheme = Theme.of(context).colorScheme;
     final filter = markup?.filterDigit;
+    final fontSize = (cellSize * 0.26).clamp(7.0, 14.0);
 
     return Padding(
-      padding: const EdgeInsets.all(2.0),
-      child: GridView.count(
-        crossAxisCount: 3,
-        physics: const NeverScrollableScrollPhysics(),
-        children: List.generate(9, (index) {
-          int num = index + 1;
-          bool isCandidate = candidates.contains(num);
-          final ref = CandidateRef(row, col, num);
-          final struck = markup?.struck.contains(ref) ?? false;
-          final cColor = markup?.candidateColors[ref];
-          final dimmed = filter != null && num != filter;
-          return GestureDetector(
-            onTap: !isCandidate || onCandidateTap == null
-                ? null
-                : () => onCandidateTap!(row, col, num),
-            child: Center(
-              child: Text(
-                isCandidate ? num.toString() : '',
-                style: TextStyle(
-                  fontSize: 8,
-                  fontWeight: cColor != null || userCands.isNotEmpty
-                      ? FontWeight.bold
-                      : FontWeight.normal,
-                  color: struck
-                      ? Colors.red.shade300
-                      : cColor ??
-                          (dimmed
-                              ? Colors.grey.shade300
-                              : (userCands.isNotEmpty
-                                  ? Colors.blue.shade700
-                                  : Colors.grey.shade600)),
-                  decoration: struck ? TextDecoration.lineThrough : null,
-                ),
-              ),
+      padding: const EdgeInsets.all(1),
+      child: Column(
+        children: List.generate(3, (bandRow) {
+          return Expanded(
+            child: Row(
+              children: List.generate(3, (bandCol) {
+                final num = bandRow * 3 + bandCol + 1;
+                final isCandidate = candidates.contains(num);
+                final isUserNote = userCands.contains(num);
+                final ref = CandidateRef(row, col, num);
+                final struck = markup?.struck.contains(ref) ?? false;
+                final cColor = markup?.candidateColors[ref];
+                final dimmed = filter != null && num != filter;
+
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: !isCandidate || onCandidateTap == null
+                        ? null
+                        : () => onCandidateTap!(row, col, num),
+                    child: Center(
+                      child: Text(
+                        isCandidate ? num.toString() : '',
+                        style: TextStyle(
+                          fontSize: fontSize,
+                          height: 1,
+                          fontWeight: cColor != null || isUserNote
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: struck
+                              ? scheme.error.withValues(alpha: 0.7)
+                              : cColor ??
+                                  (dimmed
+                                      ? scheme.onSurfaceVariant
+                                          .withValues(alpha: 0.28)
+                                      : (isUserNote
+                                          ? scheme.primary
+                                          : scheme.onSurfaceVariant)),
+                          decoration:
+                              struck ? TextDecoration.lineThrough : null,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
             ),
           );
         }),
@@ -198,23 +256,27 @@ class SudokuGrid extends StatelessWidget {
     return boxRow == selectedBoxRow && boxCol == selectedBoxCol;
   }
 
-  Border _getBorder(int row, int col) {
+  Border _getBorder(BuildContext context, int row, int col) {
+    final scheme = Theme.of(context).colorScheme;
+    final thin = scheme.outlineVariant.withValues(alpha: 0.7);
+    final thick = scheme.outline;
+
     return Border(
       top: BorderSide(
-        color: row % 3 == 0 ? Colors.black : Colors.grey.shade300,
-        width: row % 3 == 0 ? 2 : 1,
+        color: row % 3 == 0 ? thick : thin,
+        width: row % 3 == 0 ? 1.6 : 0.6,
       ),
       left: BorderSide(
-        color: col % 3 == 0 ? Colors.black : Colors.grey.shade300,
-        width: col % 3 == 0 ? 2 : 1,
+        color: col % 3 == 0 ? thick : thin,
+        width: col % 3 == 0 ? 1.6 : 0.6,
       ),
       right: BorderSide(
-        color: col == 8 ? Colors.black : Colors.transparent,
-        width: col == 8 ? 2 : 0,
+        color: col == 8 ? thick : Colors.transparent,
+        width: col == 8 ? 1.6 : 0,
       ),
       bottom: BorderSide(
-        color: row == 8 ? Colors.black : Colors.transparent,
-        width: row == 8 ? 2 : 0,
+        color: row == 8 ? thick : Colors.transparent,
+        width: row == 8 ? 1.6 : 0,
       ),
     );
   }
