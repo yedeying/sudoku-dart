@@ -17,35 +17,39 @@ void main() {
     await tester.tap(find.text('技巧说明'));
     await tester.pumpAndSettle();
 
-    expect(find.text('唯一候选数'), findsOneWidget);
-    expect(find.text('隐藏单元'), findsOneWidget);
+    expect(find.text('唯余法'), findsOneWidget);
+    expect(find.text('摒除法（行/列/宫）'), findsOneWidget);
   });
 
-  testWidgets('应用使用近黑种子色', (tester) async {
-    await tester.pumpWidget(const SudokuApp());
-    final theme = tester.widget<MaterialApp>(find.byType(MaterialApp)).theme!;
-    expect(theme.colorScheme.brightness, Brightness.light);
-    // Seed itself must be near-black (M3 fromSeed can remap primary).
-    expect(AppTheme.seed.computeLuminance() < 0.05, isTrue);
-    expect(theme.colorScheme.primary.computeLuminance() < 0.2, isTrue);
+  test('强调色是低饱和深蓝，不会盖过标记调色板', () {
+    for (final scheme in [
+      AppTheme.light().colorScheme,
+      AppTheme.dark().colorScheme,
+    ]) {
+      final hsl = HSLColor.fromColor(scheme.primary);
+      expect(hsl.saturation, lessThan(0.5), reason: '强调色饱和度需压低');
+      expect(hsl.hue, greaterThan(190), reason: '色相应落在蓝色区间');
+      expect(hsl.hue, lessThan(250));
+    }
   });
 
-  testWidgets('chrome 容器色为灰度无青绿色彩', (tester) async {
-    await tester.pumpWidget(const SudokuApp());
-    final scheme =
-        tester.widget<MaterialApp>(find.byType(MaterialApp)).theme!.colorScheme;
-
+  test('底色与容器色保持灰度，只有强调色带色相', () {
     bool isNearGray(Color c) {
       final maxC = [c.r, c.g, c.b].reduce((a, b) => a > b ? a : b);
       final minC = [c.r, c.g, c.b].reduce((a, b) => a < b ? a : b);
       return maxC - minC < 0.02;
     }
 
-    expect(isNearGray(scheme.primaryContainer), isTrue);
-    expect(isNearGray(scheme.secondaryContainer), isTrue);
-    expect(isNearGray(scheme.tertiaryContainer), isTrue);
-    expect(isNearGray(scheme.surface), isTrue);
-    expect(isNearGray(scheme.surfaceContainerHighest), isTrue);
-    expect(scheme.surfaceTint, Colors.transparent);
+    for (final scheme in [
+      AppTheme.light().colorScheme,
+      AppTheme.dark().colorScheme,
+    ]) {
+      expect(isNearGray(scheme.surface), isTrue);
+      expect(isNearGray(scheme.surfaceContainerLow), isTrue);
+      expect(isNearGray(scheme.surfaceContainerHighest), isTrue);
+      expect(isNearGray(scheme.secondaryContainer), isTrue);
+      expect(isNearGray(scheme.tertiaryContainer), isTrue);
+      expect(scheme.surfaceTint, Colors.transparent);
+    }
   });
 }

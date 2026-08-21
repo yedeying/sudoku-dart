@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/sudoku_board.dart';
 import '../models/board_markup.dart';
+import '../theme/board_palette.dart';
 import 'board_arrows_painter.dart';
 
 class SudokuGrid extends StatelessWidget {
@@ -35,59 +36,77 @@ class SudokuGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final showCands = showCandidates ||
-        (markup != null &&
-            (markup!.candidateColors.isNotEmpty ||
-                markup!.filterDigit != null ||
-                markup!.arrows.isNotEmpty));
+    final palette = BoardPalette.of(context);
 
     return AspectRatio(
       aspectRatio: 1,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: palette.paper,
           borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              color: Colors.black.withValues(alpha: 0.18),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Stack(
-          children: [
-            GridView.builder(
-              physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(4),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 9,
-                mainAxisSpacing: 1,
-                crossAxisSpacing: 1,
-              ),
-              itemCount: 81,
-              itemBuilder: (context, index) {
-                int row = index ~/ 9;
-                int col = index % 9;
-                return _buildCell(context, row, col, showCands);
-              },
-            ),
-            if (markup != null && markup!.arrows.isNotEmpty)
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: CustomPaint(
-                    painter: BoardArrowsPainter(markup: markup!),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // 4px 内边距 + 8 条 1px 间隔，剩下的宽度平分给 9 个格子。
+            final cellSize = (constraints.maxWidth - 8 - 8) / 9;
+            return Stack(
+              children: [
+                GridView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(4),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 9,
+                    mainAxisSpacing: 1,
+                    crossAxisSpacing: 1,
                   ),
+                  itemCount: 81,
+                  itemBuilder: (context, index) {
+                    int row = index ~/ 9;
+                    int col = index % 9;
+                    return _buildCell(
+                      context,
+                      row,
+                      col,
+                      showCandidates,
+                      cellSize,
+                    );
+                  },
                 ),
-              ),
-          ],
+                if (markup != null && markup!.arrows.isNotEmpty)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: CustomPaint(
+                        painter: BoardArrowsPainter(
+                          markup: markup!,
+                          strongColor: palette.strongArrow,
+                          weakColor: palette.weakArrow,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildCell(BuildContext context, int row, int col, bool showCands) {
-    final scheme = Theme.of(context).colorScheme;
+  Widget _buildCell(
+    BuildContext context,
+    int row,
+    int col,
+    bool showCands,
+    double cellSize,
+  ) {
+    final palette = BoardPalette.of(context);
     bool isInitial = board.isInitial(row, col);
     bool isSelected = selectedRow == row && selectedCol == col;
     bool isRelated = _isRelatedCell(row, col);
@@ -101,18 +120,17 @@ class SudokuGrid extends StatelessWidget {
     if (markColor != null) {
       bgColor = markColor;
     } else if (hasConflict) {
-      bgColor = Colors.red.shade100;
+      bgColor = palette.conflict;
     } else if (isSelected) {
-      bgColor = Colors.blue.shade200;
+      bgColor = palette.selected;
     } else if (sameDigit) {
-      // Weak same-digit wash — not primary/tertiary
-      bgColor = scheme.surfaceContainerHighest;
+      bgColor = palette.sameDigit;
     } else if (isRelated) {
-      bgColor = Colors.blue.shade50;
+      bgColor = palette.related;
     } else if ((row ~/ 3 + col ~/ 3) % 2 == 0) {
-      bgColor = Colors.grey.shade50;
+      bgColor = palette.paperAlt;
     } else {
-      bgColor = Colors.white;
+      bgColor = palette.paper;
     }
 
     return GestureDetector(
@@ -120,21 +138,27 @@ class SudokuGrid extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: bgColor,
-          border: _getBorder(row, col),
+          border: _getBorder(row, col, palette),
         ),
         child: Center(
           child: value == 0
-              ? _buildCandidates(context, row, col, showCands)
+              ? _buildCandidates(context, row, col, showCands, cellSize)
               : Text(
                   value.toString(),
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: cellSize * 0.55,
+                    height: 1,
                     fontWeight: isInitial ? FontWeight.bold : FontWeight.normal,
-                    color: isInitial
-                        ? Colors.black
-                        : hasConflict
-                            ? Colors.red
-                            : Colors.blue.shade700,
+                    // 上了色的格子按底色取对照色，不然深底深字全看不见。
+                    color: markColor != null
+                        ? (markColor.computeLuminance() > 0.5
+                            ? Colors.black87
+                            : Colors.white)
+                        : isInitial
+                            ? palette.givenDigit
+                            : hasConflict
+                                ? palette.conflictDigit
+                                : palette.userDigit,
                   ),
                 ),
         ),
@@ -143,31 +167,36 @@ class SudokuGrid extends StatelessWidget {
   }
 
   Widget _buildCandidates(
-      BuildContext context, int row, int col, bool showCands) {
-    final hasSameDigitCand =
-        sameDigitCandidates.any((r) => r.row == row && r.col == col);
-    if (!showCands &&
-        !hasSameDigitCand &&
-        (selectedRow != row || selectedCol != col)) {
+    BuildContext context,
+    int row,
+    int col,
+    bool showCands,
+    double cellSize,
+  ) {
+    // “显示候选”是唯一的视图层开关。选中、同数字高亮、候选上色等
+    // 只改变候选显示后的样式，不能绕过隐藏状态。
+    if (!showCands) {
       return const SizedBox.shrink();
     }
 
-    final userCands = board.getUserCandidates(row, col);
     final candidates = board.visibleCandidates(row, col);
 
     if (candidates.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    final scheme = Theme.of(context).colorScheme;
+    final palette = BoardPalette.of(context);
     final filter = markup?.filterDigit;
+    final cellWash = markup?.cellColors[BoardMarkup.cellKey(row, col)];
+    final fontSize = cellSize * 0.25;
+    final chipSize = cellSize * 0.30;
 
+    // 用固定的 3x3 布局而不是 GridView：格子里的滚动视图会在
+    // Web 上鼠标悬停时冒出滚动条。
     return Padding(
-      padding: const EdgeInsets.all(2.0),
-      child: GridView.count(
-        crossAxisCount: 3,
-        physics: const NeverScrollableScrollPhysics(),
-        children: List.generate(9, (index) {
+      padding: EdgeInsets.all(cellSize * 0.04),
+      child: _miniGrid(
+        List.generate(9, (index) {
           int num = index + 1;
           bool isCandidate = candidates.contains(num);
           final ref = CandidateRef(row, col, num);
@@ -176,77 +205,76 @@ class SudokuGrid extends StatelessWidget {
           final dimmed = filter != null && num != filter;
           final sameDigit = sameDigitCandidates.contains(ref);
           final isAnchor = arrowAnchor == ref;
-          final glyphColor = struck
-              ? Colors.red.shade300
-              : cColor != null
-                  ? (cColor.computeLuminance() > 0.5
-                      ? Colors.black87
-                      : Colors.white)
-                  : (isAnchor
-                      ? Colors.white
-                      : (sameDigit
-                          ? scheme.onSurfaceVariant
-                          : (dimmed
-                              ? Colors.grey.shade300
-                              : (userCands.contains(num)
-                                  ? Colors.blue.shade700
-                                  : Colors.grey.shade600))));
+          // 高亮一律用圆圈底色，数字只负责在底色上保持可读。
+          final Color? chipColor = struck
+              ? palette.candidateStruck
+              : isAnchor
+                  ? palette.anchor
+                  : cColor ?? (sameDigit ? palette.sameDigit : null);
+          final Color glyphColor;
+          if (chipColor != null) {
+            glyphColor = chipColor.computeLuminance() > 0.5
+                ? Colors.black87
+                : Colors.white;
+          } else if (dimmed) {
+            glyphColor = palette.candidateDim;
+          } else if (cellWash != null) {
+            glyphColor = cellWash.computeLuminance() > 0.5
+                ? Colors.black87
+                : Colors.white;
+          } else {
+            // 手写和自动候选同一个样子：用户不需要知道哪个是自己加的。
+            glyphColor = palette.candidate;
+          }
           final text = Text(
             isCandidate ? num.toString() : '',
             style: TextStyle(
-              fontSize: 8,
-              fontWeight: cColor != null ||
-                      userCands.contains(num) ||
-                      isAnchor
-                  ? FontWeight.bold
-                  : FontWeight.normal,
+              fontSize: fontSize,
+              height: 1,
+              fontWeight:
+                  chipColor != null ? FontWeight.bold : FontWeight.normal,
               color: glyphColor,
-              decoration: struck ? TextDecoration.lineThrough : null,
             ),
           );
           Widget digit = text;
-          if (isCandidate && isAnchor) {
-            digit = Container(
-              width: 12,
-              height: 12,
-              alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.black,
-              ),
-              child: text,
-            );
-          } else if (isCandidate && cColor != null) {
-            digit = Container(
-              width: 12,
-              height: 12,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: cColor,
-              ),
-              child: text,
-            );
-          } else if (isCandidate && sameDigit) {
-            digit = Container(
-              width: 12,
-              height: 12,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: scheme.surfaceContainerHighest,
-              ),
-              child: text,
-            );
+          if (isCandidate && chipColor != null) {
+            digit = _chip(chipSize, chipColor, text);
           }
           return GestureDetector(
             onTap: !isCandidate || onCandidateTap == null
                 ? null
                 : () => onCandidateTap!(row, col, num),
+            behavior: HitTestBehavior.opaque,
             child: Center(child: digit),
           );
         }),
       ),
+    );
+  }
+
+  Widget _miniGrid(List<Widget> cells) {
+    return Column(
+      children: [
+        for (int r = 0; r < 3; r++)
+          Expanded(
+            child: Row(
+              children: [
+                for (int c = 0; c < 3; c++)
+                  Expanded(child: cells[r * 3 + c]),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _chip(double size, Color color, Widget child) {
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+      child: child,
     );
   }
 
@@ -260,22 +288,22 @@ class SudokuGrid extends StatelessWidget {
     return boxRow == selectedBoxRow && boxCol == selectedBoxCol;
   }
 
-  Border _getBorder(int row, int col) {
+  Border _getBorder(int row, int col, BoardPalette palette) {
     return Border(
       top: BorderSide(
-        color: row % 3 == 0 ? Colors.black : Colors.grey.shade300,
+        color: row % 3 == 0 ? palette.gridStrong : palette.gridThin,
         width: row % 3 == 0 ? 2 : 1,
       ),
       left: BorderSide(
-        color: col % 3 == 0 ? Colors.black : Colors.grey.shade300,
+        color: col % 3 == 0 ? palette.gridStrong : palette.gridThin,
         width: col % 3 == 0 ? 2 : 1,
       ),
       right: BorderSide(
-        color: col == 8 ? Colors.black : Colors.transparent,
+        color: col == 8 ? palette.gridStrong : Colors.transparent,
         width: col == 8 ? 2 : 0,
       ),
       bottom: BorderSide(
-        color: row == 8 ? Colors.black : Colors.transparent,
+        color: row == 8 ? palette.gridStrong : Colors.transparent,
         width: row == 8 ? 2 : 0,
       ),
     );

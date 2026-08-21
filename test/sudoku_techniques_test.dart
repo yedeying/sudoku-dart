@@ -1,22 +1,20 @@
 import 'package:flutter_test/flutter_test.dart';
-import '../lib/models/sudoku_board.dart';
-import '../lib/services/sudoku_solver.dart';
+import 'package:sudoku_app/models/sudoku_board.dart';
+import 'package:sudoku_app/services/sudoku_solver.dart';
 
 void main() {
   group('数独高级技巧测试', () {
     test('基础技巧：Naked Single', () {
       // 创建一个简单的数独，只有一个格子只有唯一候选
-      var board = SudokuBoard.fromString(
-        '530070000'
-        '600195000'
-        '098000060'
-        '800060003'
-        '400803001'
-        '700020006'
-        '060000280'
-        '000419005'
-        '000080079'
-      );
+      var board = SudokuBoard.fromString('530070000'
+          '600195000'
+          '098000060'
+          '800060003'
+          '400803001'
+          '700020006'
+          '060000280'
+          '000419005'
+          '000080079');
 
       var hint = SudokuSolver.getHint(board);
       expect(hint, isNotNull);
@@ -26,17 +24,15 @@ void main() {
     });
 
     test('基础技巧：Hidden Single', () {
-      var board = SudokuBoard.fromString(
-        '003020600'
-        '900305001'
-        '001806400'
-        '008102900'
-        '700000008'
-        '006708200'
-        '002609500'
-        '800203009'
-        '005010300'
-      );
+      var board = SudokuBoard.fromString('003020600'
+          '900305001'
+          '001806400'
+          '008102900'
+          '700000008'
+          '006708200'
+          '002609500'
+          '800203009'
+          '005010300');
 
       var hint = SudokuSolver.getHint(board);
       expect(hint, isNotNull);
@@ -45,19 +41,17 @@ void main() {
       print('说明: ${hint?.explanation}');
     });
 
-    test('数字对：Naked Pair', () {
+    test('显性数对：Naked Pair', () {
       // 这个数独包含 Naked Pair 模式
-      var board = SudokuBoard.fromString(
-        '000000000'
-        '000000000'
-        '000000000'
-        '123456789'
-        '456789123'
-        '789123456'
-        '234000000'
-        '000000000'
-        '000000000'
-      );
+      var board = SudokuBoard.fromString('000000000'
+          '000000000'
+          '000000000'
+          '123456789'
+          '456789123'
+          '789123456'
+          '234000000'
+          '000000000'
+          '000000000');
 
       var hint = SudokuSolver.getHint(board);
       print('\n技巧: ${hint?.technique}');
@@ -68,17 +62,15 @@ void main() {
     });
 
     test('完整解题流程', () {
-      var board = SudokuBoard.fromString(
-        '530070000'
-        '600195000'
-        '098000060'
-        '800060003'
-        '400803001'
-        '700020006'
-        '060000280'
-        '000419005'
-        '000080079'
-      );
+      var board = SudokuBoard.fromString('530070000'
+          '600195000'
+          '098000060'
+          '800060003'
+          '400803001'
+          '700020006'
+          '060000280'
+          '000419005'
+          '000080079');
 
       print('\n开始数独:');
       print(board.toPrettyString());
@@ -110,12 +102,12 @@ void main() {
 
     test('技巧难度分级', () {
       var techniques = [
-        '唯一候选数',
-        '隐藏单元',
-        '数字对',
+        '唯余法',
+        '摒除',
+        '数对',
         '数字三元组',
-        '指向对',
-        '盒线削减',
+        '宫区块',
+        '区块',
         'X-Wing',
         'Swordfish',
         'XY-Wing',
@@ -129,17 +121,15 @@ void main() {
     });
 
     test('测试候选数字计算', () {
-      var board = SudokuBoard.fromString(
-        '530070000'
-        '600195000'
-        '098000060'
-        '800060003'
-        '400803001'
-        '700020006'
-        '060000280'
-        '000419005'
-        '000080079'
-      );
+      var board = SudokuBoard.fromString('530070000'
+          '600195000'
+          '098000060'
+          '800060003'
+          '400803001'
+          '700020006'
+          '060000280'
+          '000419005'
+          '000080079');
 
       // 测试第一个空格的候选数字
       var candidates = board.getCandidates(0, 2);
@@ -160,17 +150,15 @@ void main() {
 
     test('验证所有技巧都被正确集成', () {
       // 创建一个测试棋盘，逐步应用提示直到完成或没有更多提示
-      var board = SudokuBoard.fromString(
-        '003020600'
-        '900305001'
-        '001806400'
-        '008102900'
-        '700000008'
-        '006708200'
-        '002609500'
-        '800203009'
-        '005010300'
-      );
+      var board = SudokuBoard.fromString('003020600'
+          '900305001'
+          '001806400'
+          '008102900'
+          '700000008'
+          '006708200'
+          '002609500'
+          '800203009'
+          '005010300');
 
       Set<String> usedTechniques = {};
       int maxSteps = 100;

@@ -14,7 +14,8 @@ void main() {
   test('保留 Simple Coloring，不含独立 3D Medusa', () {
     final names = TechniqueCatalog.all.map((t) => t.name).toList();
     expect(names, contains('Simple Coloring'));
-    expect(names.any((n) => n.contains('Medusa') || n.contains('Multi-Coloring')),
+    expect(
+        names.any((n) => n.contains('Medusa') || n.contains('Multi-Coloring')),
         isFalse);
   });
 

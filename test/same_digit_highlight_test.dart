@@ -26,7 +26,10 @@ void main() {
     final g = _boardWithFives();
     g.selectCell(0, 0);
     expect(g.sameDigitHighlightCells(), contains(BoardMarkup.cellKey(1, 1)));
-    expect(g.sameDigitHighlightCandidates(), contains(CandidateRef(2, 2, 5)));
+    expect(
+      g.sameDigitHighlightCandidates(),
+      contains(const CandidateRef(2, 2, 5)),
+    );
   });
 
   test('标记开启后同数字高亮为空', () {

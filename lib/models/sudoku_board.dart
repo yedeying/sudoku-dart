@@ -6,8 +6,10 @@ class SudokuBoard {
   List<List<int>> initial;
   // 记录每个格子的候选数字（自动计算）
   List<List<Set<int>>> candidates;
-  // 用户手动设置的候选数字（用于笔记功能）
+  // 用户手动写上的候选数字（自动候选里没有的）
   List<List<Set<int>>> userCandidates;
+  // 用户手动划掉的候选数字（只影响显示，不参与技巧推理）
+  List<List<Set<int>>> userHidden;
   // 逻辑推理过程中被排除的候选数字（技巧删除的候选）
   List<List<Set<int>>> eliminated;
 
@@ -16,6 +18,8 @@ class SudokuBoard {
     required this.initial,
   })  : candidates = List.generate(9, (_) => List.generate(9, (_) => <int>{})),
         userCandidates =
+            List.generate(9, (_) => List.generate(9, (_) => <int>{})),
+        userHidden =
             List.generate(9, (_) => List.generate(9, (_) => <int>{})),
         eliminated = List.generate(9, (_) => List.generate(9, (_) => <int>{})) {
     _updateCandidates();
@@ -62,6 +66,7 @@ class SudokuBoard {
     for (int i = 0; i < 9; i++) {
       for (int j = 0; j < 9; j++) {
         newBoard.userCandidates[i][j] = Set<int>.from(userCandidates[i][j]);
+        newBoard.userHidden[i][j] = Set<int>.from(userHidden[i][j]);
         newBoard.eliminated[i][j] = Set<int>.from(eliminated[i][j]);
       }
     }
@@ -193,10 +198,13 @@ class SudokuBoard {
     return userCandidates[row][col];
   }
 
-  /// 可见候选：自动候选 ∪ 用户笔记（已填格为空）
+  /// 可见候选：自动候选 ∪ 用户手写 − 用户划掉（已填格为空）。
+  ///
+  /// 笔记和自动候选共用这一个集合，用户看到的就是这一份。
   Set<int> visibleCandidates(int row, int col) {
     if (board[row][col] != 0) return {};
-    return {...candidates[row][col], ...userCandidates[row][col]};
+    return {...candidates[row][col], ...userCandidates[row][col]}
+      ..removeAll(userHidden[row][col]);
   }
 
   /// 设置用户候选数字
@@ -206,20 +214,22 @@ class SudokuBoard {
     }
   }
 
-  /// 切换某个候选数字
+  /// 切换某个候选数字：按可见集合来加减，自动候选也能被划掉。
   void toggleUserCandidate(int row, int col, int num) {
-    if (board[row][col] == 0) {
-      if (userCandidates[row][col].contains(num)) {
-        userCandidates[row][col].remove(num);
-      } else {
-        userCandidates[row][col].add(num);
-      }
+    if (board[row][col] != 0) return;
+    if (visibleCandidates(row, col).contains(num)) {
+      userCandidates[row][col].remove(num);
+      userHidden[row][col].add(num);
+    } else {
+      userHidden[row][col].remove(num);
+      userCandidates[row][col].add(num);
     }
   }
 
   /// 清除用户候选数字
   void clearUserCandidates(int row, int col) {
     userCandidates[row][col].clear();
+    userHidden[row][col].clear();
   }
 
   /// 自动填充所有空格的候选数字
@@ -228,6 +238,7 @@ class SudokuBoard {
       for (int j = 0; j < 9; j++) {
         if (board[i][j] == 0) {
           userCandidates[i][j] = Set<int>.from(candidates[i][j]);
+          userHidden[i][j].clear();
         }
       }
     }

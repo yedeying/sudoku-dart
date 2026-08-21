@@ -19,6 +19,7 @@ class SudokuApp extends StatelessWidget {
         title: '数独游戏',
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
+        themeMode: ThemeMode.system,
         home: const MainShell(),
         debugShowCheckedModeBanner: false,
       ),

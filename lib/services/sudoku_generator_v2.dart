@@ -20,23 +20,23 @@ class SudokuGeneratorV2 {
   /// maxAttempts: 最大尝试次数
   static SudokuBoard generate(String difficulty, {int maxAttempts = 50}) {
     _log('开始生成 $difficulty 难度的题目...');
-    
+
     for (int attempt = 1; attempt <= maxAttempts; attempt++) {
       _log('尝试 $attempt/$maxAttempts...');
-      
+
       // 1. 生成完整的已解决的数独
       var completed = _generateCompleted();
-      
+
       // 2. 根据难度逐步移除数字
       var puzzle = _removeNumbersWithDifficulty(completed, difficulty);
-      
+
       if (puzzle != null) {
         puzzle.refreshCandidates();
         // 3. 验证难度
         var result = DifficultyAnalyzer.analyzeDifficulty(puzzle);
         _log('生成的题目难度: ${result.level}, 分数: ${result.score}');
         _log(DifficultyAnalyzer.getDifficultyReport(result));
-        
+
         if (DifficultyAnalyzer.validateDifficulty(puzzle, difficulty)) {
           _log('✓ 成功生成符合要求的题目！');
           return puzzle;
@@ -138,7 +138,7 @@ class SudokuGeneratorV2 {
   static SudokuBoard? _removeNumbersWithDifficulty(
       SudokuBoard completed, String difficulty) {
     var puzzle = completed.copy();
-    
+
     // 根据难度设置初始移除数量和策略
     int minRemove, maxRemove;
     switch (difficulty) {
@@ -164,7 +164,7 @@ class SudokuGeneratorV2 {
     }
 
     int targetRemove = minRemove + _random.nextInt(maxRemove - minRemove + 1);
-    
+
     // 收集所有位置
     List<List<int>> positions = [];
     for (int i = 0; i < 9; i++) {
@@ -216,23 +216,23 @@ class SudokuGeneratorV2 {
       SudokuBoard puzzle, List<List<int>> removedPositions, String difficulty) {
     // 尝试移除更多数字，使题目需要使用高级技巧
     var testPuzzle = puzzle.copy();
-    
+
     // 优先移除对称位置的数字（通常会增加难度）
     for (int i = 0; i < 9; i++) {
       for (int j = 0; j < 9; j++) {
         if (testPuzzle.board[i][j] != 0) {
           int symRow = 8 - i;
           int symCol = 8 - j;
-          
+
           if (testPuzzle.board[symRow][symCol] != 0) {
             int backup1 = testPuzzle.board[i][j];
             int backup2 = testPuzzle.board[symRow][symCol];
-            
+
             testPuzzle.board[i][j] = 0;
             testPuzzle.initial[i][j] = 0;
             testPuzzle.board[symRow][symCol] = 0;
             testPuzzle.initial[symRow][symCol] = 0;
-            
+
             // 检查唯一解和难度
             if (SudokuSolver.hasUniqueSolution(testPuzzle)) {
               testPuzzle.refreshCandidates();
@@ -242,7 +242,7 @@ class SudokuGeneratorV2 {
                 return testPuzzle;
               }
             }
-            
+
             // 恢复
             testPuzzle.board[i][j] = backup1;
             testPuzzle.initial[i][j] = backup1;
@@ -252,7 +252,7 @@ class SudokuGeneratorV2 {
         }
       }
     }
-    
+
     return puzzle;
   }
 
@@ -262,22 +262,27 @@ class SudokuGeneratorV2 {
     switch (difficulty) {
       case 'easy':
         // 只需要 Naked Single 和 Hidden Single
-        puzzle = '530070000600195000098000060800060003400803001700020006060000280000419005000080079';
+        puzzle =
+            '530070000600195000098000060800060003400803001700020006060000280000419005000080079';
         break;
       case 'medium':
         // 需要 Naked Pair 和 Pointing Pair
-        puzzle = '003020600900305001001806400008102900700000008006708200002609500800203009005010300';
+        puzzle =
+            '003020600900305001001806400008102900700000008006708200002609500800203009005010300';
         break;
       case 'hard':
         // 需要 X-Wing
-        puzzle = '000000907000420180000705026100904000050000040000507009920108000034059000507000000';
+        puzzle =
+            '000000907000420180000705026100904000050000040000507009920108000034059000507000000';
         break;
       case 'expert':
         // 需要 XY-Wing 或更高级技巧
-        puzzle = '800000000003600000070090200050007000000045700000100030001000068008500010090000400';
+        puzzle =
+            '800000000003600000070090200050007000000045700000100030001000068008500010090000400';
         break;
       default:
-        puzzle = '530070000600195000098000060800060003400803001700020006060000280000419005000080079';
+        puzzle =
+            '530070000600195000098000060800060003400803001700020006060000280000419005000080079';
     }
     return SudokuBoard.fromString(puzzle);
   }
@@ -285,15 +290,15 @@ class SudokuGeneratorV2 {
   /// 批量生成题目（用于构建题库）
   static List<SudokuBoard> generateBatch(String difficulty, int count) {
     List<SudokuBoard> puzzles = [];
-    
+
     _log('开始批量生成 $count 个 $difficulty 难度的题目...');
-    
+
     for (int i = 0; i < count; i++) {
       _log('\n生成第 ${i + 1}/$count 个题目');
       var puzzle = generate(difficulty, maxAttempts: 30);
       puzzles.add(puzzle);
     }
-    
+
     _log('\n✓ 批量生成完成！');
     return puzzles;
   }

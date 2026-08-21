@@ -27,156 +27,172 @@ class _InputScreenState extends State<InputScreen> {
         title: const Text('手动输入题目'),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 说明
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 说明
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.info_outline, color: Colors.blue.shade700),
-                          const SizedBox(width: 8),
-                          const Text(
-                            '输入说明',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                size: 18,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '输入说明',
+                                style: Theme.of(context).textTheme.titleSmall,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            '请输入81个数字（从左到右，从上到下）：\n'
+                            '• 1-9 表示已填入的数字\n'
+                            '• 0 或 . 表示空格\n'
+                            '• 可以包含空格和换行符（将被忽略）',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(height: 1.6),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        '请输入81个数字（从左到右，从上到下）：\n'
-                        '• 1-9 表示已填入的数字\n'
-                        '• 0 或 . 表示空格\n'
-                        '• 可以包含空格和换行符（将被忽略）',
-                        style: TextStyle(fontSize: 14, height: 1.5),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 示例
+                  ExpansionTile(
+                    shape: const Border(),
+                    collapsedShape: const Border(),
+                    title: const Text('查看示例'),
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHigh,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text(
+                          '530070000\n'
+                          '600195000\n'
+                          '098000060\n'
+                          '800060003\n'
+                          '400803001\n'
+                          '700020006\n'
+                          '060000280\n'
+                          '000419005\n'
+                          '000080079',
+                          style: TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: FilledButton.tonal(
+                          onPressed: () {
+                            _controller.text =
+                                '530070000600195000098000060800060003400803001700020006060000280000419005000080079';
+                          },
+                          child: const Text('使用此示例'),
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ),
 
-              const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-              // 示例
-              ExpansionTile(
-                title: const Text('查看示例'),
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    color: Colors.grey.shade50,
-                    child: const Text(
-                      '530070000\n'
-                      '600195000\n'
-                      '098000060\n'
-                      '800060003\n'
-                      '400803001\n'
-                      '700020006\n'
-                      '060000280\n'
-                      '000419005\n'
-                      '000080079',
-                      style: TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 14,
+                  // 输入框
+                  TextField(
+                    controller: _controller,
+                    maxLines: 10,
+                    decoration: InputDecoration(
+                      labelText: '输入题目',
+                      hintText: '请输入81个数字...',
+                      filled: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
                       ),
+                      errorText: _errorMessage.isEmpty ? null : _errorMessage,
+                    ),
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 14,
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        _controller.text =
-                            '530070000600195000098000060800060003400803001700020006060000280000419005000080079';
-                      },
-                      child: const Text('使用此示例'),
-                    ),
+
+                  const SizedBox(height: 16),
+
+                  // 按钮
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            _controller.clear();
+                            setState(() {
+                              _errorMessage = '';
+                            });
+                          },
+                          child: const Text('清除'),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: _loadPuzzle,
+                          child: const Text('开始游戏'),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // 快速示例按钮
+                  Text(
+                    '快速加载示例：',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _buildExampleChip(
+                        '简单示例',
+                        '530070000600195000098000060800060003400803001700020006060000280000419005000080079',
+                      ),
+                      _buildExampleChip(
+                        '中等示例',
+                        '200080300060070084030500209000105408000000000402706000301007040720040060004010003',
+                      ),
+                      _buildExampleChip(
+                        '困难示例',
+                        '000000907000420180000705026100904000050000040000507009920108000034059000507000000',
+                      ),
+                    ],
                   ),
                 ],
               ),
-
-              const SizedBox(height: 16),
-
-              // 输入框
-              TextField(
-                controller: _controller,
-                maxLines: 10,
-                decoration: InputDecoration(
-                  labelText: '输入题目',
-                  hintText: '请输入81个数字...',
-                  border: const OutlineInputBorder(),
-                  errorText: _errorMessage.isEmpty ? null : _errorMessage,
-                ),
-                style: const TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 14,
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // 按钮
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        _controller.clear();
-                        setState(() {
-                          _errorMessage = '';
-                        });
-                      },
-                      child: const Text('清除'),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _loadPuzzle,
-                      child: const Text('开始游戏'),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 32),
-
-              // 快速示例按钮
-              const Text(
-                '快速加载示例：',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _buildExampleChip(
-                    '简单示例',
-                    '530070000600195000098000060800060003400803001700020006060000280000419005000080079',
-                  ),
-                  _buildExampleChip(
-                    '中等示例',
-                    '200080300060070084030500209000105408000000000402706000301007040720040060004010003',
-                  ),
-                  _buildExampleChip(
-                    '困难示例',
-                    '000000907000420180000705026100904000050000040000507009920108000034059000507000000',
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -197,9 +213,8 @@ class _InputScreenState extends State<InputScreen> {
 
   void _loadPuzzle() {
     // 清理输入（移除空格、换行符等）
-    String input = _controller.text
-        .replaceAll(RegExp(r'\s'), '')
-        .replaceAll('.', '0');
+    String input =
+        _controller.text.replaceAll(RegExp(r'\s'), '').replaceAll('.', '0');
 
     // 验证长度
     if (input.length != 81) {

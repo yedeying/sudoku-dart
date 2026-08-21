@@ -1,5 +1,62 @@
+import '../models/board_markup.dart';
 import '../models/sudoku_board.dart';
 import 'advanced_techniques.dart';
+
+enum HintRole { pattern, extra, link, target }
+
+class HintCell {
+  final int row;
+  final int col;
+  final HintRole role;
+
+  const HintCell(this.row, this.col, this.role);
+}
+
+class HintCandidate {
+  final CandidateRef ref;
+  final HintRole role;
+
+  const HintCandidate(this.ref, this.role);
+}
+
+/// 一组格子（每个元素是 [row, col]）按同一角色标记。
+List<HintCell> hintCells(HintRole role, Iterable<List<int>> cells) =>
+    [for (final c in cells) HintCell(c[0], c[1], role)];
+
+/// 一组格子上的同一个数字按同一角色标记。
+List<HintCandidate> hintCands(
+  HintRole role,
+  int digit,
+  Iterable<List<int>> cells,
+) =>
+    [
+      for (final c in cells) HintCandidate(CandidateRef(c[0], c[1], digit), role)
+    ];
+
+/// 鱼身：基线与覆盖线交点上真正带该候选的格子。
+List<List<int>> fishBody(
+  SudokuBoard board,
+  Iterable<int> rows,
+  Iterable<int> cols,
+  int num,
+) =>
+    [
+      for (final r in rows)
+        for (final c in cols)
+          if (board.get(r, c) == 0 && board.getCandidates(r, c).contains(num))
+            [r, c],
+    ];
+
+/// 单个格子上的多个数字按同一角色标记。
+List<HintCandidate> hintDigits(
+  HintRole role,
+  List<int> cell,
+  Iterable<int> digits,
+) =>
+    [
+      for (final d in digits)
+        HintCandidate(CandidateRef(cell[0], cell[1], d), role)
+    ];
 
 /// 表示一个可以在某格子上被删除的候选数字
 class CandidateElim {
@@ -76,8 +133,8 @@ class SudokuSolver {
   /// 获取解题提示
   ///
   /// 优先返回可以直接填入数字的技巧（Naked/Hidden Single），
-  /// 然后是能够删除候选数字的逻辑技巧（返回 isElimination=true），
-  /// 最后才是暴力求解。
+  /// 然后是能够删除候选数字的逻辑技巧（返回 isElimination=true）。
+  /// 找不到已实现的逻辑技巧时返回 null，绝不以回溯结果冒充提示。
   static SudokuHint? getHint(SudokuBoard board) {
     // 1. 直接填数技巧
     var nakedSingle = _findNakedSingle(board);
@@ -93,12 +150,18 @@ class SudokuSolver {
     var nakedTriple = _findNakedTriple(board);
     if (nakedTriple != null) return nakedTriple;
 
-    // 3. 隐藏数字对/三元组
+    var nakedQuad = AdvancedTechniques.findNakedQuad(board);
+    if (nakedQuad != null) return nakedQuad;
+
+    // 3. 隐藏数字对/三元组/四元组
     var hiddenPair = AdvancedTechniques.findHiddenPair(board);
     if (hiddenPair != null) return hiddenPair;
 
     var hiddenTriple = AdvancedTechniques.findHiddenTriple(board);
     if (hiddenTriple != null) return hiddenTriple;
+
+    var hiddenQuad = AdvancedTechniques.findHiddenQuad(board);
+    if (hiddenQuad != null) return hiddenQuad;
 
     // 4. 区块删减
     var pointingPair = _findPointingPair(board);
@@ -130,16 +193,30 @@ class SudokuSolver {
     var skyscraper = AdvancedTechniques.findSkyscraper(board);
     if (skyscraper != null) return skyscraper;
 
+    var kite = AdvancedTechniques.findTwoStringKite(board);
+    if (kite != null) return kite;
+
+    var emptyRect = AdvancedTechniques.findEmptyRectangle(board);
+    if (emptyRect != null) return emptyRect;
+
     // 7. 着色
     var coloring = AdvancedTechniques.findSimpleColoring(board);
     if (coloring != null) return coloring;
 
-    // 8. 唯一矩形（填数技巧）
+    // 8. 唯一矩形
     var uniqueRect = AdvancedTechniques.findUniqueRectangleType1(board);
     if (uniqueRect != null) return uniqueRect;
 
-    // 9. 兜底：暴力求解
-    return _findBruteForceSolution(board);
+    var uniqueRect2 = AdvancedTechniques.findUniqueRectangleType2(board);
+    if (uniqueRect2 != null) return uniqueRect2;
+
+    var uniqueRect3 = AdvancedTechniques.findUniqueRectangleType3(board);
+    if (uniqueRect3 != null) return uniqueRect3;
+
+    var uniqueRect4 = AdvancedTechniques.findUniqueRectangleType4(board);
+    if (uniqueRect4 != null) return uniqueRect4;
+
+    return null;
   }
 
   // ---------------------------------------------------------------------------
@@ -150,16 +227,21 @@ class SudokuSolver {
   static List<_Unit> _allUnits() {
     List<_Unit> units = [];
     for (int r = 0; r < 9; r++) {
-      units.add(_Unit('行', '第 ${r + 1} 行',
-          [for (int c = 0; c < 9; c++) [r, c]]));
+      units.add(_Unit('行', '第 ${r + 1} 行', [
+        for (int c = 0; c < 9; c++) [r, c]
+      ]));
     }
     for (int c = 0; c < 9; c++) {
-      units.add(_Unit('列', '第 ${c + 1} 列',
-          [for (int r = 0; r < 9; r++) [r, c]]));
+      units.add(_Unit('列', '第 ${c + 1} 列', [
+        for (int r = 0; r < 9; r++) [r, c]
+      ]));
     }
     for (int br = 0; br < 3; br++) {
       for (int bc = 0; bc < 3; bc++) {
-        units.add(_Unit('宫格', '宫格 ${br + 1}-${bc + 1}', [
+        units.add(_Unit(
+            '宫',
+            '第 ${br * 3 + 1}-${br * 3 + 3} 行、第 ${bc * 3 + 1}-${bc * 3 + 3} 列的宫',
+            [
           for (int i = 0; i < 3; i++)
             for (int j = 0; j < 3; j++) [br * 3 + i, bc * 3 + j]
         ]));
@@ -186,15 +268,59 @@ class SudokuSolver {
               row: i,
               col: j,
               value: candidates.first,
-              technique: '唯一候选数',
+              technique: '唯余法',
               explanation: '这个格子只能填入 ${candidates.first}，'
                   '因为其他数字在同行、同列或同宫格中已经出现。',
+              patternCells: [
+                HintCell(i, j, HintRole.pattern),
+                ...hintCells(
+                  HintRole.link,
+                  _blockingPeers(board, i, j, candidates.first),
+                ),
+              ],
+              patternCandidates: [
+                HintCandidate(
+                  CandidateRef(i, j, candidates.first),
+                  HintRole.pattern,
+                ),
+              ],
             );
           }
         }
       }
     }
     return null;
+  }
+
+  /// 宫的说法：「宫格 1-2」这种编号没人看得懂，直接说它占哪几行哪几列。
+  static String _boxLabel(int boxRow, int boxCol) =>
+      '第 ${boxRow * 3 + 1}-${boxRow * 3 + 3} 行、'
+      '第 ${boxCol * 3 + 1}-${boxCol * 3 + 3} 列的宫';
+
+  /// 唯一候选数的依据：每个被排除的数字，各找一个已填的同行/列/宫格子作为见证。
+  static List<List<int>> _blockingPeers(
+    SudokuBoard board,
+    int row,
+    int col,
+    int keep,
+  ) {
+    final peers = <List<int>>[
+      for (int c = 0; c < 9; c++)
+        if (c != col) [row, c],
+      for (int r = 0; r < 9; r++)
+        if (r != row) [r, col],
+      for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+          if ((row ~/ 3) * 3 + i != row || (col ~/ 3) * 3 + j != col)
+            [(row ~/ 3) * 3 + i, (col ~/ 3) * 3 + j],
+    ];
+    final witnesses = <int, List<int>>{};
+    for (final p in peers) {
+      final v = board.get(p[0], p[1]);
+      if (v == 0 || v == keep) continue;
+      witnesses.putIfAbsent(v, () => p);
+    }
+    return witnesses.values.toList();
   }
 
   /// 隐藏单元：某个数字在某行/列/宫格中只能放在一个位置
@@ -230,8 +356,21 @@ class SudokuSolver {
           row: row,
           col: possibleCols[0],
           value: num,
-          technique: '隐藏单元（行）',
+          technique: '行摒除',
           explanation: '数字 $num 在第 ${row + 1} 行只能放在这个位置。',
+          patternCells: [
+            HintCell(row, possibleCols[0], HintRole.pattern),
+            ...hintCells(HintRole.link, [
+              for (int c = 0; c < 9; c++)
+                if (c != possibleCols[0]) [row, c],
+            ]),
+          ],
+          patternCandidates: [
+            HintCandidate(
+              CandidateRef(row, possibleCols[0], num),
+              HintRole.pattern,
+            ),
+          ],
         );
       }
     }
@@ -252,8 +391,21 @@ class SudokuSolver {
           row: possibleRows[0],
           col: col,
           value: num,
-          technique: '隐藏单元（列）',
+          technique: '列摒除',
           explanation: '数字 $num 在第 ${col + 1} 列只能放在这个位置。',
+          patternCells: [
+            HintCell(possibleRows[0], col, HintRole.pattern),
+            ...hintCells(HintRole.link, [
+              for (int r = 0; r < 9; r++)
+                if (r != possibleRows[0]) [r, col],
+            ]),
+          ],
+          patternCandidates: [
+            HintCandidate(
+              CandidateRef(possibleRows[0], col, num),
+              HintRole.pattern,
+            ),
+          ],
         );
       }
     }
@@ -268,8 +420,7 @@ class SudokuSolver {
       List<List<int>> possibleCells = [];
       for (int i = startRow; i < startRow + 3; i++) {
         for (int j = startCol; j < startCol + 3; j++) {
-          if (board.get(i, j) == 0 &&
-              board.getCandidates(i, j).contains(num)) {
+          if (board.get(i, j) == 0 && board.getCandidates(i, j).contains(num)) {
             possibleCells.add([i, j]);
           }
         }
@@ -279,8 +430,24 @@ class SudokuSolver {
           row: possibleCells[0][0],
           col: possibleCells[0][1],
           value: num,
-          technique: '隐藏单元（宫格）',
-          explanation: '数字 $num 在宫格 ${boxRow + 1}-${boxCol + 1} 只能放在这个位置。',
+          technique: '宫摒除',
+          explanation: '数字 $num 在${_boxLabel(boxRow, boxCol)}只能放在这个位置。',
+          patternCells: [
+            HintCell(possibleCells[0][0], possibleCells[0][1],
+                HintRole.pattern),
+            ...hintCells(HintRole.link, [
+              for (int i = startRow; i < startRow + 3; i++)
+                for (int j = startCol; j < startCol + 3; j++)
+                  if (i != possibleCells[0][0] || j != possibleCells[0][1])
+                    [i, j],
+            ]),
+          ],
+          patternCandidates: [
+            HintCandidate(
+              CandidateRef(possibleCells[0][0], possibleCells[0][1], num),
+              HintRole.pattern,
+            ),
+          ],
         );
       }
     }
@@ -295,9 +462,7 @@ class SudokuSolver {
   /// 则可以从单元内其他格子删除这两个数字。
   static SudokuHint? _findNakedPair(SudokuBoard board) {
     for (final u in _allUnits()) {
-      var cells = u.cells
-          .where((c) => board.get(c[0], c[1]) == 0)
-          .toList();
+      var cells = u.cells.where((c) => board.get(c[0], c[1]) == 0).toList();
       for (int i = 0; i < cells.length; i++) {
         var ci = board.getCandidates(cells[i][0], cells[i][1]);
         if (ci.length != 2) continue;
@@ -319,11 +484,17 @@ class SudokuSolver {
           }
           if (elims.isNotEmpty) {
             return SudokuHint.elimination(
-              technique: '数字对（${u.type}）',
-              explanation: '${u.label} 中 (${cells[i][0] + 1},${cells[i][1] + 1}) 和 '
+              technique: '显性数对（${u.type}）',
+              explanation:
+                  '${u.label} 中 (${cells[i][0] + 1},${cells[i][1] + 1}) 和 '
                   '(${cells[j][0] + 1},${cells[j][1] + 1}) 形成数字对 '
                   '${ci.toList()..sort()}，可以从该单元其他格子删除这两个数字。',
               eliminations: elims,
+              patternCells: hintCells(HintRole.pattern, [cells[i], cells[j]]),
+              patternCandidates: [
+                ...hintDigits(HintRole.pattern, cells[i], ci),
+                ...hintDigits(HintRole.pattern, cells[j], cj),
+              ],
             );
           }
         }
@@ -365,10 +536,26 @@ class SudokuSolver {
             }
             if (elims.isNotEmpty) {
               return SudokuHint.elimination(
-                technique: '数字三元组（${u.type}）',
-                explanation: '${u.label} 中三个格子形成三元组 '
-                    '${union.toList()..sort()}，可以从该单元其他格子删除这些数字。',
+                technique: '显性三数组（${u.type}）',
+                explanation: '${u.label} 中 '
+                    '(${cells[i][0] + 1},${cells[i][1] + 1})、'
+                    '(${cells[j][0] + 1},${cells[j][1] + 1})、'
+                    '(${cells[k][0] + 1},${cells[k][1] + 1}) '
+                    '三个格子形成三元组 ${union.toList()..sort()}，'
+                    '可以从该单元其他格子删除这些数字。',
                 eliminations: elims,
+                patternCells: hintCells(
+                  HintRole.pattern,
+                  [cells[i], cells[j], cells[k]],
+                ),
+                patternCandidates: [
+                  for (final c in [cells[i], cells[j], cells[k]])
+                    ...hintDigits(
+                      HintRole.pattern,
+                      c,
+                      board.getCandidates(c[0], c[1]),
+                    ),
+                ],
               );
             }
           }
@@ -413,10 +600,17 @@ class SudokuSolver {
             }
             if (elims.isNotEmpty) {
               return SudokuHint.elimination(
-                technique: '指向对（行）',
-                explanation: '宫格 ${boxRow + 1}-${boxCol + 1} 中数字 $num 只能在第 '
-                    '${row + 1} 行，因此可以从该行宫格外的位置删除 $num。',
+                technique: '宫区块（行）',
+                explanation: '${_boxLabel(boxRow, boxCol)}里，数字 $num 只可能落在第 '
+                    '${row + 1} 行的 ${positions.map((p) => '(${p[0] + 1},${p[1] + 1})').join('、')}。'
+                    '这个宫的 $num 一定在这一行，所以该行宫外的 $num 都可以删掉。',
                 eliminations: elims,
+                patternCells: hintCells(HintRole.pattern, positions),
+                patternCandidates: hintCands(
+                  HintRole.pattern,
+                  num,
+                  positions,
+                ),
               );
             }
           }
@@ -434,10 +628,17 @@ class SudokuSolver {
             }
             if (elims.isNotEmpty) {
               return SudokuHint.elimination(
-                technique: '指向对（列）',
-                explanation: '宫格 ${boxRow + 1}-${boxCol + 1} 中数字 $num 只能在第 '
-                    '${col + 1} 列，因此可以从该列宫格外的位置删除 $num。',
+                technique: '宫区块（列）',
+                explanation: '${_boxLabel(boxRow, boxCol)}里，数字 $num 只可能落在第 '
+                    '${col + 1} 列的 ${positions.map((p) => '(${p[0] + 1},${p[1] + 1})').join('、')}。'
+                    '这个宫的 $num 一定在这一列，所以该列宫外的 $num 都可以删掉。',
                 eliminations: elims,
+                patternCells: hintCells(HintRole.pattern, positions),
+                patternCandidates: hintCands(
+                  HintRole.pattern,
+                  num,
+                  positions,
+                ),
               );
             }
           }
@@ -479,10 +680,18 @@ class SudokuSolver {
         }
         if (elims.isNotEmpty) {
           return SudokuHint.elimination(
-            technique: '盒线削减（行）',
-            explanation: '第 ${row + 1} 行的数字 $num 只能在宫格 '
-                '${boxRow + 1}-${boxCol + 1}，因此可以从该宫格其他行删除 $num。',
+            technique: '行区块',
+            explanation: '第 ${row + 1} 行的数字 $num 只能落在'
+                '${_boxLabel(boxRow, boxCol)}里的 '
+                '${cols.map((c) => '(${row + 1},${c + 1})').join('、')}。'
+                '这一行的 $num 一定在这个宫，所以该宫其他行的 $num 都可以删掉。',
             eliminations: elims,
+            patternCells: hintCells(HintRole.pattern, [
+              for (final c in cols) [row, c],
+            ]),
+            patternCandidates: hintCands(HintRole.pattern, num, [
+              for (final c in cols) [row, c],
+            ]),
           );
         }
       }
@@ -517,10 +726,18 @@ class SudokuSolver {
         }
         if (elims.isNotEmpty) {
           return SudokuHint.elimination(
-            technique: '盒线削减（列）',
-            explanation: '第 ${col + 1} 列的数字 $num 只能在宫格 '
-                '${boxRow + 1}-${boxCol + 1}，因此可以从该宫格其他列删除 $num。',
+            technique: '列区块',
+            explanation: '第 ${col + 1} 列的数字 $num 只能落在'
+                '${_boxLabel(boxRow, boxCol)}里的 '
+                '${rows.map((r) => '(${r + 1},${col + 1})').join('、')}。'
+                '这一列的 $num 一定在这个宫，所以该宫其他列的 $num 都可以删掉。',
             eliminations: elims,
+            patternCells: hintCells(HintRole.pattern, [
+              for (final r in rows) [r, col],
+            ]),
+            patternCandidates: hintCands(HintRole.pattern, num, [
+              for (final r in rows) [r, col],
+            ]),
           );
         }
       }
@@ -572,6 +789,22 @@ class SudokuSolver {
                     '都只能在第 ${col1 + 1} 列和第 ${col2 + 1} 列，形成 X-Wing，'
                     '可以从这两列的其他位置删除 $num。',
                 eliminations: elims,
+                patternCells: hintCells(HintRole.pattern, [
+                  [row1, col1],
+                  [row1, col2],
+                  [row2, col1],
+                  [row2, col2],
+                ]),
+                patternCandidates: hintCands(HintRole.pattern, num, [
+                  [row1, col1],
+                  [row1, col2],
+                  [row2, col1],
+                  [row2, col2],
+                ]),
+                links: [
+                  _strong(row1, col1, row1, col2, num),
+                  _strong(row2, col1, row2, col2, num),
+                ],
               );
             }
           }
@@ -615,6 +848,22 @@ class SudokuSolver {
                     '都只能在第 ${row1 + 1} 行和第 ${row2 + 1} 行，形成 X-Wing，'
                     '可以从这两行的其他位置删除 $num。',
                 eliminations: elims,
+                patternCells: hintCells(HintRole.pattern, [
+                  [row1, col1],
+                  [row2, col1],
+                  [row1, col2],
+                  [row2, col2],
+                ]),
+                patternCandidates: hintCands(HintRole.pattern, num, [
+                  [row1, col1],
+                  [row2, col1],
+                  [row1, col2],
+                  [row2, col2],
+                ]),
+                links: [
+                  _strong(row1, col1, row2, col1, num),
+                  _strong(row1, col2, row2, col2, num),
+                ],
               );
             }
           }
@@ -623,6 +872,14 @@ class SudokuSolver {
     }
     return null;
   }
+
+  /// 基线上的强链：这一行/列里该数字只剩这两格，必有其一。
+  static MarkupArrow _strong(int r1, int c1, int r2, int c2, int num) =>
+      MarkupArrow(
+        from: CandidateRef(r1, c1, num),
+        to: CandidateRef(r2, c2, num),
+        kind: ArrowKind.strong,
+      );
 
   /// Swordfish
   static SudokuHint? _findSwordfish(SudokuBoard board) {
@@ -637,12 +894,16 @@ class SudokuSolver {
             cols.add(col);
           }
         }
-        if (cols.length == 2 || cols.length == 3) rowsWith.add(MapEntry(row, cols));
+        if (cols.length == 2 || cols.length == 3) {
+          rowsWith.add(MapEntry(row, cols));
+        }
       }
       for (int i = 0; i < rowsWith.length; i++) {
         for (int j = i + 1; j < rowsWith.length; j++) {
           for (int k = j + 1; k < rowsWith.length; k++) {
-            var allCols = rowsWith[i].value.toSet()
+            var allCols = rowsWith[i]
+                .value
+                .toSet()
                 .union(rowsWith[j].value.toSet())
                 .union(rowsWith[k].value.toSet());
             if (allCols.length != 3) continue;
@@ -664,6 +925,15 @@ class SudokuSolver {
                     '形成 Swordfish（涉及列 ${allCols.map((c) => c + 1).join('、')}），'
                     '可以从这些列的其他位置删除 $num。',
                 eliminations: elims,
+                patternCells: hintCells(
+                  HintRole.pattern,
+                  fishBody(board, rows, allCols, num),
+                ),
+                patternCandidates: hintCands(
+                  HintRole.pattern,
+                  num,
+                  fishBody(board, rows, allCols, num),
+                ),
               );
             }
           }
@@ -680,12 +950,16 @@ class SudokuSolver {
             rows.add(row);
           }
         }
-        if (rows.length == 2 || rows.length == 3) colsWith.add(MapEntry(col, rows));
+        if (rows.length == 2 || rows.length == 3) {
+          colsWith.add(MapEntry(col, rows));
+        }
       }
       for (int i = 0; i < colsWith.length; i++) {
         for (int j = i + 1; j < colsWith.length; j++) {
           for (int k = j + 1; k < colsWith.length; k++) {
-            var allRows = colsWith[i].value.toSet()
+            var allRows = colsWith[i]
+                .value
+                .toSet()
                 .union(colsWith[j].value.toSet())
                 .union(colsWith[k].value.toSet());
             if (allRows.length != 3) continue;
@@ -707,6 +981,15 @@ class SudokuSolver {
                     '形成 Swordfish（涉及行 ${allRows.map((r) => r + 1).join('、')}），'
                     '可以从这些行的其他位置删除 $num。',
                 eliminations: elims,
+                patternCells: hintCells(
+                  HintRole.pattern,
+                  fishBody(board, allRows, cols, num),
+                ),
+                patternCandidates: hintCands(
+                  HintRole.pattern,
+                  num,
+                  fishBody(board, allRows, cols, num),
+                ),
               );
             }
           }
@@ -790,10 +1073,30 @@ class SudokuSolver {
           if (elims.isNotEmpty) {
             return SudokuHint.elimination(
               technique: 'XY-Wing',
-              explanation: '格子 (${pRow + 1},${pCol + 1}) 作为支点，与 '
-                  '(${w1Row + 1},${w1Col + 1}) 和 (${w2Row + 1},${w2Col + 1}) '
-                  '形成 XY-Wing，可以删除相关格子的候选数字 $z。',
+              explanation: '格子 (${pRow + 1},${pCol + 1}) 是支点（候选 '
+                  '${pCands.join('、')}），两翼 (${w1Row + 1},${w1Col + 1}) 和 '
+                  '(${w2Row + 1},${w2Col + 1}) 各带一个 $z。'
+                  '支点填哪个数，都会逼出一翼的 $z，'
+                  '所以同时能看到两翼的格子里 $z 可以删掉。',
               eliminations: elims,
+              patternCells: [
+                HintCell(pRow, pCol, HintRole.extra),
+                ...hintCells(HintRole.pattern, [
+                  [w1Row, w1Col],
+                  [w2Row, w2Col],
+                ]),
+              ],
+              patternCandidates: [
+                ...hintDigits(HintRole.extra, [pRow, pCol], pCands),
+                ...hintCands(HintRole.pattern, z, [
+                  [w1Row, w1Col],
+                  [w2Row, w2Col],
+                ]),
+              ],
+              links: [
+                _weak(pRow, pCol, common1.first, w1Row, w1Col, common1.first),
+                _weak(pRow, pCol, common2.first, w2Row, w2Col, common2.first),
+              ],
             );
           }
         }
@@ -860,10 +1163,30 @@ class SudokuSolver {
             if (elims.isNotEmpty) {
               return SudokuHint.elimination(
                 technique: 'XYZ-Wing',
-                explanation: '格子 (${pRow + 1},${pCol + 1}) 作为支点，与 '
+                explanation: '格子 (${pRow + 1},${pCol + 1}) 是支点（候选 '
+                    '${(pCands.toList()..sort()).join('、')}），两翼 '
                     '(${w1Row + 1},${w1Col + 1}) 和 (${w2Row + 1},${w2Col + 1}) '
-                    '形成 XYZ-Wing，可以删除相关格子的候选数字 $z。',
+                    '都带 $z。三格中 $z 必有其一，'
+                    '所以同时能看到这三格的位置上 $z 可以删掉。',
                 eliminations: elims,
+                patternCells: [
+                  HintCell(pRow, pCol, HintRole.extra),
+                  ...hintCells(HintRole.pattern, [
+                    [w1Row, w1Col],
+                    [w2Row, w2Col],
+                  ]),
+                ],
+                patternCandidates: [
+                  ...hintDigits(HintRole.extra, [pRow, pCol], pCands),
+                  ...hintCands(HintRole.pattern, z, [
+                    [w1Row, w1Col],
+                    [w2Row, w2Col],
+                  ]),
+                ],
+                links: [
+                  _weak(pRow, pCol, z, w1Row, w1Col, z),
+                  _weak(pRow, pCol, z, w2Row, w2Col, z),
+                ],
               );
             }
           }
@@ -873,32 +1196,26 @@ class SudokuSolver {
     return null;
   }
 
+  /// 弱链：两个位置互相可见，同一个数字不能同时成立。
+  static MarkupArrow _weak(
+    int r1,
+    int c1,
+    int n1,
+    int r2,
+    int c2,
+    int n2,
+  ) =>
+      MarkupArrow(
+        from: CandidateRef(r1, c1, n1),
+        to: CandidateRef(r2, c2, n2),
+        kind: ArrowKind.weak,
+      );
+
   /// 检查两个格子是否互相可见（同行、同列或同宫格）
   static bool _canSee(int r1, int c1, int r2, int c2) {
     if (r1 == r2 && c1 == c2) return false;
     if (r1 == r2 || c1 == c2) return true;
     return (r1 ~/ 3 == r2 ~/ 3) && (c1 ~/ 3 == c2 ~/ 3);
-  }
-
-  /// 使用求解器找到下一步（兜底）
-  static SudokuHint? _findBruteForceSolution(SudokuBoard board) {
-    var tempBoard = board.copy();
-    if (solve(tempBoard)) {
-      for (int i = 0; i < 9; i++) {
-        for (int j = 0; j < 9; j++) {
-          if (board.get(i, j) == 0 && tempBoard.get(i, j) != 0) {
-            return SudokuHint(
-              row: i,
-              col: j,
-              value: tempBoard.get(i, j),
-              technique: '高级技巧',
-              explanation: '这一步需要使用更复杂的解题技巧，或者进行试错。',
-            );
-          }
-        }
-      }
-    }
-    return null;
   }
 
   // ---------------------------------------------------------------------------
@@ -957,6 +1274,11 @@ class SudokuSolver {
 
   /// 获取解题过程（逐步演示）
   static List<SudokuStep> getSolutionSteps(SudokuBoard board) {
+    return getLogicalSolveTrace(board).steps;
+  }
+
+  /// 运行当前已实现的逻辑技巧，并同时报告是否完整解出。
+  static LogicalSolveTrace getLogicalSolveTrace(SudokuBoard board) {
     List<SudokuStep> steps = [];
     var tempBoard = board.copy();
 
@@ -990,7 +1312,10 @@ class SudokuSolver {
       }
     }
 
-    return steps;
+    return LogicalSolveTrace(
+      steps: steps,
+      completed: tempBoard.isComplete(),
+    );
   }
 }
 
@@ -1017,6 +1342,9 @@ class SudokuHint {
   final String explanation;
   final bool isElimination;
   final List<CandidateElim> eliminations;
+  final List<HintCell> patternCells;
+  final List<HintCandidate> patternCandidates;
+  final List<MarkupArrow> links;
 
   SudokuHint({
     required this.row,
@@ -1026,6 +1354,9 @@ class SudokuHint {
     required this.explanation,
     this.isElimination = false,
     this.eliminations = const [],
+    this.patternCells = const [],
+    this.patternCandidates = const [],
+    this.links = const [],
   });
 
   /// 构造一个删除候选数字的提示
@@ -1033,6 +1364,9 @@ class SudokuHint {
     required String technique,
     required String explanation,
     required List<CandidateElim> eliminations,
+    List<HintCell> patternCells = const [],
+    List<HintCandidate> patternCandidates = const [],
+    List<MarkupArrow> links = const [],
   }) {
     final first = eliminations.first;
     return SudokuHint(
@@ -1043,6 +1377,9 @@ class SudokuHint {
       explanation: explanation,
       isElimination: true,
       eliminations: eliminations,
+      patternCells: patternCells,
+      patternCandidates: patternCandidates,
+      links: links,
     );
   }
 }
@@ -1065,5 +1402,15 @@ class SudokuStep {
     required this.explanation,
     required this.boardState,
     this.isElimination = false,
+  });
+}
+
+class LogicalSolveTrace {
+  final List<SudokuStep> steps;
+  final bool completed;
+
+  const LogicalSolveTrace({
+    required this.steps,
+    required this.completed,
   });
 }

@@ -1,7 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sudoku_app/models/game_state.dart';
+import 'package:sudoku_app/models/sudoku_board.dart';
+import 'package:sudoku_app/services/sudoku_solver.dart';
 
 void main() {
+  test('求解器找不到逻辑技巧时返回 null，不用回溯猜数', () {
+    final board = SudokuBoard.fromString(List.filled(81, '0').join());
+
+    final hint = SudokuSolver.getHint(board);
+
+    expect(hint, isNull);
+  });
+
   test('用户路径把回溯填数当成未找到', () {
     // 空盘几乎只会走到暴力或无解；自定义几乎完成的盘用 getHint
     final state = GameState();

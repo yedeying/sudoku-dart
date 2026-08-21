@@ -28,23 +28,23 @@ GameState _boardWithDigit7Conjugates() {
 }
 
 void main() {
-  test('自动共轭画出行、列、宫，且不只扫行', () {
+  test('自动强链画出行、列、宫，且不只扫行', () {
     final g = _boardWithDigit7Conjugates();
-    g.setMarkupMode(MarkupMode.autoConjugate);
+    g.setMarkupMode(MarkupMode.autoStrong);
     g.onNumberPad(7);
     expect(
-      g.userMarkup.arrows.where((a) => a.kind == ArrowKind.conjugate).length,
+      g.userMarkup.arrows.where((a) => a.kind == ArrowKind.strong).length,
       3,
     );
   });
 
-  test('超过两个候选的单元不画共轭', () {
+  test('超过两个候选的单元不画强链', () {
     final g = _boardWithDigit7Conjugates();
-    g.setMarkupMode(MarkupMode.autoConjugate);
+    g.setMarkupMode(MarkupMode.autoStrong);
     g.onNumberPad(7);
     final col3Pair = g.userMarkup.arrows.any(
       (a) =>
-          a.kind == ArrowKind.conjugate &&
+          a.kind == ArrowKind.strong &&
           {a.from.col, a.to.col}.contains(3) &&
           a.from.row != 0 &&
           a.to.row != 0,
@@ -52,7 +52,7 @@ void main() {
     expect(col3Pair, isFalse);
   });
 
-  test('无共轭对时设置 conjugateNotice', () {
+  test('无双值单元时设置 autoStrongNotice', () {
     final g = GameState()..loadCustomGame('0' * 81);
     for (int r = 0; r < 9; r++) {
       for (int c = 0; c < 9; c++) {
@@ -61,10 +61,10 @@ void main() {
       }
     }
     g.board!.candidates[0][0].add(5);
-    g.setMarkupMode(MarkupMode.autoConjugate);
+    g.setMarkupMode(MarkupMode.autoStrong);
     g.onNumberPad(5);
     expect(g.userMarkup.arrows, isEmpty);
-    expect(g.conjugateNotice, '该数字没有共轭对');
+    expect(g.autoStrongNotice, '该数字没有强链');
   });
 
   test('强链第一点留下锚点，第二点画线并清空锚点', () {
@@ -86,7 +86,7 @@ void main() {
     expect(g.arrowAnchor, isNull);
   });
 
-  test('宫共轭：同行另有同数字时仍合法', () {
+  test('宫内双值强链：同行另有同数字时仍合法', () {
     final cands = List.generate(9, (_) => List.generate(9, (_) => <int>{}));
     // Box 8 pair (6,6)-(6,7); third 5 on same row outside the box
     cands[6][6].add(5);
@@ -102,19 +102,19 @@ void main() {
     );
   });
 
-  test('已有共轭箭头再画时不设 conjugateNotice', () {
+  test('已有强链再画时不设 autoStrongNotice', () {
     final g = _boardWithDigit7Conjugates();
-    g.setMarkupMode(MarkupMode.autoConjugate);
+    g.setMarkupMode(MarkupMode.autoStrong);
     g.onNumberPad(7);
-    expect(g.conjugateNotice, isNull);
+    expect(g.autoStrongNotice, isNull);
     expect(
-      g.userMarkup.arrows.where((a) => a.kind == ArrowKind.conjugate).length,
+      g.userMarkup.arrows.where((a) => a.kind == ArrowKind.strong).length,
       3,
     );
     g.onNumberPad(7);
-    expect(g.conjugateNotice, isNull);
+    expect(g.autoStrongNotice, isNull);
     expect(
-      g.userMarkup.arrows.where((a) => a.kind == ArrowKind.conjugate).length,
+      g.userMarkup.arrows.where((a) => a.kind == ArrowKind.strong).length,
       3,
     );
   });

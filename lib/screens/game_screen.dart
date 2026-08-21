@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/game_state.dart';
 import '../models/board_markup.dart';
+import '../services/sudoku_solver.dart';
 import '../widgets/sudoku_grid.dart';
 import '../widgets/hint_panel.dart';
 
@@ -117,11 +118,11 @@ class _GameScreenState extends State<GameScreen> {
               });
             }
 
-            if (gameState.conjugateNotice != null) {
-              final notice = gameState.conjugateNotice!;
+            if (gameState.autoStrongNotice != null) {
+              final notice = gameState.autoStrongNotice!;
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (!mounted) return;
-                gameState.clearConjugateNotice();
+                gameState.clearAutoStrongNotice();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(notice),
@@ -145,10 +146,10 @@ class _GameScreenState extends State<GameScreen> {
                     child: Center(
                       child: SudokuGrid(
                         board: gameState.board!,
-                        selectedRow: gameState.selectedRow,
-                        selectedCol: gameState.selectedCol,
-                        showCandidates: gameState.showCandidates ||
-                            gameState.markupEnabled,
+                        selectedRow: gameState.displaySelectedRow,
+                        selectedCol: gameState.displaySelectedCol,
+                        // 候选显示只受这个视图开关控制；标记和提示不能偷偷打开。
+                        showCandidates: gameState.showCandidates,
                         conflictCells: gameState.getConflictCells(),
                         markup: gameState.displayMarkup,
                         sameDigitCells: gameState.sameDigitHighlightCells(),
@@ -158,10 +159,8 @@ class _GameScreenState extends State<GameScreen> {
                         onCellTap: (row, col) {
                           gameState.onCellTap(row, col);
                         },
-                        onCandidateTap: gameState.markupMode ==
-                                    MarkupMode.strong ||
-                                gameState.markupMode == MarkupMode.weak
-                            ? gameState.onCandidateMarkupTap
+                        onCandidateTap: gameState.markupEnabled
+                            ? gameState.onCandidateTap
                             : null,
                       ),
                     ),
@@ -274,9 +273,19 @@ class _GameScreenState extends State<GameScreen> {
                 onPressed: gameState.canRedo ? () => gameState.redo() : null,
               ),
               _buildControlButton(
-                icon: Icons.lightbulb,
-                label: '提示',
-                onPressed: () => _showHint(context, gameState),
+                icon: _readyHint(gameState) != null
+                    ? Icons.check
+                    : Icons.lightbulb,
+                label: _readyHint(gameState) != null ? '应用' : '提示',
+                active: _readyHint(gameState) != null,
+                onPressed: () {
+                  final ready = _readyHint(gameState);
+                  if (ready != null) {
+                    gameState.applyHintAndAdvance(ready);
+                  } else {
+                    _showHint(context, gameState);
+                  }
+                },
               ),
               _buildControlButton(
                 icon: Icons.clear,
@@ -326,19 +335,20 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Widget _buildMarkupBar(GameState gameState) {
+    final scheme = Theme.of(context).colorScheme;
+
     Widget modeChip(String label, MarkupMode mode) {
       final selected = gameState.markupMode == mode;
       return FilterChip(
         label: Text(
           label,
           style: TextStyle(
-            color: selected ? Colors.white : null,
+            color: selected ? scheme.onPrimary : scheme.onSurfaceVariant,
           ),
         ),
         selected: selected,
         showCheckmark: false,
-        selectedColor: Colors.black,
-        checkmarkColor: Colors.white,
+        selectedColor: scheme.primary,
         onSelected: (_) => gameState.setMarkupMode(mode),
       );
     }
@@ -354,7 +364,7 @@ class _GameScreenState extends State<GameScreen> {
             modeChip('候选色', MarkupMode.candidateColor),
             modeChip('强链', MarkupMode.strong),
             modeChip('弱链', MarkupMode.weak),
-            modeChip('自动共轭', MarkupMode.autoConjugate),
+            modeChip('自动强链', MarkupMode.autoStrong),
             modeChip('关闭', MarkupMode.off),
             ActionChip(
               label: const Text('清除标记'),
@@ -363,12 +373,12 @@ class _GameScreenState extends State<GameScreen> {
           ],
         ),
         const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        Wrap(
+          alignment: WrapAlignment.center,
           children: [
             for (final color in MarkupPalette.colors)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                 child: GestureDetector(
                   onTap: () => gameState.setMarkupColor(color),
                   child: Container(
@@ -379,7 +389,7 @@ class _GameScreenState extends State<GameScreen> {
                       color: color,
                       border: Border.all(
                         color: gameState.markupColor == color
-                            ? Colors.black
+                            ? scheme.onSurface
                             : Colors.transparent,
                         width: 2,
                       ),
@@ -394,15 +404,15 @@ class _GameScreenState extends State<GameScreen> {
           Text(
             '已选起点，再点终点',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.black54,
+                  color: scheme.onSurfaceVariant,
                 ),
           ),
         ] else if (gameState.markupMode == MarkupMode.candidateColor) ...[
           const SizedBox(height: 6),
           Text(
-            '选格后点数字上色',
+            '直接点棋盘上的候选数字上色',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.black54,
+                  color: scheme.onSurfaceVariant,
                 ),
           ),
         ],
@@ -416,14 +426,17 @@ class _GameScreenState extends State<GameScreen> {
     required VoidCallback? onPressed,
     bool active = false,
   }) {
+    final scheme = Theme.of(context).colorScheme;
     final enabled = onPressed != null;
+    final disabled = scheme.onSurface.withValues(alpha: 0.38);
+
     final Color iconColor;
     if (!enabled) {
-      iconColor = Colors.grey;
+      iconColor = disabled;
     } else if (active) {
-      iconColor = Colors.white;
+      iconColor = scheme.onPrimary;
     } else {
-      iconColor = Colors.black87;
+      iconColor = scheme.onSurfaceVariant;
     }
 
     return Column(
@@ -434,8 +447,8 @@ class _GameScreenState extends State<GameScreen> {
           color: iconColor,
           style: active
               ? IconButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
+                  backgroundColor: scheme.primary,
+                  foregroundColor: scheme.onPrimary,
                 )
               : null,
           iconSize: 28,
@@ -444,7 +457,7 @@ class _GameScreenState extends State<GameScreen> {
           label,
           style: TextStyle(
             fontSize: 12,
-            color: enabled ? Colors.black : Colors.grey,
+            color: enabled ? scheme.onSurface : disabled,
           ),
         ),
       ],
@@ -469,17 +482,19 @@ class _GameScreenState extends State<GameScreen> {
     final noteMode =
         gameState.markupMode == MarkupMode.off && gameState.candidateMode;
 
+    final scheme = Theme.of(context).colorScheme;
     final Color background;
     final Color foreground;
     if (!isEnabled) {
-      background = Colors.grey.shade300;
-      foreground = Colors.grey.shade500;
+      background = scheme.surfaceContainerHigh;
+      foreground = scheme.onSurface.withValues(alpha: 0.38);
     } else if (noteMode) {
-      background = Colors.grey.shade500;
-      foreground = Colors.white;
+      // 笔记模式用容器色区分，避免和填数模式的实心强调色混淆。
+      background = scheme.primaryContainer;
+      foreground = scheme.onPrimaryContainer;
     } else {
-      background = Colors.black;
-      foreground = Colors.white;
+      background = scheme.primary;
+      foreground = scheme.onPrimary;
     }
 
     return InkWell(
@@ -519,6 +534,13 @@ class _GameScreenState extends State<GameScreen> {
       default:
         return '自定义';
     }
+  }
+
+  /// 当前是否有可直接应用的提示（用于把「提示」键切成「应用」）。
+  SudokuHint? _readyHint(GameState gameState) {
+    final session = gameState.hintSession;
+    if (session == null || session.phase != HintPhase.ready) return null;
+    return session.hint;
   }
 
   bool _hintPanelVisible(GameState gameState) {
@@ -561,7 +583,7 @@ class _GameScreenState extends State<GameScreen> {
           body: '${hint.explanation}\n\n$detail',
           actionLabel: isElim ? '应用删除' : '应用本步',
           onCancel: () => gameState.clearHintMarkup(),
-          onApply: () => gameState.applyHint(hint),
+          onApply: () => gameState.applyHintAndAdvance(hint),
         );
       case HintPhase.none:
         return const SizedBox.shrink();

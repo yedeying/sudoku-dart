@@ -15,14 +15,14 @@ GameState _classicWithVisible8() {
 
 void main() {
   test('未进格色模式时选格不上色', () {
-    final g = GameState()..loadExampleGame('easy');
+    final g = GameState()..loadCustomGame(classic);
     g.setMarkupMode(MarkupMode.off);
     g.onCellTap(0, 0);
     expect(g.userMarkup.cellColors, isEmpty);
   });
 
   test('格色模式点格写入当前色，同色再点取消', () {
-    final g = GameState()..loadExampleGame('easy');
+    final g = GameState()..loadCustomGame(classic);
     g.setMarkupColor(MarkupPalette.colors.first);
     g.setMarkupMode(MarkupMode.cellColor);
     g.onCellTap(1, 1);
@@ -80,10 +80,10 @@ void main() {
     );
   });
 
-  test('自动共轭模式网格候选点不上色', () {
+  test('自动强链模式网格候选点不上色', () {
     final g = _classicWithVisible8();
     g.setMarkupColor(MarkupPalette.colors.first);
-    g.setMarkupMode(MarkupMode.autoConjugate);
+    g.setMarkupMode(MarkupMode.autoStrong);
     g.onCandidateMarkupTap(0, 2, 8);
     expect(g.userMarkup.candidateColors, isEmpty);
     expect(g.userMarkup.arrows, isEmpty);

@@ -6,37 +6,46 @@ import 'sudoku_solver.dart';
 class DifficultyAnalyzer {
   /// 技巧难度分数
   static const Map<String, int> techniqueScores = {
-    '唯一候选数': 1,
-    '隐藏单元（行）': 2,
-    '隐藏单元（列）': 2,
-    '隐藏单元（宫格）': 2,
-    '数字对（行）': 5,
-    '数字对（列）': 5,
-    '数字对（宫格）': 5,
-    '隐藏数字对（行）': 15,        // 新增
-    '隐藏数字对（列）': 15,        // 新增
-    '隐藏数字对（宫格）': 15,      // 新增
-    '数字三元组（行）': 10,
-    '数字三元组（列）': 10,
-    '数字三元组（宫格）': 10,
-    '隐藏数字三元组（行）': 20,    // 新增
-    '隐藏数字三元组（列）': 20,    // 新增
-    '隐藏数字三元组（宫格）': 20,  // 新增
-    '指向对（行）': 15,
-    '指向对（列）': 15,
-    '盒线削减（行）': 15,
-    '盒线削减（列）': 15,
+    '唯余法': 1,
+    '行摒除': 2,
+    '列摒除': 2,
+    '宫摒除': 2,
+    '显性数对（行）': 5,
+    '显性数对（列）': 5,
+    '显性数对（宫）': 5,
+    '隐性数对（行）': 15,
+    '隐性数对（列）': 15,
+    '隐性数对（宫）': 15,
+    '显性三数组（行）': 10,
+    '显性三数组（列）': 10,
+    '显性三数组（宫）': 10,
+    '隐性三数组（行）': 20,
+    '隐性三数组（列）': 20,
+    '隐性三数组（宫）': 20,
+    '显性四数组（行）': 25,
+    '显性四数组（列）': 25,
+    '显性四数组（宫）': 25,
+    '隐性四数组（行）': 30,
+    '隐性四数组（列）': 30,
+    '隐性四数组（宫）': 30,
+    '宫区块（行）': 15,
+    '宫区块（列）': 15,
+    '行区块': 15,
+    '列区块': 15,
     'X-Wing': 25,
     'Swordfish': 40,
-    'Jellyfish': 50,                // 新增
+    'Jellyfish': 50, // 新增
     'XY-Wing': 50,
     'XYZ-Wing': 60,
-    'Unique Rectangle Type 1': 80,  // 新增
-    'Simple Coloring': 70,           // 新增
-    'W-Wing': 90,                    // 新增
-    'Skyscraper': 75,                // 新增
-    '2-String Kite': 75,             // 新增
-    'Empty Rectangle': 85,           // 新增
+    'Unique Rectangle Type 1': 80, // 新增
+    'Unique Rectangle Type 2': 82,
+    'Unique Rectangle Type 3': 84,
+    'Unique Rectangle Type 4': 86,
+    'Simple Coloring': 70, // 新增
+    'W-Wing': 90, // 新增
+    'Skyscraper': 75, // 新增
+    '2-String Kite': 75, // 新增
+    'Empty Rectangle': 85, // 新增
     '高级技巧': 100, // 需要回溯的情况
   };
 
@@ -46,40 +55,53 @@ class DifficultyAnalyzer {
       name: '简单',
       minScore: 0,
       maxScore: 80,
-      requiredTechniques: ['唯一候选数'],
-      forbiddenTechniques: ['X-Wing', 'Swordfish', 'XY-Wing', 'XYZ-Wing', '高级技巧'],
+      requiredTechniques: ['唯余法'],
+      forbiddenTechniques: [
+        'X-Wing',
+        'Swordfish',
+        'XY-Wing',
+        'XYZ-Wing',
+        '高级技巧'
+      ],
     ),
     'medium': DifficultyLevel(
       name: '中等',
       minScore: 60,
       maxScore: 200,
-      requiredTechniques: [],  // 中等难度可以只用基础技巧但较多步骤
-      forbiddenTechniques: ['X-Wing', 'Swordfish', 'XY-Wing', 'XYZ-Wing', '高级技巧'],
+      requiredTechniques: [], // 中等难度可以只用基础技巧但较多步骤
+      forbiddenTechniques: [
+        'X-Wing',
+        'Swordfish',
+        'XY-Wing',
+        'XYZ-Wing',
+        '高级技巧'
+      ],
     ),
     'hard': DifficultyLevel(
       name: '困难',
       minScore: 150,
       maxScore: 400,
-      requiredTechniques: [],  // 允许使用各种技巧
-      forbiddenTechniques: ['高级技巧'],  // 但不能用回溯
+      requiredTechniques: [], // 允许使用各种技巧
+      forbiddenTechniques: ['高级技巧'], // 但不能用回溯
     ),
     'expert': DifficultyLevel(
       name: '专家',
       minScore: 300,
       maxScore: 10000,
-      requiredTechniques: [],  // 专家级可以用任何技巧
+      requiredTechniques: [], // 专家级可以用任何技巧
       forbiddenTechniques: [],
     ),
   };
 
   /// 分析题目难度
   static DifficultyResult analyzeDifficulty(SudokuBoard board) {
-    var steps = SudokuSolver.getSolutionSteps(board);
-    
+    final trace = SudokuSolver.getLogicalSolveTrace(board);
+    final steps = trace.steps;
+
     if (steps.isEmpty) {
       return DifficultyResult(
         score: 0,
-        level: 'invalid',
+        level: trace.completed ? 'invalid' : 'unsupported',
         usedTechniques: {},
         stepCount: 0,
         maxTechniqueScore: 0,
@@ -94,17 +116,19 @@ class DifficultyAnalyzer {
     for (var step in steps) {
       String technique = step.technique;
       usedTechniques[technique] = (usedTechniques[technique] ?? 0) + 1;
-      
+
       int score = techniqueScores[technique] ?? 1;
       totalScore += score;
-      
+
       if (score > maxTechniqueScore) {
         maxTechniqueScore = score;
       }
     }
 
     // 根据分数判断难度等级
-    String level = _determineLevel(totalScore, usedTechniques);
+    String level = trace.completed
+        ? _determineLevel(totalScore, usedTechniques)
+        : 'unsupported';
 
     return DifficultyResult(
       score: totalScore,
@@ -123,7 +147,8 @@ class DifficultyAnalyzer {
     }
 
     // 检查是否使用了专家级技巧
-    if (_hasAnyTechnique(usedTechniques, ['XY-Wing', 'XYZ-Wing', 'Swordfish'])) {
+    if (_hasAnyTechnique(
+        usedTechniques, ['XY-Wing', 'XYZ-Wing', 'Swordfish'])) {
       return 'expert';
     }
 
@@ -133,7 +158,10 @@ class DifficultyAnalyzer {
     }
 
     // 检查是否使用了中级技巧
-    if (_hasAnyTechnique(usedTechniques, ['数字对', '数字三元组', '指向对', '盒线削减'])) {
+    if (_hasAnyTechnique(
+      usedTechniques,
+      ['数对', '三数组', '四数组', '区块'],
+    )) {
       return 'medium';
     }
 
@@ -145,9 +173,11 @@ class DifficultyAnalyzer {
   }
 
   /// 检查是否使用了任何指定的技巧
-  static bool _hasAnyTechnique(Map<String, int> usedTechniques, List<String> techniques) {
+  static bool _hasAnyTechnique(
+      Map<String, int> usedTechniques, List<String> techniques) {
     for (var technique in techniques) {
-      if (usedTechniques.containsKey(technique) && usedTechniques[technique]! > 0) {
+      if (usedTechniques.containsKey(technique) &&
+          usedTechniques[technique]! > 0) {
         return true;
       }
       // 也检查包含关键字的技巧
@@ -163,9 +193,12 @@ class DifficultyAnalyzer {
   /// 验证题目是否符合指定难度
   static bool validateDifficulty(SudokuBoard board, String targetDifficulty) {
     var result = analyzeDifficulty(board);
-    
+
     if (targetDifficulty == 'custom') return true;
-    
+    if (result.level == 'unsupported' || result.level == 'invalid') {
+      return false;
+    }
+
     var level = difficultyLevels[targetDifficulty];
     if (level == null) return false;
 
@@ -199,25 +232,33 @@ class DifficultyAnalyzer {
     sb.writeln('总步数: ${result.stepCount}');
     sb.writeln('最高技巧难度: ${result.maxTechniqueScore}');
     sb.writeln('\n使用的技巧:');
-    
+
     var sortedTechniques = result.usedTechniques.entries.toList()
-      ..sort((a, b) => (techniqueScores[b.key] ?? 0).compareTo(techniqueScores[a.key] ?? 0));
-    
+      ..sort((a, b) =>
+          (techniqueScores[b.key] ?? 0).compareTo(techniqueScores[a.key] ?? 0));
+
     for (var entry in sortedTechniques) {
       int score = techniqueScores[entry.key] ?? 0;
       sb.writeln('  ${entry.key}: ${entry.value} 次 (难度: $score)');
     }
-    
+
     return sb.toString();
   }
 
   static String _getLevelName(String level) {
     switch (level) {
-      case 'easy': return '简单';
-      case 'medium': return '中等';
-      case 'hard': return '困难';
-      case 'expert': return '专家';
-      default: return '未知';
+      case 'easy':
+        return '简单';
+      case 'medium':
+        return '中等';
+      case 'hard':
+        return '困难';
+      case 'expert':
+        return '专家';
+      case 'unsupported':
+        return '超出当前逻辑技巧';
+      default:
+        return '未知';
     }
   }
 }

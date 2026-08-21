@@ -5,7 +5,7 @@ void main() {
   List<List<Set<int>>> emptyCands() =>
       List.generate(9, (_) => List.generate(9, (_) => <int>{}));
 
-  test('共轭箭头：同行恰两个该数字候选时合法', () {
+  test('双值强链：同行恰两个该数字候选时合法', () {
     final cands = emptyCands();
     cands[0][1].add(5);
     cands[0][7].add(5);
@@ -19,7 +19,7 @@ void main() {
     );
   });
 
-  test('共轭箭头：同行超过两个候选时不合法', () {
+  test('双值强链：同行超过两个候选时不合法', () {
     final cands = emptyCands();
     cands[0][1].add(5);
     cands[0][4].add(5);
@@ -34,7 +34,7 @@ void main() {
     );
   });
 
-  test('共轭箭头：不同数字不合法', () {
+  test('双值强链：不同数字不合法', () {
     final cands = emptyCands();
     cands[0][1].add(5);
     cands[0][7].add(6);
@@ -48,7 +48,7 @@ void main() {
     );
   });
 
-  test('弱箭头不检查共轭约束', () {
+  test('弱箭头不检查双值约束', () {
     final markup = BoardMarkup();
     final cands = emptyCands();
     cands[0][0].add(1);

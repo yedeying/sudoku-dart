@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
 
+import 'board_palette.dart';
+
 /// 全局主题：由单一种子色派生 Material 3 配色，并统一圆角、留白与控件层级。
 ///
 /// 界面代码只允许引用 [ColorScheme] 与 [TextTheme] 中的令牌，
 /// 不再硬编码具体色值，深色模式才能跟随系统正确反色。
 class AppTheme {
   static const Color seed = Color(0xFF1A1A1A);
+
+  /// 低饱和深蓝强调色：只用于选中、激活等状态，
+  /// 饱和度刻意压低，避免和标记调色板（金/绿/蓝/红）抢注意力。
+  static const Color accent = Color(0xFF35507A);
+  static const Color accentDark = Color(0xFFA8BEDE);
+
+  /// 随包内置的中文子集字体，避免 Web 首帧方块字。
+  static const String fontFamily = 'AppSans';
 
   /// 棋盘、卡片等容器统一圆角。
   static const double radius = 18;
@@ -17,11 +27,21 @@ class AppTheme {
   static ThemeData _build(Brightness brightness) {
     // fromSeed remaps near-black to teal/cyan containers; build neutrals explicitly.
     final scheme = _neutralScheme(brightness);
-    final base = ThemeData(useMaterial3: true, colorScheme: scheme);
+    final base = ThemeData(
+      useMaterial3: true,
+      colorScheme: scheme,
+      fontFamily: fontFamily,
+      fontFamilyFallback: const ['Noto Sans SC', 'PingFang SC', 'sans-serif'],
+    );
     final text = base.textTheme;
 
     return base.copyWith(
       scaffoldBackgroundColor: scheme.surface,
+      extensions: [
+        brightness == Brightness.light
+            ? BoardPalette.lightPalette
+            : BoardPalette.darkPalette,
+      ],
       textTheme: text.copyWith(
         headlineLarge: text.headlineLarge?.copyWith(
           fontWeight: FontWeight.w700,
@@ -65,7 +85,7 @@ class AppTheme {
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: scheme.surfaceContainer,
         surfaceTintColor: Colors.transparent,
-        indicatorColor: scheme.secondaryContainer,
+        indicatorColor: scheme.primaryContainer,
         elevation: 0,
         height: 68,
         labelTextStyle: WidgetStatePropertyAll(
@@ -138,34 +158,41 @@ class AppTheme {
   /// Grayscale Material 3 scheme so chrome cannot pick up seed-derived teal/cyan.
   static ColorScheme _neutralScheme(Brightness brightness) {
     final light = brightness == Brightness.light;
-    const onPrimary = Colors.white;
     final onSurface = light ? seed : const Color(0xFFF5F5F5);
-    final surface = light ? const Color(0xFFFAFAFA) : const Color(0xFF121212);
-    final surfaceLow = light ? const Color(0xFFF2F2F2) : const Color(0xFF1C1C1C);
-    final surfaceMid = light ? const Color(0xFFEBEBEB) : const Color(0xFF242424);
-    final surfaceHigh = light ? const Color(0xFFE3E3E3) : const Color(0xFF2C2C2C);
+    final surface = light ? const Color(0xFFFAFAFA) : const Color(0xFF141414);
+    final surfaceLow = light ? const Color(0xFFF1F1F1) : const Color(0xFF242424);
+    final surfaceMid = light ? const Color(0xFFE7E7E7) : const Color(0xFF2E2E2E);
+    final surfaceHigh = light ? const Color(0xFFDCDCDC) : const Color(0xFF383838);
     final surfaceHighest =
-        light ? const Color(0xFFD9D9D9) : const Color(0xFF363636);
-    final outline = light ? const Color(0xFFB0B0B0) : const Color(0xFF6E6E6E);
+        light ? const Color(0xFFCFCFCF) : const Color(0xFF454545);
+    final outline = light ? const Color(0xFF8A8A8A) : const Color(0xFF8A8A8A);
     final outlineVariant =
-        light ? const Color(0xFFD6D6D6) : const Color(0xFF4A4A4A);
+        light ? const Color(0xFFC4C4C4) : const Color(0xFF5C5C5C);
+    // 深色模式下强调色必须反相，否则深色按钮会消失在近黑的底色里。
+    final primary = light ? accent : accentDark;
+    final onPrimary = light ? Colors.white : const Color(0xFF16233A);
+    final primaryContainer =
+        light ? const Color(0xFFDCE4F1) : const Color(0xFF2C3D5A);
+    final onPrimaryContainer =
+        light ? const Color(0xFF16233A) : const Color(0xFFDCE4F1);
 
     return ColorScheme(
       brightness: brightness,
-      primary: seed,
+      primary: primary,
       onPrimary: onPrimary,
-      primaryContainer: surfaceHighest,
-      onPrimaryContainer: onSurface,
-      secondary: seed,
-      onSecondary: onPrimary,
+      primaryContainer: primaryContainer,
+      onPrimaryContainer: onPrimaryContainer,
+      // 次级/三级仍走灰度，保证只有“选中/激活”会出现强调色。
+      secondary: onSurface,
+      onSecondary: surface,
       secondaryContainer: surfaceHigh,
       onSecondaryContainer: onSurface,
-      tertiary: seed,
-      onTertiary: onPrimary,
+      tertiary: onSurface,
+      onTertiary: surface,
       tertiaryContainer: surfaceMid,
       onTertiaryContainer: onSurface,
-      error: const Color(0xFFB3261E),
-      onError: onPrimary,
+      error: light ? const Color(0xFFB3261E) : const Color(0xFFF2B8B5),
+      onError: light ? Colors.white : const Color(0xFF601410),
       errorContainer: light ? const Color(0xFFF9DEDC) : const Color(0xFF8C1D18),
       onErrorContainer: light ? const Color(0xFF410E0B) : const Color(0xFFF9DEDC),
       surface: surface,

@@ -1,13 +1,32 @@
 import 'package:flutter/material.dart';
 
-enum MarkupMode { off, cellColor, candidateColor, strong, weak, autoConjugate }
+enum MarkupMode { off, cellColor, candidateColor, strong, weak, autoStrong }
 
 class MarkupPalette {
+  static const blue = Color(0xFF1565C0);
+  static const red = Color(0xFFC62828);
+  static const green = Color(0xFF2E7D32);
+  static const purple = Color(0xFF6A1B9A);
+  static const teal = Color(0xFF00838F);
+  static const orange = Color(0xFFE65100);
+  static const rose = Color(0xFFAD1457);
+  static const brown = Color(0xFF4E342E);
+  static const skyBlue = Color(0xFF4FC3F7);
+  static const gold = Color(0xFFC9A227);
+
+  /// 十个色相/明度都拉开的颜色，够同时标几条链而不互相冒充。
+  /// 常用的蓝红绿紫排在前面，第一个也就是默认色；金黄压到最后。
   static const colors = [
-    Color(0xFFC9A227),
-    Color(0xFF2E7D32),
-    Color(0xFF1565C0),
-    Color(0xFFC62828),
+    blue,
+    red,
+    green,
+    purple,
+    teal,
+    orange,
+    rose,
+    brown,
+    skyBlue,
+    gold,
   ];
 }
 
@@ -30,17 +49,21 @@ class CandidateRef {
   int get hashCode => Object.hash(row, col, num);
 }
 
-enum ArrowKind { strong, weak, conjugate }
+enum ArrowKind { strong, weak }
 
 class MarkupArrow {
   final CandidateRef from;
   final CandidateRef to;
   final ArrowKind kind;
 
+  /// 用户画的链带上当前标记色；提示自动生成的链留空，走主题的强/弱链色。
+  final Color? color;
+
   const MarkupArrow({
     required this.from,
     required this.to,
     required this.kind,
+    this.color,
   });
 }
 
@@ -73,7 +96,7 @@ class BoardMarkup {
         filterDigit: filterDigit ?? this.filterDigit,
       );
 
-  /// 共轭：同数字，且所在行或列或宫内该数字候选格恰好 2 个，这两格就是这两点
+  /// 双值强链：同数字，且所在行或列或宫内该数字候选格恰好 2 个。
   static bool isLegalConjugate(
     CandidateRef a,
     CandidateRef b,
@@ -119,13 +142,10 @@ class BoardMarkup {
     CandidateRef from,
     CandidateRef to,
     ArrowKind kind,
-    List<List<Set<int>>> candidates,
-  ) {
-    if (kind == ArrowKind.conjugate &&
-        !isLegalConjugate(from, to, candidates)) {
-      return false;
-    }
-    arrows.add(MarkupArrow(from: from, to: to, kind: kind));
+    List<List<Set<int>>> candidates, {
+    Color? color,
+  }) {
+    arrows.add(MarkupArrow(from: from, to: to, kind: kind, color: color));
     return true;
   }
 }

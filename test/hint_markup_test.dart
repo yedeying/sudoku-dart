@@ -1,0 +1,70 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:sudoku_app/models/board_markup.dart';
+import 'package:sudoku_app/models/game_state.dart';
+import 'package:sudoku_app/services/sudoku_solver.dart';
+
+void main() {
+  test('getHint 不选中格子，也不打开行列宫或同数字高亮', () {
+    final g = GameState()
+      ..loadCustomGame(
+        '530070000'
+        '600195000'
+        '098000060'
+        '800060003'
+        '400803001'
+        '700020006'
+        '060000280'
+        '000419005'
+        '000080079',
+      );
+    g.selectCell(0, 0);
+    expect(g.selectedRow, 0);
+
+    final hint = g.getHint();
+    expect(hint, isNotNull);
+    expect(g.hintSession?.phase, HintPhase.ready);
+    expect(g.displaySelectedRow, isNull);
+    expect(g.displaySelectedCol, isNull);
+    expect(g.sameDigitHighlightCells(), isEmpty);
+    expect(g.sameDigitHighlightCandidates(), isEmpty);
+  });
+
+  test('markupFromHint 按角色给格底、候选圆圈和箭头上色', () {
+    final hint = SudokuHint.elimination(
+      technique: '2-String Kite',
+      explanation: 'test',
+      eliminations: [CandidateElim(8, 7, 5)],
+      patternCells: const [
+        HintCell(0, 1, HintRole.link),
+        HintCell(0, 7, HintRole.link),
+        HintCell(8, 7, HintRole.target),
+      ],
+      patternCandidates: const [
+        HintCandidate(CandidateRef(0, 1, 5), HintRole.link),
+        HintCandidate(CandidateRef(8, 7, 5), HintRole.target),
+      ],
+      links: const [
+        MarkupArrow(
+          from: CandidateRef(0, 1, 5),
+          to: CandidateRef(0, 7, 5),
+          kind: ArrowKind.strong,
+        ),
+      ],
+    );
+
+    final m = GameState.markupFromHint(hint);
+    expect(m.cellColors[BoardMarkup.cellKey(0, 1)], isNotNull);
+    expect(
+      m.cellColors[BoardMarkup.cellKey(8, 7)],
+      const Color(0xFFFFCDD2),
+    );
+    expect(
+      m.candidateColors[const CandidateRef(0, 1, 5)],
+      MarkupPalette.green,
+    );
+    expect(m.struck, contains(const CandidateRef(8, 7, 5)));
+    expect(m.arrows, hasLength(1));
+    expect(m.arrows.first.kind, ArrowKind.strong);
+  });
+}
