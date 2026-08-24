@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/game_state.dart';
 import '../theme/app_theme.dart';
+import '../widgets/accent_picker.dart';
 import 'game_screen.dart';
 import 'input_screen.dart';
 
@@ -79,17 +80,28 @@ class HomeScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: scheme.primaryContainer,
-            borderRadius: BorderRadius.circular(AppTheme.radius),
-          ),
-          child: Icon(
-            Icons.grid_4x4,
-            size: 32,
-            color: scheme.onPrimaryContainer,
-          ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: scheme.primaryContainer,
+                borderRadius: BorderRadius.circular(AppTheme.radius),
+              ),
+              child: Icon(
+                Icons.grid_4x4,
+                size: 32,
+                color: scheme.onPrimaryContainer,
+              ),
+            ),
+            const Spacer(),
+            IconButton(
+              tooltip: '强调色',
+              icon: const Icon(Icons.palette_outlined),
+              onPressed: () => AccentPicker.open(context),
+            ),
+          ],
         ),
         const SizedBox(height: 18),
         Text('数独游戏', style: theme.textTheme.headlineMedium),

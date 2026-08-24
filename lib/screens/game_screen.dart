@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/game_state.dart';
 import '../models/board_markup.dart';
 import '../services/sudoku_solver.dart';
+import '../widgets/accent_picker.dart';
 import '../widgets/sudoku_grid.dart';
 import '../widgets/hint_panel.dart';
 
@@ -64,6 +65,11 @@ class _GameScreenState extends State<GameScreen> {
                 ),
               );
             },
+          ),
+          IconButton(
+            tooltip: '强调色',
+            icon: const Icon(Icons.palette_outlined),
+            onPressed: () => AccentPicker.open(context),
           ),
           // 更多选项
           PopupMenuButton<String>(
