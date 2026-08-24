@@ -51,6 +51,8 @@ void main() {
       expect(t.definition.length, greaterThanOrEqualTo(80), reason: t.id);
       expect(t.howToSpot.length, greaterThanOrEqualTo(40), reason: t.id);
       expect(t.walkthrough.length, greaterThanOrEqualTo(80), reason: t.id);
+      expect(t.walkthrough, isNot(contains(RegExp(r'第\s*\d+\s*行第'))),
+          reason: '${t.id} walkthrough 仍用第x行第x列');
       expect(t.caveats.length, greaterThanOrEqualTo(20), reason: t.id);
       expect(t.legend, isNotEmpty, reason: t.id);
       final marked = t.exampleMarkup.cellColors.isNotEmpty ||
@@ -58,6 +60,24 @@ void main() {
           t.exampleMarkup.arrows.isNotEmpty ||
           t.exampleMarkup.struck.isNotEmpty;
       expect(marked, isTrue, reason: '${t.id} 没有标记');
+    }
+  });
+
+  test('链类技巧 walkthrough 含链表达式', () {
+    const ids = [
+      'xy_chain',
+      'aic',
+      'nice_loop',
+      'grouped_aic',
+      'skyscraper',
+      'kite',
+      'xy_wing',
+    ];
+    final map = {for (final t in TechniqueCatalog.all) t.id: t};
+    for (final id in ids) {
+      final text = map[id]!.walkthrough;
+      expect(text.contains(' = ') || text.contains('{'), isTrue, reason: id);
+      expect(RegExp(r'\d+r\d+c\d+').hasMatch(text), isTrue, reason: id);
     }
   });
 

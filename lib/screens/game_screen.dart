@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/game_state.dart';
 import '../models/board_markup.dart';
+import '../models/notation.dart';
 import '../services/sudoku_solver.dart';
 import '../widgets/accent_picker.dart';
 import '../widgets/sudoku_grid.dart';
@@ -151,15 +152,17 @@ class _GameScreenState extends State<GameScreen> {
                       child: LayoutBuilder(
                         builder: (context, boardArea) {
                           const topPadding = 8.0;
-                          final side = math.min(
-                            math.min(boardArea.maxWidth - 32, 560.0),
-                            boardArea.maxHeight - topPadding,
-                          ).clamp(0.0, double.infinity);
+                          final side = math
+                              .min(
+                                math.min(boardArea.maxWidth - 32, 560.0),
+                                boardArea.maxHeight - topPadding,
+                              )
+                              .clamp(0.0, double.infinity);
                           return Column(
                             children: [
                               Padding(
-                                padding:
-                                    const EdgeInsets.fromLTRB(16, topPadding, 16, 0),
+                                padding: const EdgeInsets.fromLTRB(
+                                    16, topPadding, 16, 0),
                                 child: SizedBox(
                                   width: side,
                                   height: side,
@@ -173,8 +176,8 @@ class _GameScreenState extends State<GameScreen> {
                                     markup: gameState.displayMarkup,
                                     sameDigitCells:
                                         gameState.sameDigitHighlightCells(),
-                                    sameDigitCandidates:
-                                        gameState.sameDigitHighlightCandidates(),
+                                    sameDigitCandidates: gameState
+                                        .sameDigitHighlightCandidates(),
                                     arrowAnchor: gameState.arrowAnchor,
                                     onCellTap: (row, col) {
                                       gameState.onCellTap(row, col);
@@ -604,16 +607,16 @@ class _GameScreenState extends State<GameScreen> {
       case HintPhase.ready:
         final hint = session.hint!;
         final isElim = hint.isElimination;
-        final title = session.fromDeepSearch
-            ? '${hint.technique}（深度搜索）'
-            : hint.technique;
+        final title =
+            session.fromDeepSearch ? '${hint.technique}（深度搜索）' : hint.technique;
+        final chain = hint.links.isEmpty ? '' : '\n${chainExpr(hint.links)}';
         final detail = isElim
-            ? '将删除 ${hint.eliminations.length} 个候选数'
-            : '位置：第 ${hint.row + 1} 行，第 ${hint.col + 1} 列'
-                '${hint.value > 0 ? '\n数字：${hint.value}' : ''}';
+            ? elimLine(hint.eliminations
+                .map((e) => (row: e.row, col: e.col, digit: e.num)))
+            : fillLine(hint.row, hint.col, hint.value);
         return HintPanel(
           title: title,
-          body: '${hint.explanation}\n\n$detail',
+          body: '${hint.explanation}$chain\n\n$detail',
           actionLabel: isElim ? '应用删除' : '应用本步',
           onCancel: () => gameState.clearHintMarkup(),
           onApply: () => gameState.applyHintAndAdvance(hint),
@@ -712,10 +715,8 @@ class _GameScreenState extends State<GameScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('自动填充候选数'),
-        content: const Text(
-          '自动为所有空格填充可能的候选数字。\n\n'
-          '这将覆盖您手动设置的候选数，确定要继续吗？'
-        ),
+        content: const Text('自动为所有空格填充可能的候选数字。\n\n'
+            '这将覆盖您手动设置的候选数，确定要继续吗？'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),

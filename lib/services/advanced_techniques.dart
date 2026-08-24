@@ -1,4 +1,5 @@
 import '../models/board_markup.dart';
+import '../models/notation.dart';
 import '../models/sudoku_board.dart';
 import 'sudoku_solver.dart';
 
@@ -15,9 +16,8 @@ class AdvancedTechniques {
     return (r1 ~/ 3 == r2 ~/ 3) && (c1 ~/ 3 == c2 ~/ 3);
   }
 
-  static List<HintCell> _targetCells(List<CandidateElim> elims) => [
-        for (final e in elims) HintCell(e.row, e.col, HintRole.target)
-      ];
+  static List<HintCell> _targetCells(List<CandidateElim> elims) =>
+      [for (final e in elims) HintCell(e.row, e.col, HintRole.target)];
 
   static List<HintCandidate> _targetCands(List<CandidateElim> elims) => [
         for (final e in elims)
@@ -28,21 +28,18 @@ class AdvancedTechniques {
   static List<_Unit> _allUnits() {
     List<_Unit> units = [];
     for (int r = 0; r < 9; r++) {
-      units.add(_Unit('行', '第 ${r + 1} 行', [
+      units.add(_Unit('行', rowRef(r), [
         for (int c = 0; c < 9; c++) [r, c]
       ]));
     }
     for (int c = 0; c < 9; c++) {
-      units.add(_Unit('列', '第 ${c + 1} 列', [
+      units.add(_Unit('列', colRef(c), [
         for (int r = 0; r < 9; r++) [r, c]
       ]));
     }
     for (int br = 0; br < 3; br++) {
       for (int bc = 0; bc < 3; bc++) {
-        units.add(_Unit(
-            '宫',
-            '第 ${br * 3 + 1}-${br * 3 + 3} 行、第 ${bc * 3 + 1}-${bc * 3 + 3} 列的宫',
-            [
+        units.add(_Unit('宫', boxRef(br, bc), [
           for (int i = 0; i < 3; i++)
             for (int j = 0; j < 3; j++) [br * 3 + i, bc * 3 + j]
         ]));
@@ -101,10 +98,9 @@ class AdvancedTechniques {
           final sortedDigits = digits.toList()..sort();
           return SudokuHint.elimination(
             technique: '显性四数组（${unit.type}）',
-            explanation: '${unit.label} 中 '
-                '${quad.map((c) => '(${c[0] + 1},${c[1] + 1})').join('、')} '
-                '四个格子的候选并集只有 ${sortedDigits.join('、')}，'
-                '因此这四个数字必定占据这些格子，可从该单元其它格子删除它们。',
+            explanation: '${unit.label} 中 ${cellsList(quad)} '
+                '候选并集只有 ${sortedDigits.join('、')}，'
+                '这四个数字占满这些格，可从该单元其它格删除它们。',
             eliminations: eliminations,
             patternCells: hintCells(HintRole.pattern, quad),
             patternCandidates: [
@@ -166,9 +162,9 @@ class AdvancedTechniques {
               return SudokuHint.elimination(
                 technique: '隐性数对（${u.type}）',
                 explanation: '${u.label} 中数字 ${nums[i]} 和 ${nums[j]} 只能出现在 '
-                    '(${p1[0][0] + 1},${p1[0][1] + 1}) 和 '
-                    '(${p1[1][0] + 1},${p1[1][1] + 1})，'
-                    '因此这两格只能是这两个数字，可删除其他候选数。',
+                    '${cellRef(p1[0][0], p1[0][1])} 和 '
+                    '${cellRef(p1[1][0], p1[1][1])}，'
+                    '这两格只能是这两个数字，其它候选可删。',
                 eliminations: elims,
                 patternCells: hintCells(HintRole.pattern, p1),
                 patternCandidates: [
@@ -231,11 +227,10 @@ class AdvancedTechniques {
             if (elims.isNotEmpty) {
               return SudokuHint.elimination(
                 technique: '隐性三数组（${u.type}）',
-                explanation:
-                    '${u.label} 中数字 ${nums[i]}、${nums[j]}、${nums[k]} '
+                explanation: '${u.label} 中数字 ${nums[i]}、${nums[j]}、${nums[k]} '
                     '只能出现在 '
-                    '${union.map((k) => '(${keyToCell[k]![0] + 1},${keyToCell[k]![1] + 1})').join('、')}，'
-                    '这三格被这三个数字占满，其他候选数可以删掉。',
+                    '${union.map((k) => cellRef(keyToCell[k]![0], keyToCell[k]![1])).join(', ')}，'
+                    '这三格被这三个数字占满，其它候选可删。',
                 eliminations: elims,
                 patternCells: hintCells(
                   HintRole.pattern,
@@ -247,8 +242,7 @@ class AdvancedTechniques {
                       HintRole.pattern,
                       keyToCell[key]!,
                       tripleNums.where((n) => board
-                          .getCandidates(
-                              keyToCell[key]![0], keyToCell[key]![1])
+                          .getCandidates(keyToCell[key]![0], keyToCell[key]![1])
                           .contains(n)),
                     ),
                 ],
@@ -309,8 +303,8 @@ class AdvancedTechniques {
             technique: '隐性四数组（${unit.type}）',
             explanation: '${unit.label} 中数字 ${sortedDigits.join('、')} '
                 '只可能出现在 '
-                '${positions.map((k) => '(${cellsByKey[k]![0] + 1},${cellsByKey[k]![1] + 1})').join('、')}，'
-                '这四格被这四个数字占满，其它候选数可以删掉。',
+                '${positions.map((k) => cellRef(cellsByKey[k]![0], cellsByKey[k]![1])).join(', ')}，'
+                '这四格被这四个数字占满，其它候选可删。',
             eliminations: eliminations,
             patternCells: hintCells(
               HintRole.pattern,
@@ -393,9 +387,8 @@ class AdvancedTechniques {
             if (elims.isNotEmpty) {
               return SudokuHint.elimination(
                 technique: 'Jellyfish',
-                explanation: '数字 $num 在第 ${rows.map((r) => r + 1).join('、')} 行'
-                    '形成 Jellyfish（涉及列 ${allCols.map((c) => c + 1).join('、')}），'
-                    '可从这些列的其他位置删除 $num。',
+                explanation: '数字 $num 在 ${rowsList(rows)} 形成 Jellyfish'
+                    '（列 ${colsList(allCols)}），这些列其它位置的 $num 可删。',
                 eliminations: elims,
                 patternCells: hintCells(
                   HintRole.pattern,
@@ -461,9 +454,8 @@ class AdvancedTechniques {
             if (elims.isNotEmpty) {
               return SudokuHint.elimination(
                 technique: 'Jellyfish',
-                explanation: '数字 $num 在第 ${cols.map((c) => c + 1).join('、')} 列'
-                    '形成 Jellyfish（涉及行 ${allRows.map((r) => r + 1).join('、')}），'
-                    '可从这些行的其他位置删除 $num。',
+                explanation: '数字 $num 在 ${colsList(cols)} 形成 Jellyfish'
+                    '（行 ${rowsList(allRows)}），这些行其它位置的 $num 可删。',
                 eliminations: elims,
                 patternCells: hintCells(
                   HintRole.pattern,
@@ -519,10 +511,9 @@ class AdvancedTechniques {
                 col: j2,
                 value: extraNum,
                 technique: 'Unique Rectangle Type 1',
-                explanation:
-                    '题目保证唯一解。格子 (${i + 1},${j + 1}), (${i + 1},${j2 + 1}), '
-                    '(${i2 + 1},${j + 1}), (${i2 + 1},${j2 + 1}) 形成唯一矩形，'
-                    '为避免出现多解，(${i2 + 1},${j2 + 1}) 必须填 $extraNum。',
+                explanation: '题目保证唯一解。${cellRef(i, j)}, ${cellRef(i, j2)}, '
+                    '${cellRef(i2, j)}, ${cellRef(i2, j2)} 形成唯一矩形，'
+                    '为避免多解，${cellRef(i2, j2)} 必须填 $extraNum。',
                 patternCells: [
                   ...hintCells(HintRole.pattern, [
                     [i, j],
@@ -550,10 +541,9 @@ class AdvancedTechniques {
                 col: j,
                 value: extraNum,
                 technique: 'Unique Rectangle Type 1',
-                explanation:
-                    '题目保证唯一解。格子 (${i + 1},${j + 1}), (${i + 1},${j2 + 1}), '
-                    '(${i2 + 1},${j + 1}), (${i2 + 1},${j2 + 1}) 形成唯一矩形，'
-                    '为避免出现多解，(${i2 + 1},${j + 1}) 必须填 $extraNum。',
+                explanation: '题目保证唯一解。${cellRef(i, j)}, ${cellRef(i, j2)}, '
+                    '${cellRef(i2, j)}, ${cellRef(i2, j2)} 形成唯一矩形，'
+                    '为避免多解，${cellRef(i2, j)} 必须填 $extraNum。',
                 patternCells: [
                   ...hintCells(HintRole.pattern, [
                     [i, j],
@@ -1176,11 +1166,12 @@ class AdvancedTechniques {
           if (elims.isNotEmpty) {
             return SudokuHint.elimination(
               technique: 'W-Wing',
-              explanation: '双值格 (${c1[0] + 1},${c1[1] + 1}) 与 '
-                  '(${c2[0] + 1},${c2[1] + 1}) 候选相同 ${pair..sort()}，'
-                  '通过数字 $linkDigit 的强链（'
-                  '${e1![0] + 1},${e1[1] + 1} - ${e2![0] + 1},${e2[1] + 1}）相连，'
-                  '形成 W-Wing，可删除相关格子的候选数 $elimDigit。',
+              explanation: '双值格 ${cellRef(c1[0], c1[1])} 与 '
+                  '${cellRef(c2[0], c2[1])} 候选相同 ${pair..sort()}，'
+                  '经 $linkDigit 的强链 '
+                  '${candRef(e1![0], e1[1], linkDigit)} = '
+                  '${candRef(e2![0], e2[1], linkDigit)} 相连，'
+                  '形成 W-Wing，相关格的 $elimDigit 可删。',
               eliminations: elims,
               patternCells: [
                 ...hintCells(HintRole.pattern, [c1, c2]),
@@ -1269,9 +1260,9 @@ class AdvancedTechniques {
         if (elims.isNotEmpty) {
           return SudokuHint.elimination(
             technique: 'Skyscraper',
-            explanation: '数字 $num 在第 ${r1 + 1} 行和第 ${r2 + 1} 行各只有两个候选位置，'
-                '且在第 ${baseCol + 1} 列对齐形成 Skyscraper，'
-                '可删除同时可见两个屋顶的格子的候选数 $num。',
+            explanation: '数字 $num 在 ${rowRef(r1)} 和 ${rowRef(r2)} 各只有两个候选，'
+                '在 ${colRef(baseCol)} 对齐形成 Skyscraper，'
+                '同时看见两个屋顶处的 $num 可删。',
             eliminations: elims,
             patternCells: [
               ...hintCells(HintRole.link, [
@@ -1356,9 +1347,9 @@ class AdvancedTechniques {
         if (elims.isNotEmpty) {
           return SudokuHint.elimination(
             technique: 'Skyscraper',
-            explanation: '数字 $num 在第 ${c1 + 1} 列和第 ${c2 + 1} 列各只有两个候选位置，'
-                '且在第 ${baseRow + 1} 行对齐形成 Skyscraper，'
-                '可删除同时可见两个屋顶的格子的候选数 $num。',
+            explanation: '数字 $num 在 ${colRef(c1)} 和 ${colRef(c2)} 各只有两个候选，'
+                '在 ${rowRef(baseRow)} 对齐形成 Skyscraper，'
+                '同时看见两个屋顶处的 $num 可删。',
             eliminations: elims,
             patternCells: [
               ...hintCells(HintRole.link, [
@@ -1454,8 +1445,9 @@ class AdvancedTechniques {
             if (elims.isNotEmpty) {
               return SudokuHint.elimination(
                 technique: '2-String Kite',
-                explanation: '数字 $digit 在第 ${row + 1} 行和第 ${col + 1} 列各有一条强链，'
-                    '并在同一宫内拐弯形成双线风筝，可删除同时看见两个远端的候选数 $digit。',
+                explanation:
+                    '数字 $digit 在 ${rowRef(row)} 和 ${colRef(col)} 各有一条强链，'
+                    '同宫拐弯形成双线风筝，同时看见两个远端的 $digit 可删。',
                 eliminations: elims,
                 patternCells: [
                   ...hintCells(HintRole.link, [
@@ -1555,10 +1547,9 @@ class AdvancedTechniques {
                   !(otherRow ~/ 3 == boxRow && coverCol ~/ 3 == boxCol)) {
                 return SudokuHint.elimination(
                   technique: 'Empty Rectangle',
-                  explanation:
-                      '数字 $digit 在宫格 ${boxRow + 1}-${boxCol + 1} 形成空矩形，'
-                      '并与第 ${linkCol + 1} 列的强链配合，可删除 '
-                      '(${otherRow + 1},${coverCol + 1}) 的候选数 $digit。',
+                  explanation: '数字 $digit 在 ${boxRef(boxRow, boxCol)} 形成空矩形，'
+                      '并与 ${colRef(linkCol)} 的强链配合，可删 '
+                      '${candRef(otherRow, coverCol, digit)}。',
                   eliminations: [CandidateElim(otherRow, coverCol, digit)],
                   patternCells: [
                     ...hintCells(HintRole.pattern, positions),
@@ -1606,10 +1597,9 @@ class AdvancedTechniques {
                   !(coverRow ~/ 3 == boxRow && otherCol ~/ 3 == boxCol)) {
                 return SudokuHint.elimination(
                   technique: 'Empty Rectangle',
-                  explanation:
-                      '数字 $digit 在宫格 ${boxRow + 1}-${boxCol + 1} 形成空矩形，'
-                      '并与第 ${linkRow + 1} 行的强链配合，可删除 '
-                      '(${coverRow + 1},${otherCol + 1}) 的候选数 $digit。',
+                  explanation: '数字 $digit 在 ${boxRef(boxRow, boxCol)} 形成空矩形，'
+                      '并与 ${rowRef(linkRow)} 的强链配合，可删 '
+                      '${candRef(coverRow, otherCol, digit)}。',
                   eliminations: [CandidateElim(coverRow, otherCol, digit)],
                   patternCells: [
                     ...hintCells(HintRole.pattern, positions),

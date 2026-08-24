@@ -1,4 +1,5 @@
 import '../models/board_markup.dart';
+import '../models/notation.dart';
 import '../models/sudoku_board.dart';
 import 'advanced_techniques.dart';
 
@@ -30,7 +31,8 @@ List<HintCandidate> hintCands(
   Iterable<List<int>> cells,
 ) =>
     [
-      for (final c in cells) HintCandidate(CandidateRef(c[0], c[1], digit), role)
+      for (final c in cells)
+        HintCandidate(CandidateRef(c[0], c[1], digit), role)
     ];
 
 /// 鱼身：基线与覆盖线交点上真正带该候选的格子。
@@ -227,21 +229,18 @@ class SudokuSolver {
   static List<_Unit> _allUnits() {
     List<_Unit> units = [];
     for (int r = 0; r < 9; r++) {
-      units.add(_Unit('行', '第 ${r + 1} 行', [
+      units.add(_Unit('行', rowRef(r), [
         for (int c = 0; c < 9; c++) [r, c]
       ]));
     }
     for (int c = 0; c < 9; c++) {
-      units.add(_Unit('列', '第 ${c + 1} 列', [
+      units.add(_Unit('列', colRef(c), [
         for (int r = 0; r < 9; r++) [r, c]
       ]));
     }
     for (int br = 0; br < 3; br++) {
       for (int bc = 0; bc < 3; bc++) {
-        units.add(_Unit(
-            '宫',
-            '第 ${br * 3 + 1}-${br * 3 + 3} 行、第 ${bc * 3 + 1}-${bc * 3 + 3} 列的宫',
-            [
+        units.add(_Unit('宫', boxRef(br, bc), [
           for (int i = 0; i < 3; i++)
             for (int j = 0; j < 3; j++) [br * 3 + i, bc * 3 + j]
         ]));
@@ -269,8 +268,8 @@ class SudokuSolver {
               col: j,
               value: candidates.first,
               technique: '唯余法',
-              explanation: '这个格子只能填入 ${candidates.first}，'
-                  '因为其他数字在同行、同列或同宫格中已经出现。',
+              explanation: '${cellRef(i, j)} 只能填 ${candidates.first}，'
+                  '同行、同列、同宫已占满其它数字。',
               patternCells: [
                 HintCell(i, j, HintRole.pattern),
                 ...hintCells(
@@ -293,9 +292,7 @@ class SudokuSolver {
   }
 
   /// 宫的说法：「宫格 1-2」这种编号没人看得懂，直接说它占哪几行哪几列。
-  static String _boxLabel(int boxRow, int boxCol) =>
-      '第 ${boxRow * 3 + 1}-${boxRow * 3 + 3} 行、'
-      '第 ${boxCol * 3 + 1}-${boxCol * 3 + 3} 列的宫';
+  static String _boxLabel(int boxRow, int boxCol) => boxRef(boxRow, boxCol);
 
   /// 唯一候选数的依据：每个被排除的数字，各找一个已填的同行/列/宫格子作为见证。
   static List<List<int>> _blockingPeers(
@@ -357,7 +354,8 @@ class SudokuSolver {
           col: possibleCols[0],
           value: num,
           technique: '行摒除',
-          explanation: '数字 $num 在第 ${row + 1} 行只能放在这个位置。',
+          explanation:
+              '${rowRef(row)} 上数字 $num 只能放在 ${cellRef(row, possibleCols[0])}。',
           patternCells: [
             HintCell(row, possibleCols[0], HintRole.pattern),
             ...hintCells(HintRole.link, [
@@ -392,7 +390,8 @@ class SudokuSolver {
           col: col,
           value: num,
           technique: '列摒除',
-          explanation: '数字 $num 在第 ${col + 1} 列只能放在这个位置。',
+          explanation:
+              '${colRef(col)} 上数字 $num 只能放在 ${cellRef(possibleRows[0], col)}。',
           patternCells: [
             HintCell(possibleRows[0], col, HintRole.pattern),
             ...hintCells(HintRole.link, [
@@ -431,10 +430,11 @@ class SudokuSolver {
           col: possibleCells[0][1],
           value: num,
           technique: '宫摒除',
-          explanation: '数字 $num 在${_boxLabel(boxRow, boxCol)}只能放在这个位置。',
+          explanation: '${_boxLabel(boxRow, boxCol)} 上数字 $num 只能放在 '
+              '${cellRef(possibleCells[0][0], possibleCells[0][1])}。',
           patternCells: [
-            HintCell(possibleCells[0][0], possibleCells[0][1],
-                HintRole.pattern),
+            HintCell(
+                possibleCells[0][0], possibleCells[0][1], HintRole.pattern),
             ...hintCells(HintRole.link, [
               for (int i = startRow; i < startRow + 3; i++)
                 for (int j = startCol; j < startCol + 3; j++)
@@ -486,9 +486,9 @@ class SudokuSolver {
             return SudokuHint.elimination(
               technique: '显性数对（${u.type}）',
               explanation:
-                  '${u.label} 中 (${cells[i][0] + 1},${cells[i][1] + 1}) 和 '
-                  '(${cells[j][0] + 1},${cells[j][1] + 1}) 形成数字对 '
-                  '${ci.toList()..sort()}，可以从该单元其他格子删除这两个数字。',
+                  '${u.label} 中 ${cellRef(cells[i][0], cells[i][1])} 和 '
+                  '${cellRef(cells[j][0], cells[j][1])} 形成数对 '
+                  '${ci.toList()..sort()}，可从该单元其它格删除这两个数字。',
               eliminations: elims,
               patternCells: hintCells(HintRole.pattern, [cells[i], cells[j]]),
               patternCandidates: [
@@ -538,11 +538,11 @@ class SudokuSolver {
               return SudokuHint.elimination(
                 technique: '显性三数组（${u.type}）',
                 explanation: '${u.label} 中 '
-                    '(${cells[i][0] + 1},${cells[i][1] + 1})、'
-                    '(${cells[j][0] + 1},${cells[j][1] + 1})、'
-                    '(${cells[k][0] + 1},${cells[k][1] + 1}) '
-                    '三个格子形成三元组 ${union.toList()..sort()}，'
-                    '可以从该单元其他格子删除这些数字。',
+                    '${cellRef(cells[i][0], cells[i][1])}、'
+                    '${cellRef(cells[j][0], cells[j][1])}、'
+                    '${cellRef(cells[k][0], cells[k][1])} '
+                    '形成三数组 ${union.toList()..sort()}，'
+                    '可从该单元其它格删除这些数字。',
                 eliminations: elims,
                 patternCells: hintCells(
                   HintRole.pattern,
@@ -601,9 +601,9 @@ class SudokuSolver {
             if (elims.isNotEmpty) {
               return SudokuHint.elimination(
                 technique: '宫区块（行）',
-                explanation: '${_boxLabel(boxRow, boxCol)}里，数字 $num 只可能落在第 '
-                    '${row + 1} 行的 ${positions.map((p) => '(${p[0] + 1},${p[1] + 1})').join('、')}。'
-                    '这个宫的 $num 一定在这一行，所以该行宫外的 $num 都可以删掉。',
+                explanation: '${_boxLabel(boxRow, boxCol)} 里数字 $num 只落在 '
+                    '${rowRef(row)} 的 ${cellsList(positions)}。'
+                    '该宫的 $num 必在 ${rowRef(row)}，故 ${rowRef(row)} 宫外的 $num 可删。',
                 eliminations: elims,
                 patternCells: hintCells(HintRole.pattern, positions),
                 patternCandidates: hintCands(
@@ -629,9 +629,9 @@ class SudokuSolver {
             if (elims.isNotEmpty) {
               return SudokuHint.elimination(
                 technique: '宫区块（列）',
-                explanation: '${_boxLabel(boxRow, boxCol)}里，数字 $num 只可能落在第 '
-                    '${col + 1} 列的 ${positions.map((p) => '(${p[0] + 1},${p[1] + 1})').join('、')}。'
-                    '这个宫的 $num 一定在这一列，所以该列宫外的 $num 都可以删掉。',
+                explanation: '${_boxLabel(boxRow, boxCol)} 里数字 $num 只落在 '
+                    '${colRef(col)} 的 ${cellsList(positions)}。'
+                    '该宫的 $num 必在 ${colRef(col)}，故 ${colRef(col)} 宫外的 $num 可删。',
                 eliminations: elims,
                 patternCells: hintCells(HintRole.pattern, positions),
                 patternCandidates: hintCands(
@@ -681,10 +681,10 @@ class SudokuSolver {
         if (elims.isNotEmpty) {
           return SudokuHint.elimination(
             technique: '行区块',
-            explanation: '第 ${row + 1} 行的数字 $num 只能落在'
-                '${_boxLabel(boxRow, boxCol)}里的 '
-                '${cols.map((c) => '(${row + 1},${c + 1})').join('、')}。'
-                '这一行的 $num 一定在这个宫，所以该宫其他行的 $num 都可以删掉。',
+            explanation: '${rowRef(row)} 的数字 $num 只落在 '
+                '${_boxLabel(boxRow, boxCol)} 的 '
+                '${cols.map((c) => cellRef(row, c)).join(', ')}。'
+                '该行 $num 必在此宫，故宫内其它行的 $num 可删。',
             eliminations: elims,
             patternCells: hintCells(HintRole.pattern, [
               for (final c in cols) [row, c],
@@ -727,10 +727,10 @@ class SudokuSolver {
         if (elims.isNotEmpty) {
           return SudokuHint.elimination(
             technique: '列区块',
-            explanation: '第 ${col + 1} 列的数字 $num 只能落在'
-                '${_boxLabel(boxRow, boxCol)}里的 '
-                '${rows.map((r) => '(${r + 1},${col + 1})').join('、')}。'
-                '这一列的 $num 一定在这个宫，所以该宫其他列的 $num 都可以删掉。',
+            explanation: '${colRef(col)} 的数字 $num 只落在 '
+                '${_boxLabel(boxRow, boxCol)} 的 '
+                '${rows.map((r) => cellRef(r, col)).join(', ')}。'
+                '该列 $num 必在此宫，故宫内其它列的 $num 可删。',
             eliminations: elims,
             patternCells: hintCells(HintRole.pattern, [
               for (final r in rows) [r, col],
@@ -785,9 +785,9 @@ class SudokuSolver {
             if (elims.isNotEmpty) {
               return SudokuHint.elimination(
                 technique: 'X-Wing',
-                explanation: '数字 $num 在第 ${row1 + 1} 行和第 ${row2 + 1} 行'
-                    '都只能在第 ${col1 + 1} 列和第 ${col2 + 1} 列，形成 X-Wing，'
-                    '可以从这两列的其他位置删除 $num。',
+                explanation: '数字 $num 在 ${rowRef(row1)},${rowRef(row2)} '
+                    '只出现于 ${colRef(col1)},${colRef(col2)}，形成 X-Wing，'
+                    '这两列其它位置的 $num 可删。',
                 eliminations: elims,
                 patternCells: hintCells(HintRole.pattern, [
                   [row1, col1],
@@ -844,9 +844,9 @@ class SudokuSolver {
             if (elims.isNotEmpty) {
               return SudokuHint.elimination(
                 technique: 'X-Wing',
-                explanation: '数字 $num 在第 ${col1 + 1} 列和第 ${col2 + 1} 列'
-                    '都只能在第 ${row1 + 1} 行和第 ${row2 + 1} 行，形成 X-Wing，'
-                    '可以从这两行的其他位置删除 $num。',
+                explanation: '数字 $num 在 ${colRef(col1)},${colRef(col2)} '
+                    '只出现于 ${rowRef(row1)},${rowRef(row2)}，形成 X-Wing，'
+                    '这两行其它位置的 $num 可删。',
                 eliminations: elims,
                 patternCells: hintCells(HintRole.pattern, [
                   [row1, col1],
@@ -921,9 +921,8 @@ class SudokuSolver {
             if (elims.isNotEmpty) {
               return SudokuHint.elimination(
                 technique: 'Swordfish',
-                explanation: '数字 $num 在第 ${rows.map((r) => r + 1).join('、')} 行'
-                    '形成 Swordfish（涉及列 ${allCols.map((c) => c + 1).join('、')}），'
-                    '可以从这些列的其他位置删除 $num。',
+                explanation: '数字 $num 在 ${rowsList(rows)} 形成 Swordfish'
+                    '（列 ${colsList(allCols)}），这些列其它位置的 $num 可删。',
                 eliminations: elims,
                 patternCells: hintCells(
                   HintRole.pattern,
@@ -977,9 +976,8 @@ class SudokuSolver {
             if (elims.isNotEmpty) {
               return SudokuHint.elimination(
                 technique: 'Swordfish',
-                explanation: '数字 $num 在第 ${cols.map((c) => c + 1).join('、')} 列'
-                    '形成 Swordfish（涉及行 ${allRows.map((r) => r + 1).join('、')}），'
-                    '可以从这些行的其他位置删除 $num。',
+                explanation: '数字 $num 在 ${colsList(cols)} 形成 Swordfish'
+                    '（行 ${rowsList(allRows)}），这些行其它位置的 $num 可删。',
                 eliminations: elims,
                 patternCells: hintCells(
                   HintRole.pattern,
@@ -1073,11 +1071,11 @@ class SudokuSolver {
           if (elims.isNotEmpty) {
             return SudokuHint.elimination(
               technique: 'XY-Wing',
-              explanation: '格子 (${pRow + 1},${pCol + 1}) 是支点（候选 '
-                  '${pCands.join('、')}），两翼 (${w1Row + 1},${w1Col + 1}) 和 '
-                  '(${w2Row + 1},${w2Col + 1}) 各带一个 $z。'
-                  '支点填哪个数，都会逼出一翼的 $z，'
-                  '所以同时能看到两翼的格子里 $z 可以删掉。',
+              explanation: '${cellRef(pRow, pCol)} 是支点（候选 '
+                  '${pCands.join('、')}），两翼 ${cellRef(w1Row, w1Col)} 和 '
+                  '${cellRef(w2Row, w2Col)} 各带一个 $z。'
+                  '支点填哪个数都会逼出一翼的 $z，'
+                  '同时看见两翼处的 $z 可删。',
               eliminations: elims,
               patternCells: [
                 HintCell(pRow, pCol, HintRole.extra),
@@ -1163,11 +1161,11 @@ class SudokuSolver {
             if (elims.isNotEmpty) {
               return SudokuHint.elimination(
                 technique: 'XYZ-Wing',
-                explanation: '格子 (${pRow + 1},${pCol + 1}) 是支点（候选 '
+                explanation: '${cellRef(pRow, pCol)} 是支点（候选 '
                     '${(pCands.toList()..sort()).join('、')}），两翼 '
-                    '(${w1Row + 1},${w1Col + 1}) 和 (${w2Row + 1},${w2Col + 1}) '
+                    '${cellRef(w1Row, w1Col)} 和 ${cellRef(w2Row, w2Col)} '
                     '都带 $z。三格中 $z 必有其一，'
-                    '所以同时能看到这三格的位置上 $z 可以删掉。',
+                    '同时看见这三格处的 $z 可删。',
                 eliminations: elims,
                 patternCells: [
                   HintCell(pRow, pCol, HintRole.extra),
