@@ -52,12 +52,25 @@ void main() {
     expect(find.byIcon(Icons.lightbulb), findsNothing);
     expect(find.text('应用'), findsOneWidget);
 
+    Finder drawerApply() {
+      final byLabel = find.text('应用本步').evaluate().isNotEmpty
+          ? find.text('应用本步')
+          : find.text('应用删除');
+      return find.ancestor(of: byLabel, matching: find.byType(FilledButton));
+    }
+
     final before = state.hintsUsed;
-    await tester.tap(find.byIcon(Icons.check));
+    await tester.tap(drawerApply());
     await tester.pump();
 
     expect(state.hintsUsed, before + 1);
-    // 应用后立刻给出下一步，按钮保持在“应用”，可以连点。
+    // 应用后立刻给出下一步，抽屉按钮保持可连点。
+    expect(state.hintSession?.phase, HintPhase.ready);
+
+    await tester.tap(drawerApply());
+    await tester.pump();
+
+    expect(state.hintsUsed, before + 2);
     expect(state.hintSession?.phase, HintPhase.ready);
     expect(find.text('应用'), findsOneWidget);
   });

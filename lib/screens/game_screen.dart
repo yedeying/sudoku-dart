@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/game_state.dart';
@@ -138,61 +139,67 @@ class _GameScreenState extends State<GameScreen> {
               });
             }
 
-            return Column(
-              children: [
-                // 信息栏
-                _buildInfoBar(gameState),
-                
-                const SizedBox(height: 16),
-
-                // 数独棋盘
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Center(
-                      child: SudokuGrid(
-                        board: gameState.board!,
-                        selectedRow: gameState.displaySelectedRow,
-                        selectedCol: gameState.displaySelectedCol,
-                        // 候选显示只受这个视图开关控制；标记和提示不能偷偷打开。
-                        showCandidates: gameState.showCandidates,
-                        conflictCells: gameState.getConflictCells(),
-                        markup: gameState.displayMarkup,
-                        sameDigitCells: gameState.sameDigitHighlightCells(),
-                        sameDigitCandidates:
-                            gameState.sameDigitHighlightCandidates(),
-                        arrowAnchor: gameState.arrowAnchor,
-                        onCellTap: (row, col) {
-                          gameState.onCellTap(row, col);
-                        },
-                        onCandidateTap: gameState.markupEnabled
-                            ? gameState.onCandidateTap
-                            : null,
-                      ),
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final side = math.min(constraints.maxWidth - 32, 560.0);
+                return Stack(
+                  children: [
+                    Column(
+                      children: [
+                        _buildInfoBar(gameState),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                          child: SizedBox(
+                            width: side,
+                            height: side,
+                            child: SudokuGrid(
+                              board: gameState.board!,
+                              selectedRow: gameState.displaySelectedRow,
+                              selectedCol: gameState.displaySelectedCol,
+                              // 候选显示只受这个视图开关控制；标记和提示不能偷偷打开。
+                              showCandidates: gameState.showCandidates,
+                              conflictCells: gameState.getConflictCells(),
+                              markup: gameState.displayMarkup,
+                              sameDigitCells: gameState.sameDigitHighlightCells(),
+                              sameDigitCandidates:
+                                  gameState.sameDigitHighlightCandidates(),
+                              arrowAnchor: gameState.arrowAnchor,
+                              onCellTap: (row, col) {
+                                gameState.onCellTap(row, col);
+                              },
+                              onCandidateTap: gameState.markupEnabled
+                                  ? gameState.onCandidateTap
+                                  : null,
+                            ),
+                          ),
+                        ),
+                        Flexible(
+                          child: SingleChildScrollView(
+                            child: Column(
+                              children: [
+                                _buildControlButtons(gameState),
+                                const SizedBox(height: 8),
+                                _buildNumberPad(gameState),
+                                const SizedBox(height: 16),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                if (_hintPanelVisible(gameState)) ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: _buildHintPanel(gameState),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-
-                // 控制按钮
-                _buildControlButtons(gameState),
-
-                const SizedBox(height: 8),
-
-                // 数字键盘
-                _buildNumberPad(gameState),
-
-                const SizedBox(height: 16),
-              ],
+                    if (_hintPanelVisible(gameState))
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: Material(
+                          elevation: 8,
+                          child: _buildHintPanel(gameState),
+                        ),
+                      ),
+                  ],
+                );
+              },
             );
           },
         ),
