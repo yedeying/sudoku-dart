@@ -140,11 +140,18 @@ class BoardPalette extends ThemeExtension<BoardPalette> {
   static BoardPalette fromAccent(Brightness brightness, Color accent) {
     final light = brightness == Brightness.light;
     final base = light ? lightPalette : darkPalette;
-    final glyph = light ? accent : _withLightness(accent, 0.76);
+    final selected = _selectedWash(accent, light: light);
+    final sameDigit = _sameDigitWash(accent, light: light);
+    final glyph = _glyphOnWashes(
+      accent,
+      light: light,
+      selected: selected,
+      sameDigit: sameDigit,
+    );
     return base.copyWith(
       related: _relatedWash(accent, light: light),
-      selected: _selectedWash(accent, light: light),
-      sameDigit: _sameDigitWash(accent, light: light),
+      selected: selected,
+      sameDigit: sameDigit,
       userDigit: glyph,
       candidateNote: glyph,
       strongArrow: glyph,
@@ -168,7 +175,34 @@ class BoardPalette extends ThemeExtension<BoardPalette> {
   }
 
   static Color _selectedWash(Color accent, {required bool light}) {
-    return _withLightness(accent, light ? 0.78 : 0.32);
+    return _withLightness(accent, light ? 0.86 : 0.32);
+  }
+
+  /// Light-mode glyphs must sit at least 4.5:1 on selected and sameDigit washes.
+  static Color _glyphOnWashes(
+    Color accent, {
+    required bool light,
+    required Color selected,
+    required Color sameDigit,
+  }) {
+    if (!light) return _withLightness(accent, 0.76);
+    var lightness = HSLColor.fromColor(accent).lightness;
+    var glyph = accent;
+    while (lightness > 0.05 &&
+        (_contrastRatio(glyph, selected) < 4.5 ||
+            _contrastRatio(glyph, sameDigit) < 4.5)) {
+      lightness -= 0.02;
+      glyph = _withLightness(accent, lightness);
+    }
+    return glyph;
+  }
+
+  static double _contrastRatio(Color a, Color b) {
+    final la = a.computeLuminance();
+    final lb = b.computeLuminance();
+    final hi = la > lb ? la : lb;
+    final lo = la > lb ? lb : la;
+    return (hi + 0.05) / (lo + 0.05);
   }
 
   static Color _relatedWash(Color accent, {required bool light}) {

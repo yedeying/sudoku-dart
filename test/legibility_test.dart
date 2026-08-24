@@ -89,6 +89,25 @@ void main() {
     }
   });
 
+  test('浅色用户填数在选中格和同数底上对比度达标', () {
+    for (final id in AccentId.values) {
+      final p = BoardPalette.fromAccent(
+        Brightness.light,
+        ThemeController.colorFor(id),
+      );
+      expect(
+        _contrast(p.userDigit, p.selected),
+        greaterThanOrEqualTo(4.5),
+        reason: '$id userDigit on selected',
+      );
+      expect(
+        _contrast(p.userDigit, p.sameDigit),
+        greaterThanOrEqualTo(4.5),
+        reason: '$id userDigit on sameDigit',
+      );
+    }
+  });
+
   test('棋盘跟随主题亮暗，深色下不再是白纸盖深灰块', () {
     final lightPalette = AppTheme.light().extension<BoardPalette>()!;
     final darkPalette = AppTheme.dark().extension<BoardPalette>()!;
