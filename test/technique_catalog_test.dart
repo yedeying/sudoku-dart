@@ -87,4 +87,31 @@ void main() {
       expect(marked, isTrue, reason: '$id 缺少足够的标记');
     }
   });
+
+  test('链式翼技巧盘面都带箭头', () {
+    const chainLikeIds = [
+      'skyscraper',
+      'kite',
+      'empty_rect',
+      'xy_wing',
+      'xyz_wing',
+      'w_wing',
+      'simple_coloring',
+    ];
+    final map = {for (final t in TechniqueCatalog.all) t.id: t};
+    for (final id in chainLikeIds) {
+      final t = map[id]!;
+      expect(t.exampleMarkup.arrows, isNotEmpty, reason: '$id 缺少链路箭头');
+    }
+  });
+
+  test('唯一矩形与 BUG+1 盘面标出四个模式格', () {
+    const rectLikeIds = ['ur1', 'ur2', 'ur3', 'ur4', 'bug1'];
+    final map = {for (final t in TechniqueCatalog.all) t.id: t};
+    for (final id in rectLikeIds) {
+      final t = map[id]!;
+      expect(t.exampleMarkup.cellColors.length, greaterThanOrEqualTo(4),
+          reason: '$id 应标出矩形/BUG 四个格子');
+    }
+  });
 }

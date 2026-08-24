@@ -3,6 +3,7 @@ import 'board_markup.dart';
 import 'teaching_colors.dart';
 import 'technique_examples_basic.dart';
 import 'technique_examples_fish.dart';
+import 'technique_examples_wings.dart';
 
 class TechniqueLegendItem {
   final Color color;
@@ -52,19 +53,7 @@ class TechniqueCatalog {
     final items = <TechniqueInfo>[
       ...basicTechniqueExamples(),
       ...fishTechniqueExamples(),
-      _t('skyscraper', '摩天楼', '两行（或两列）上各一条强链，删同时看到两远端的该数字。', 100),
-      _t('kite', '双线风筝', '一行一条强链、一列一条强链，在宫里拐一下，删远端交汇处。', 105),
-      _t('empty_rect', '空矩形', '宫内某数字候选构成空心矩形，再配一条外强链来删格。', 110),
-      _t('xy_wing', 'XY-Wing', '三个双值格形成 Y 型，删同时看到两翼的那个数字。', 120),
-      _t('xyz_wing', 'XYZ-Wing', '支点三个候选、两翼各含其中两个，删三格共同可见处的公共数字。', 125),
-      _t('w_wing', 'W-Wing', '两个相同 {a,b} 格被某数字的一条强链连上，删同时看到这两格的另一个数字。', 130),
-      _t('wxyz_wing', 'WXYZ-Wing', '四个格子、四个数字的翼，删公共可见处的锁定数字。', 135),
-      _t('simple_coloring', 'Simple Coloring', '单数字沿强链涂两色，同色互见或一格看见两色则删。', 140),
-      _t('ur1', '唯一矩形 Type 1', '题目保证唯一解：2×2 矩形三格都是 {a,b}，第四格多一个数字，必须填那个。', 150),
-      _t('ur2', '唯一矩形 Type 2', '题目保证唯一解：矩形里同一个额外数字出现两次，删它们共同可见处。', 155),
-      _t('ur3', '唯一矩形 Type 3', '题目保证唯一解：额外候选和一个子集缠在一起，当数组去删。', 160),
-      _t('ur4', '唯一矩形 Type 4', '题目保证唯一解：矩形所在线上一数字形成强链，删矩形内另一个数字。', 165),
-      _t('bug1', 'BUG+1', '题目保证唯一解：除一格外将构成多解双值盘，那一格必须填多出来的候选。', 170),
+      ...wingTechniqueExamples(),
       _t('xy_chain', 'XY-Chain', '一串双值格强弱交替，两端同一数字，删同时看到两端的它。', 180),
       _t('aic', 'AIC 开链', '候选点上强-弱交替，两端同真则矛盾，删能看见两端的候选。', 190),
       _t('nice_loop', 'Nice Loop / AIC 环', '链走回起点；连续环删弱链处，不连续环删端点。', 200),
