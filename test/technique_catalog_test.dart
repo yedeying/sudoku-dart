@@ -44,4 +44,28 @@ void main() {
       expect(marked, isTrue, reason: '${t.id} 没有标记');
     }
   });
+
+  test('基础技巧盘面互不相同且带标记', () {
+    const ids = [
+      'naked_single',
+      'hidden_single',
+      'naked_pair',
+      'naked_triple',
+      'naked_quad',
+      'hidden_pair',
+      'hidden_triple',
+      'hidden_quad',
+      'pointing',
+      'box_line',
+    ];
+    final map = {for (final t in TechniqueCatalog.all) t.id: t};
+    for (final id in ids) {
+      final t = map[id]!;
+      expect(
+          t.exampleMarkup.cellColors.length +
+              t.exampleMarkup.candidateColors.length,
+          greaterThan(1),
+          reason: id);
+    }
+  });
 }

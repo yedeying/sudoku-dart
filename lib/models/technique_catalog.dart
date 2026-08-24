@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'board_markup.dart';
 import 'teaching_colors.dart';
+import 'technique_examples_basic.dart';
 
 class TechniqueLegendItem {
   final Color color;
@@ -48,16 +49,7 @@ class TechniqueCatalog {
 
   static List<TechniqueInfo> _build() {
     final items = <TechniqueInfo>[
-      _t('naked_single', '唯余法', '一格只剩一个数字，直接填。', 10),
-      _t('hidden_single', '摒除法（行/列/宫）', '某行/列/宫里某个数字只剩一个位置，填那里。', 20),
-      _t('naked_pair', '显性数对', '两格恰好共有两个数字，从同区域其它格删掉它们。', 30),
-      _t('naked_triple', '显性三数组', '三格恰好共有三个数字，从同区域其它格删掉它们。', 35),
-      _t('naked_quad', '显性四数组', '四格恰好共有四个数字，从同区域其它格删掉它们。', 40),
-      _t('hidden_pair', '隐性数对', '两个数字只出现在同样两格，这两格删掉其它候选。', 45),
-      _t('hidden_triple', '隐性三数组', '三个数字只出现在同样三格，这三格删掉其它候选。', 50),
-      _t('hidden_quad', '隐性四数组', '四个数字只出现在同样四格，这四格删掉其它候选。', 55),
-      _t('pointing', '宫区块', '宫内某数字全挤在同一行或列，删这行/列宫外的该数字。', 60),
-      _t('box_line', '行/列区块', '行/列上某数字全挤在同一宫，删这宫里其它行/列的该数字。', 65),
+      ...basicTechniqueExamples(),
       _t('xwing', 'X-Wing', '某数字在两行只出现在相同两列（或对调），删这两列其它行的它。', 70),
       _t('swordfish', 'Swordfish', 'X-Wing 的三行三列版。', 75),
       _t('jellyfish', 'Jellyfish', '四行四列的鱼。', 80),
