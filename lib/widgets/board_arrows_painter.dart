@@ -129,7 +129,9 @@ class BoardArrowsPainter extends CustomPainter {
         arrow.kind == ArrowKind.weak ? _dashed(line) : line,
         paint,
       );
-      _arrowHead(canvas, line, color);
+      if (arrow.directed) {
+        _arrowHead(canvas, line, color);
+      }
     }
   }
 

@@ -102,6 +102,23 @@ void main() {
     );
   });
 
+  test('自动强链不带箭头', () {
+    final g = _boardWithDigit7Conjugates();
+    g.setMarkupMode(MarkupMode.autoStrong);
+    g.onNumberPad(7);
+    expect(g.userMarkup.arrows, isNotEmpty);
+    expect(g.userMarkup.arrows.every((a) => a.kind == ArrowKind.strong), isTrue);
+    expect(g.userMarkup.arrows.every((a) => a.directed == false), isTrue);
+  });
+
+  test('手动画的强链仍带箭头', () {
+    final g = GameState()..loadCustomGame('0' * 81);
+    g.setMarkupMode(MarkupMode.strong);
+    g.onCandidateMarkupTap(0, 0, 1);
+    g.onCandidateMarkupTap(0, 1, 1);
+    expect(g.userMarkup.arrows.single.directed, isTrue);
+  });
+
   test('已有强链再画时不设 autoStrongNotice', () {
     final g = _boardWithDigit7Conjugates();
     g.setMarkupMode(MarkupMode.autoStrong);

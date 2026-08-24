@@ -59,11 +59,15 @@ class MarkupArrow {
   /// 用户画的链带上当前标记色；提示自动生成的链留空，走主题的强/弱链色。
   final Color? color;
 
+  /// 是否绘制箭头（手动画链有方向，自动强链无方向）。
+  final bool directed;
+
   const MarkupArrow({
     required this.from,
     required this.to,
     required this.kind,
     this.color,
+    this.directed = true,
   });
 }
 
@@ -144,8 +148,17 @@ class BoardMarkup {
     ArrowKind kind,
     List<List<Set<int>>> candidates, {
     Color? color,
+    bool directed = true,
   }) {
-    arrows.add(MarkupArrow(from: from, to: to, kind: kind, color: color));
+    arrows.add(
+      MarkupArrow(
+        from: from,
+        to: to,
+        kind: kind,
+        color: color,
+        directed: directed,
+      ),
+    );
     return true;
   }
 }

@@ -634,6 +634,7 @@ class GameState extends ChangeNotifier {
         ArrowKind.strong,
         _board!.candidates,
         color: markupColor,
+        directed: false,
       )) {
         added++;
       }
