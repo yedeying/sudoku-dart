@@ -68,4 +68,23 @@ void main() {
           reason: id);
     }
   });
+
+  test('鱼类与带鳍/Franken 鱼盘面都有实质标记', () {
+    const ids = [
+      'xwing',
+      'swordfish',
+      'jellyfish',
+      'finned_xwing',
+      'finned_swordfish',
+      'finned_jellyfish',
+      'franken_fish',
+    ];
+    final map = {for (final t in TechniqueCatalog.all) t.id: t};
+    for (final id in ids) {
+      final t = map[id]!;
+      final marked = t.exampleMarkup.arrows.isNotEmpty ||
+          t.exampleMarkup.cellColors.length >= 4;
+      expect(marked, isTrue, reason: '$id 缺少足够的标记');
+    }
+  });
 }

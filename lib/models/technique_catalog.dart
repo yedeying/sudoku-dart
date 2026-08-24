@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'board_markup.dart';
 import 'teaching_colors.dart';
 import 'technique_examples_basic.dart';
+import 'technique_examples_fish.dart';
 
 class TechniqueLegendItem {
   final Color color;
@@ -50,13 +51,7 @@ class TechniqueCatalog {
   static List<TechniqueInfo> _build() {
     final items = <TechniqueInfo>[
       ...basicTechniqueExamples(),
-      _t('xwing', 'X-Wing', '某数字在两行只出现在相同两列（或对调），删这两列其它行的它。', 70),
-      _t('swordfish', 'Swordfish', 'X-Wing 的三行三列版。', 75),
-      _t('jellyfish', 'Jellyfish', '四行四列的鱼。', 80),
-      _t('finned_xwing', '带鳍 X-Wing', '差一个鳍格才成 X-Wing，只能删看得到鳍的那个候选。', 85),
-      _t('finned_swordfish', '带鳍 Swordfish', '带鳍的三鱼。', 88),
-      _t('finned_jellyfish', '带鳍 Jellyfish', '带鳍的四鱼。', 90),
-      _t('franken_fish', 'Franken/Mutant Fish', '鱼的覆盖单位不限于纯行对纯列，宫也可以当一条线。', 95),
+      ...fishTechniqueExamples(),
       _t('skyscraper', '摩天楼', '两行（或两列）上各一条强链，删同时看到两远端的该数字。', 100),
       _t('kite', '双线风筝', '一行一条强链、一列一条强链，在宫里拐一下，删远端交汇处。', 105),
       _t('empty_rect', '空矩形', '宫内某数字候选构成空心矩形，再配一条外强链来删格。', 110),
