@@ -86,13 +86,13 @@ class BoardPalette extends ThemeExtension<BoardPalette> {
     required this.weakArrow,
   });
 
-  /// 底色一律走中性灰，只有“选中 / 用户填入 / 强链”这些状态带强调色色相。
+  /// 底色一律走中性灰；选中、同数字浅底、用户填入、强链带强调色色相。
   static const BoardPalette lightPalette = BoardPalette(
     paper: Color(0xFFFFFFFF),
     paperAlt: Color(0xFFF6F6F6),
     related: Color(0xFFE9EDF3),
     selected: Color(0xFFC3D0E6),
-    sameDigit: Color(0xFFE2E2E2),
+    sameDigit: Color(0xFFD6E3F5),
     conflict: Color(0xFFF7D9D6),
     givenDigit: Color(0xFF1A1A1A),
     userDigit: Color(0xFF35507A),

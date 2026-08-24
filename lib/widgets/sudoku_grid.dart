@@ -136,6 +136,7 @@ class SudokuGrid extends StatelessWidget {
     return GestureDetector(
       onTap: readOnly ? null : () => onCellTap(row, col),
       child: Container(
+        key: ValueKey('cell-$row-$col'),
         decoration: BoxDecoration(
           color: bgColor,
           border: _getBorder(row, col, palette),
@@ -241,6 +242,7 @@ class SudokuGrid extends StatelessWidget {
             digit = _chip(chipSize, chipColor, text);
           }
           return GestureDetector(
+            key: ValueKey('cand-$row-$col-$num'),
             onTap: !isCandidate || onCandidateTap == null
                 ? null
                 : () => onCandidateTap!(row, col, num),
