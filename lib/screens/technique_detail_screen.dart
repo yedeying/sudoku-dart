@@ -14,25 +14,6 @@ class TechniqueDetailScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
-    Widget _section(String title, String body) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: theme.textTheme.titleMedium),
-              const SizedBox(height: 8),
-              Text(
-                body,
-                style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(title: Text(info.name)),
       body: Center(
@@ -110,6 +91,30 @@ class TechniqueDetailScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _section(String title, String body) {
+    return Builder(
+      builder: (context) {
+        final theme = Theme.of(context);
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: theme.textTheme.titleMedium),
+                const SizedBox(height: 8),
+                Text(
+                  body,
+                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
