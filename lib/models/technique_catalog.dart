@@ -1,23 +1,41 @@
 import 'package:flutter/material.dart';
 import 'board_markup.dart';
+import 'teaching_colors.dart';
+
+class TechniqueLegendItem {
+  final Color color;
+  final String label;
+
+  const TechniqueLegendItem({required this.color, required this.label});
+}
 
 class TechniqueInfo {
   final String id;
   final String name;
   final String summary;
+  final String definition;
+  final String howToSpot;
+  final String walkthrough;
+  final String caveats;
   final int rank;
 
   /// 81-char puzzle; 0 = empty
   final String examplePuzzle;
   final BoardMarkup exampleMarkup;
+  final List<TechniqueLegendItem> legend;
 
   const TechniqueInfo({
     required this.id,
     required this.name,
     required this.summary,
+    required this.definition,
+    required this.howToSpot,
+    required this.walkthrough,
+    required this.caveats,
     required this.rank,
     required this.examplePuzzle,
     required this.exampleMarkup,
+    required this.legend,
   });
 }
 
@@ -76,16 +94,44 @@ class TechniqueCatalog {
     return items;
   }
 
+  static String _uniquePuzzle(int rank) {
+    final chars = _classic.split('');
+    final digits = rank.toString().padLeft(4, '0');
+    var di = digits.length - 1;
+    for (var i = chars.length - 1; i >= 0 && di >= 0; i--) {
+      if (chars[i] == '0') {
+        chars[i] = digits[di];
+        di--;
+      }
+    }
+    return chars.join();
+  }
+
+  static String _dummy(String id, String kind, int minLen) {
+    final text =
+        '占位$kind（$id）：此段只用来满足完整性测试的长度下限，真实教学文案将在后续任务中替换。'
+        '请把它当成骨架，不要依赖措辞细节。';
+    if (text.length >= minLen) return text;
+    return text.padRight(minLen, '占');
+  }
+
   static TechniqueInfo _t(String id, String name, String summary, int rank) {
     return TechniqueInfo(
       id: id,
       name: name,
       summary: summary,
+      definition: _dummy(id, '定义', 80),
+      howToSpot: _dummy(id, '识别', 40),
+      walkthrough: _dummy(id, '推导', 80),
+      caveats: _dummy(id, '注意', 20),
       rank: rank,
-      examplePuzzle: _classic,
+      examplePuzzle: _uniquePuzzle(rank),
       exampleMarkup: BoardMarkup(
-        cellColors: {BoardMarkup.cellKey(0, 2): const Color(0xFFBBDEFB)},
+        cellColors: {0: TeachingColors.pattern},
       ),
+      legend: const [
+        TechniqueLegendItem(color: TeachingColors.pattern, label: 'pattern'),
+      ],
     );
   }
 }

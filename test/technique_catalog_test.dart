@@ -23,4 +23,25 @@ void main() {
     final ids = TechniqueCatalog.all.map((t) => t.id).toSet();
     expect(ids, containsAll(['aic', 'nice_loop', 'forcing_net', 'naked_quad']));
   });
+
+  test('每条技巧都有独立盘面和完整说明', () {
+    const placeholder =
+        '530070000600195000098000060800060003400803001700020006060000280000419005000080079';
+    final puzzles = <String>{};
+    for (final t in TechniqueCatalog.all) {
+      expect(t.examplePuzzle.length, 81, reason: t.id);
+      expect(t.examplePuzzle, isNot(placeholder), reason: '${t.id} 仍是占位盘');
+      expect(puzzles.add(t.examplePuzzle), isTrue, reason: '${t.id} 盘面重复');
+      expect(t.definition.length, greaterThanOrEqualTo(80), reason: t.id);
+      expect(t.howToSpot.length, greaterThanOrEqualTo(40), reason: t.id);
+      expect(t.walkthrough.length, greaterThanOrEqualTo(80), reason: t.id);
+      expect(t.caveats.length, greaterThanOrEqualTo(20), reason: t.id);
+      expect(t.legend, isNotEmpty, reason: t.id);
+      final marked = t.exampleMarkup.cellColors.isNotEmpty ||
+          t.exampleMarkup.candidateColors.isNotEmpty ||
+          t.exampleMarkup.arrows.isNotEmpty ||
+          t.exampleMarkup.struck.isNotEmpty;
+      expect(marked, isTrue, reason: '${t.id} 没有标记');
+    }
+  });
 }
