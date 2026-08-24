@@ -79,7 +79,7 @@ void main() {
       ),
     ));
 
-    const palette = BoardPalette.lightPalette;
+    final palette = AppTheme.light().extension<BoardPalette>()!;
     final cell = tester.widget<Container>(
       find.byKey(const ValueKey('cell-1-1')),
     );

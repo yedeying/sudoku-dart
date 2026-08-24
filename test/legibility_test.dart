@@ -4,6 +4,7 @@ import 'package:sudoku_app/main.dart';
 import 'package:sudoku_app/models/sudoku_board.dart';
 import 'package:sudoku_app/theme/app_theme.dart';
 import 'package:sudoku_app/theme/board_palette.dart';
+import 'package:sudoku_app/theme/theme_controller.dart';
 import 'package:sudoku_app/widgets/sudoku_grid.dart';
 
 const _puzzle = '530070000'
@@ -74,6 +75,17 @@ void main() {
         _contrast(palette.paper, palette.gridStrong),
         greaterThan(_contrast(palette.paper, palette.gridThin)),
       );
+    }
+  });
+
+  test('强调底与对照字对比度达标', () {
+    for (final id in AccentId.values) {
+      final c = ThemeController.colorFor(id);
+      for (final b in Brightness.values) {
+        final p = BoardPalette.fromAccent(b, c);
+        final fg = p.sameDigit.computeLuminance() > 0.5 ? Colors.black87 : Colors.white;
+        expect(_contrast(p.sameDigit, fg), greaterThan(4.5));
+      }
     }
   });
 

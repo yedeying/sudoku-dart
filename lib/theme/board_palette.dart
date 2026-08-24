@@ -135,6 +135,46 @@ class BoardPalette extends ThemeExtension<BoardPalette> {
     return Theme.of(context).extension<BoardPalette>() ?? lightPalette;
   }
 
+  /// Derive accent-tinted roles from [accent]; keep paper, grids, and
+  /// given/candidate glyphs neutral so markup colors stay readable.
+  static BoardPalette fromAccent(Brightness brightness, Color accent) {
+    final light = brightness == Brightness.light;
+    final base = light ? lightPalette : darkPalette;
+    final glyph = light ? accent : _withLightness(accent, 0.76);
+    return base.copyWith(
+      related: _relatedWash(accent, light: light),
+      selected: _selectedWash(accent, light: light),
+      sameDigit: _sameDigitWash(accent, light: light),
+      userDigit: glyph,
+      candidateNote: glyph,
+      strongArrow: glyph,
+    );
+  }
+
+  static Color _withLightness(Color color, double lightness) {
+    return HSLColor.fromColor(color)
+        .withLightness(lightness.clamp(0.0, 1.0))
+        .toColor();
+  }
+
+  static Color _sameDigitWash(Color accent, {required bool light}) {
+    if (light) return _withLightness(accent, 0.90);
+    // Dark wash must stay tinted (not grey) and dark enough for white glyphs.
+    for (var lightness = 0.26; lightness >= 0.10; lightness -= 0.02) {
+      final wash = _withLightness(accent, lightness);
+      if (wash.computeLuminance() < 0.175) return wash;
+    }
+    return _withLightness(accent, 0.12);
+  }
+
+  static Color _selectedWash(Color accent, {required bool light}) {
+    return _withLightness(accent, light ? 0.78 : 0.32);
+  }
+
+  static Color _relatedWash(Color accent, {required bool light}) {
+    return _withLightness(accent, light ? 0.93 : 0.20);
+  }
+
   @override
   BoardPalette copyWith({
     Color? paper,

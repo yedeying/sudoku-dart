@@ -20,13 +20,19 @@ class AppTheme {
   /// 棋盘、卡片等容器统一圆角。
   static const double radius = 18;
 
-  static ThemeData light() => _build(Brightness.light);
+  static const Color _defaultBlue = Color(0xFF1565C0);
 
-  static ThemeData dark() => _build(Brightness.dark);
+  static ThemeData light() => lightFor(_defaultBlue);
 
-  static ThemeData _build(Brightness brightness) {
+  static ThemeData dark() => darkFor(_defaultBlue);
+
+  static ThemeData lightFor(Color accent) => _build(Brightness.light, accent);
+
+  static ThemeData darkFor(Color accent) => _build(Brightness.dark, accent);
+
+  static ThemeData _build(Brightness brightness, Color accent) {
     // fromSeed remaps near-black to teal/cyan containers; build neutrals explicitly.
-    final scheme = _neutralScheme(brightness);
+    final scheme = _neutralScheme(brightness, accent);
     final base = ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
@@ -38,9 +44,7 @@ class AppTheme {
     return base.copyWith(
       scaffoldBackgroundColor: scheme.surface,
       extensions: [
-        brightness == Brightness.light
-            ? BoardPalette.lightPalette
-            : BoardPalette.darkPalette,
+        BoardPalette.fromAccent(brightness, accent),
       ],
       textTheme: text.copyWith(
         headlineLarge: text.headlineLarge?.copyWith(
@@ -156,7 +160,8 @@ class AppTheme {
   }
 
   /// Grayscale Material 3 scheme so chrome cannot pick up seed-derived teal/cyan.
-  static ColorScheme _neutralScheme(Brightness brightness) {
+  /// [accent] fills primary / primaryContainer; surfaces stay neutral.
+  static ColorScheme _neutralScheme(Brightness brightness, Color accent) {
     final light = brightness == Brightness.light;
     final onSurface = light ? seed : const Color(0xFFF5F5F5);
     final surface = light ? const Color(0xFFFAFAFA) : const Color(0xFF141414);
@@ -168,13 +173,12 @@ class AppTheme {
     final outline = light ? const Color(0xFF8A8A8A) : const Color(0xFF8A8A8A);
     final outlineVariant =
         light ? const Color(0xFFC4C4C4) : const Color(0xFF5C5C5C);
-    // 深色模式下强调色必须反相，否则深色按钮会消失在近黑的底色里。
-    final primary = light ? accent : accentDark;
-    final onPrimary = light ? Colors.white : const Color(0xFF16233A);
+    // 深色模式下强调色必须提亮，否则深色按钮会消失在近黑的底色里。
+    final primary = light ? accent : _withLightness(accent, 0.76);
+    final onPrimary = _onFor(primary);
     final primaryContainer =
-        light ? const Color(0xFFDCE4F1) : const Color(0xFF2C3D5A);
-    final onPrimaryContainer =
-        light ? const Color(0xFF16233A) : const Color(0xFFDCE4F1);
+        light ? _withLightness(accent, 0.90) : _withLightness(accent, 0.22);
+    final onPrimaryContainer = _onFor(primaryContainer);
 
     return ColorScheme(
       brightness: brightness,
@@ -212,5 +216,17 @@ class AppTheme {
       inversePrimary: light ? const Color(0xFFCCCCCC) : const Color(0xFF555555),
       surfaceTint: Colors.transparent,
     );
+  }
+
+  static Color _withLightness(Color color, double lightness) {
+    return HSLColor.fromColor(color)
+        .withLightness(lightness.clamp(0.0, 1.0))
+        .toColor();
+  }
+
+  static Color _onFor(Color background) {
+    return background.computeLuminance() > 0.183
+        ? const Color(0xFF16233A)
+        : Colors.white;
   }
 }

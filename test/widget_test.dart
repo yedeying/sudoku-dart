@@ -21,13 +21,16 @@ void main() {
     expect(find.text('摒除法（行/列/宫）'), findsOneWidget);
   });
 
-  test('强调色是低饱和深蓝，不会盖过标记调色板', () {
+  test('默认强调色是蓝色种子', () {
+    expect(
+      AppTheme.light().colorScheme.primary,
+      const Color(0xFF1565C0),
+    );
     for (final scheme in [
       AppTheme.light().colorScheme,
       AppTheme.dark().colorScheme,
     ]) {
       final hsl = HSLColor.fromColor(scheme.primary);
-      expect(hsl.saturation, lessThan(0.5), reason: '强调色饱和度需压低');
       expect(hsl.hue, greaterThan(190), reason: '色相应落在蓝色区间');
       expect(hsl.hue, lessThan(250));
     }

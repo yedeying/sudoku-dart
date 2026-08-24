@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/main_shell.dart';
 import 'models/game_state.dart';
-import 'theme/app_theme.dart';
+import 'theme/theme_controller.dart';
 
 void main() {
   runApp(const SudokuApp());
@@ -13,15 +13,24 @@ class SudokuApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => GameState(),
-      child: MaterialApp(
-        title: '数独游戏',
-        theme: AppTheme.light(),
-        darkTheme: AppTheme.dark(),
-        themeMode: ThemeMode.system,
-        home: const MainShell(),
-        debugShowCheckedModeBanner: false,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => GameState()),
+        ChangeNotifierProvider(create: (_) {
+          final c = ThemeController();
+          c.load();
+          return c;
+        }),
+      ],
+      child: Consumer<ThemeController>(
+        builder: (_, theme, __) => MaterialApp(
+          title: '数独游戏',
+          theme: theme.light,
+          darkTheme: theme.dark,
+          themeMode: ThemeMode.system,
+          home: const MainShell(),
+          debugShowCheckedModeBanner: false,
+        ),
       ),
     );
   }
