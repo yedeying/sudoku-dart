@@ -139,67 +139,85 @@ class _GameScreenState extends State<GameScreen> {
               });
             }
 
-            return LayoutBuilder(
-              builder: (context, constraints) {
-                final side = math.min(constraints.maxWidth - 32, 560.0);
-                return Stack(
+            return Stack(
+              children: [
+                Column(
                   children: [
-                    Column(
-                      children: [
-                        _buildInfoBar(gameState),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                          child: SizedBox(
-                            width: side,
-                            height: side,
-                            child: SudokuGrid(
-                              board: gameState.board!,
-                              selectedRow: gameState.displaySelectedRow,
-                              selectedCol: gameState.displaySelectedCol,
-                              // 候选显示只受这个视图开关控制；标记和提示不能偷偷打开。
-                              showCandidates: gameState.showCandidates,
-                              conflictCells: gameState.getConflictCells(),
-                              markup: gameState.displayMarkup,
-                              sameDigitCells: gameState.sameDigitHighlightCells(),
-                              sameDigitCandidates:
-                                  gameState.sameDigitHighlightCandidates(),
-                              arrowAnchor: gameState.arrowAnchor,
-                              onCellTap: (row, col) {
-                                gameState.onCellTap(row, col);
-                              },
-                              onCandidateTap: gameState.markupEnabled
-                                  ? gameState.onCandidateTap
-                                  : null,
-                            ),
-                          ),
-                        ),
-                        Flexible(
-                          child: SingleChildScrollView(
-                            child: Column(
-                              children: [
-                                _buildControlButtons(gameState),
-                                const SizedBox(height: 8),
-                                _buildNumberPad(gameState),
-                                const SizedBox(height: 16),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (_hintPanelVisible(gameState))
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        child: Material(
-                          elevation: 8,
-                          child: _buildHintPanel(gameState),
-                        ),
+                    _buildInfoBar(gameState),
+                    // 用 Expanded 把「信息条已经占掉的高度」让 LayoutBuilder
+                    // 直接量出来，棋盘按剩余宽高算尺寸，不再只看宽度——
+                    // 矮宽的横屏视口下才不会把控制区挤到溢出。
+                    Expanded(
+                      child: LayoutBuilder(
+                        builder: (context, boardArea) {
+                          const topPadding = 8.0;
+                          final side = math.min(
+                            math.min(boardArea.maxWidth - 32, 560.0),
+                            boardArea.maxHeight - topPadding,
+                          ).clamp(0.0, double.infinity);
+                          return Column(
+                            children: [
+                              Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, topPadding, 16, 0),
+                                child: SizedBox(
+                                  width: side,
+                                  height: side,
+                                  child: SudokuGrid(
+                                    board: gameState.board!,
+                                    selectedRow: gameState.displaySelectedRow,
+                                    selectedCol: gameState.displaySelectedCol,
+                                    // 候选显示只受这个视图开关控制；标记和提示不能偷偷打开。
+                                    showCandidates: gameState.showCandidates,
+                                    conflictCells: gameState.getConflictCells(),
+                                    markup: gameState.displayMarkup,
+                                    sameDigitCells:
+                                        gameState.sameDigitHighlightCells(),
+                                    sameDigitCandidates:
+                                        gameState.sameDigitHighlightCandidates(),
+                                    arrowAnchor: gameState.arrowAnchor,
+                                    onCellTap: (row, col) {
+                                      gameState.onCellTap(row, col);
+                                    },
+                                    onCandidateTap: gameState.markupEnabled
+                                        ? gameState.onCandidateTap
+                                        : null,
+                                  ),
+                                ),
+                              ),
+                              Flexible(
+                                child: SingleChildScrollView(
+                                  child: Column(
+                                    children: [
+                                      _buildControlButtons(gameState),
+                                      const SizedBox(height: 8),
+                                      _buildNumberPad(gameState),
+                                      const SizedBox(height: 16),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
+                    ),
                   ],
-                );
-              },
+                ),
+                if (_hintPanelVisible(gameState))
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: Material(
+                      elevation: 8,
+                      child: _buildHintPanel(
+                        gameState,
+                        maxHeight: MediaQuery.of(context).size.height * 0.5,
+                      ),
+                    ),
+                  ),
+              ],
             );
           },
         ),
@@ -561,7 +579,7 @@ class _GameScreenState extends State<GameScreen> {
     return phase != HintPhase.none;
   }
 
-  Widget _buildHintPanel(GameState gameState) {
+  Widget _buildHintPanel(GameState gameState, {double? maxHeight}) {
     final session = gameState.hintSession!;
     switch (session.phase) {
       case HintPhase.offerDeep:
@@ -573,6 +591,7 @@ class _GameScreenState extends State<GameScreen> {
           actionLabel: '深度搜索',
           onCancel: () => gameState.clearHintMarkup(),
           onApply: () => gameState.requestDeepSearch(),
+          maxHeight: maxHeight,
         );
       case HintPhase.failed:
         return HintPanel(
@@ -580,6 +599,7 @@ class _GameScreenState extends State<GameScreen> {
           body: '在限定深度内没有推出新的填数或删除。可以检查已填数字是否有误，或换一题继续练习。',
           cancelLabel: '知道了',
           onCancel: () => gameState.clearHintMarkup(),
+          maxHeight: maxHeight,
         );
       case HintPhase.ready:
         final hint = session.hint!;
@@ -597,6 +617,7 @@ class _GameScreenState extends State<GameScreen> {
           actionLabel: isElim ? '应用删除' : '应用本步',
           onCancel: () => gameState.clearHintMarkup(),
           onApply: () => gameState.applyHintAndAdvance(hint),
+          maxHeight: maxHeight,
         );
       case HintPhase.none:
         return const SizedBox.shrink();

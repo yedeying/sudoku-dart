@@ -8,4 +8,8 @@ class TeachingColors {
   static const elimCand = Color(0xFFC62828);
   static const pattern = Color(0xFFBBDEFB);
   static const cover = Color(0xFFC8E6C9);
+
+  /// Nishio 等反证法里「假设推导后被排空候选的矛盾格」，
+  /// 与真正的删除目标（elimCand，红）区分开，避免误读成「这就是答案」。
+  static const contradiction = Color(0xFF6A1B9A);
 }

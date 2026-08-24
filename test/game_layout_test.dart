@@ -43,4 +43,21 @@ void main() {
     expect(after, before);
     expect(find.text('应用删除').evaluate().isNotEmpty || find.text('应用本步').evaluate().isNotEmpty || find.text('应用').evaluate().isNotEmpty, isTrue);
   });
+
+  testWidgets('矮宽视口（横屏手机）下棋盘不溢出', (tester) async {
+    // 典型横屏手机：宽远大于高，高度只够勉强放下信息条 + 方形棋盘。
+    tester.view.physicalSize = const Size(844, 390);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final state = GameState()..loadCustomGame(_classic);
+    await _pumpGame(tester, state);
+
+    // 出现 RenderFlex 溢出等布局异常时 takeException 会捕获到 FlutterError。
+    expect(tester.takeException(), isNull);
+
+    final boardSize = tester.getSize(find.byType(SudokuGrid));
+    // 棋盘应保持正方形，且没有把自己撑到超出物理视口高度。
+    expect(boardSize.width, closeTo(boardSize.height, 0.5));
+    expect(boardSize.height, lessThanOrEqualTo(390));
+  });
 }

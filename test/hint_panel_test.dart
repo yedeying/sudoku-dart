@@ -21,6 +21,32 @@ void main() {
     expect(find.text('取消'), findsOneWidget);
   });
 
+  testWidgets('长正文超过高度上限时卡片本身不溢出，内容改为内部滚动', (tester) async {
+    final longBody = List.generate(60, (i) => '第 $i 行很长的提示说明文字').join('\n');
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Align(
+          alignment: Alignment.bottomCenter,
+          child: HintPanel(
+            title: '一个很长的提示',
+            body: longBody,
+            actionLabel: '应用删除',
+            onCancel: () {},
+            onApply: () {},
+            maxHeight: 200,
+          ),
+        ),
+      ),
+    ));
+
+    expect(tester.takeException(), isNull);
+    final cardHeight = tester.getSize(find.byType(Card)).height;
+    expect(cardHeight, lessThanOrEqualTo(200.5));
+    // 标题和按钮始终可见，正文被裁切在可滚动区域内。
+    expect(find.text('一个很长的提示'), findsOneWidget);
+    expect(find.text('应用删除'), findsOneWidget);
+  });
+
   test('getHint 写入 hintSession 而不依赖对话框', () {
     final g = GameState()
       ..loadCustomGame(

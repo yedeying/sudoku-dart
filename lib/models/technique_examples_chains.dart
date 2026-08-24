@@ -42,6 +42,13 @@ const _forcingLegend = [
   TechniqueLegendItem(color: TeachingColors.elimCand, label: '矛盾/删除'),
 ];
 
+const _nishioLegend = [
+  TechniqueLegendItem(color: TeachingColors.start, label: '假设'),
+  TechniqueLegendItem(color: TeachingColors.node, label: '推导中继'),
+  TechniqueLegendItem(color: TeachingColors.contradiction, label: '矛盾格（候选被排空）'),
+  TechniqueLegendItem(color: TeachingColors.elimCand, label: '删除'),
+];
+
 /// 链类通用标记：起点涂 start（绿），终点涂 end（黄），中继格涂 node（蓝），
 /// 被删除候选所在格涂 elimCell（浅黄）、候选本身涂 elimCand（红）。
 BoardMarkup _chainMarkup({
@@ -124,13 +131,22 @@ BoardMarkup _forcingMarkup({
   List<List<int>> path = const [],
   List<MarkupArrow> arrows = const [],
   List<List<int>> eliminated = const [],
+  List<int>? contradiction,
 }) {
+  // 先铺 elimCell，再让假设格/推导格/矛盾格覆盖上去：假设格即便和删除目标
+  // 同格（如 Nishio 反证），也要保住 start 的绿色，不能被压成一样的高亮。
   final cellColors = <int, Color>{
-    _ck(assumption[0], assumption[1]): TeachingColors.start,
-    for (final p in path) _ck(p[0], p[1]): TeachingColors.node,
+    for (final e in eliminated) _ck(e[0], e[1]): TeachingColors.elimCell,
   };
-  for (final e in eliminated) {
-    cellColors[_ck(e[0], e[1])] = TeachingColors.elimCell;
+  for (final p in path) {
+    cellColors[_ck(p[0], p[1])] = TeachingColors.node;
+  }
+  cellColors[_ck(assumption[0], assumption[1])] = TeachingColors.start;
+  // 矛盾格（假设推导后候选被排空的那一格）单独上色，
+  // 不能和真正被删除的候选共用红色，否则会读成「这格的答案是它」。
+  if (contradiction != null) {
+    cellColors[_ck(contradiction[0], contradiction[1])] =
+        TeachingColors.contradiction;
   }
   return BoardMarkup(
     cellColors: cellColors,
@@ -588,13 +604,12 @@ List<TechniqueInfo> chainTechniqueExamples() => [
             [7, 7],
             [7, 0],
           ],
+          contradiction: [7, 3],
           eliminated: [
-            [7, 3, 1],
-            [7, 3, 2],
-            [7, 3, 3],
+            [2, 3, 3],
           ],
         ),
-        legend: _forcingLegend,
+        legend: _nishioLegend,
       ),
       TechniqueInfo(
         id: 'forcing_chain',

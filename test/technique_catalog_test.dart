@@ -1,5 +1,21 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sudoku_app/models/sudoku_board.dart';
+import 'package:sudoku_app/models/teaching_colors.dart';
 import 'package:sudoku_app/models/technique_catalog.dart';
+import 'package:sudoku_app/services/sudoku_solver.dart';
+
+/// 在 [row],[col] 强行填入 [digit]（不经过 initial 校验），看能否推出一个完整解。
+/// 用于独立于 finder 之外，验证某个候选真的可以/不可以完成一个合法数独，
+/// 这样即使 [SudokuSolver.getHint] 在这一手牌面上不报告该技巧，也能确认
+/// 教学标记宣称的删除/结论在数学上站得住脚。
+bool _completionExists(SudokuBoard base, int row, int col, int digit) {
+  final probe = SudokuBoard(
+    board: base.board.map((r) => List<int>.from(r)).toList(),
+    initial: base.initial.map((r) => List<int>.from(r)).toList(),
+  );
+  probe.board[row][col] = digit;
+  return SudokuSolver.countSolutions(probe, limit: 1) >= 1;
+}
 
 void main() {
   test('技巧目录 rank 严格递增', () {
@@ -114,4 +130,56 @@ void main() {
           reason: '$id 应标出矩形/BUG 四个格子');
     }
   });
+
+  test(
+    '求解器抽查：elimCand 候选不可能出现在任何完整解里，'
+    '填数结论是该格唯一能完成解的数字',
+    () {
+      // GameState.getHint / 各 finder 不一定在教学盘面这一手就报出对应技巧，
+      // 所以不能用「finder 是否命中」来验证例子，而要直接用回溯求解器
+      // 检验标记宣称的数学结论：删除的候选永远凑不出完整解；
+      // 填数结论是该格所有候选里唯一能凑出完整解的那个。
+      for (final t in TechniqueCatalog.all) {
+        final board = SudokuBoard.fromString(t.examplePuzzle);
+        t.exampleMarkup.candidateColors.forEach((ref, color) {
+          if (color == TeachingColors.elimCand) {
+            expect(
+              board.get(ref.row, ref.col),
+              0,
+              reason: '${t.id}: 删除目标 (${ref.row + 1},${ref.col + 1}) '
+                  '应该是空格，不该是已填的给定数',
+            );
+            expect(
+              _completionExists(board, ref.row, ref.col, ref.num),
+              isFalse,
+              reason: '${t.id}: (${ref.row + 1},${ref.col + 1})=${ref.num} '
+                  '仍能凑出一个完整解，说明这个候选其实没被真正排除',
+            );
+          } else if (color == TeachingColors.start) {
+            expect(
+              board.get(ref.row, ref.col),
+              0,
+              reason: '${t.id}: 结论格 (${ref.row + 1},${ref.col + 1}) '
+                  '应该是空格，不该是已填的给定数',
+            );
+            expect(
+              _completionExists(board, ref.row, ref.col, ref.num),
+              isTrue,
+              reason: '${t.id}: 结论数字 ${ref.num} 在 '
+                  '(${ref.row + 1},${ref.col + 1}) 应该能凑出至少一个完整解',
+            );
+            for (final other in board.getCandidates(ref.row, ref.col)) {
+              if (other == ref.num) continue;
+              expect(
+                _completionExists(board, ref.row, ref.col, other),
+                isFalse,
+                reason: '${t.id}: (${ref.row + 1},${ref.col + 1}) 候选 '
+                    '$other 也能凑出完整解，说明 ${ref.num} 并非唯一结论',
+              );
+            }
+          }
+        });
+      }
+    },
+  );
 }
