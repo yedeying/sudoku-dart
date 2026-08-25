@@ -5,9 +5,15 @@ import '../theme/theme_controller.dart';
 
 const _labels = <AccentId, String>{
   AccentId.blue: '蓝',
+  AccentId.red: '红',
+  AccentId.green: '绿',
+  AccentId.purple: '紫',
   AccentId.teal: '青绿',
-  AccentId.amber: '琥珀',
+  AccentId.orange: '橙',
   AccentId.rose: '玫红',
+  AccentId.indigo: '靛',
+  AccentId.sky: '天蓝',
+  AccentId.gold: '金',
 };
 
 class AccentPicker extends StatelessWidget {
@@ -26,22 +32,25 @@ class AccentPicker extends StatelessWidget {
 
     return AlertDialog(
       title: const Text('强调色'),
-      content: Wrap(
-        alignment: WrapAlignment.spaceEvenly,
-        spacing: 12,
-        runSpacing: 12,
-        children: [
-          for (final id in AccentId.values)
-            _AccentSwatch(
-              id: id,
-              label: _labels[id]!,
-              selected: controller.accentId == id,
-              onTap: () async {
-                await controller.setAccent(id);
-                if (context.mounted) Navigator.pop(context);
-              },
-            ),
-        ],
+      content: SizedBox(
+        width: 280,
+        child: Wrap(
+          alignment: WrapAlignment.spaceEvenly,
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            for (final id in AccentId.values)
+              _AccentSwatch(
+                id: id,
+                label: _labels[id]!,
+                selected: controller.accentId == id,
+                onTap: () async {
+                  await controller.setAccent(id);
+                  if (context.mounted) Navigator.pop(context);
+                },
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -63,7 +72,7 @@ class _AccentSwatch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final color = ThemeController.colorFor(id);
+    final color = ThemeController.swatchFor(id);
 
     return InkWell(
       onTap: onTap,

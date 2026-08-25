@@ -182,6 +182,18 @@ class SudokuSolver {
     var jellyfish = AdvancedTechniques.findJellyfish(board);
     if (jellyfish != null) return jellyfish;
 
+    var finnedX = AdvancedTechniques.findFinnedXWing(board);
+    if (finnedX != null) return finnedX;
+
+    var finnedSf = AdvancedTechniques.findFinnedSwordfish(board);
+    if (finnedSf != null) return finnedSf;
+
+    var finnedJf = AdvancedTechniques.findFinnedJellyfish(board);
+    if (finnedJf != null) return finnedJf;
+
+    var franken = AdvancedTechniques.findFrankenFish(board);
+    if (franken != null) return franken;
+
     // 6. Wing 技巧
     var xyWing = _findXYWing(board);
     if (xyWing != null) return xyWing;
@@ -191,6 +203,9 @@ class SudokuSolver {
 
     var wWing = AdvancedTechniques.findWWing(board);
     if (wWing != null) return wWing;
+
+    var wxyz = AdvancedTechniques.findWxyzWing(board);
+    if (wxyz != null) return wxyz;
 
     var skyscraper = AdvancedTechniques.findSkyscraper(board);
     if (skyscraper != null) return skyscraper;
@@ -217,6 +232,45 @@ class SudokuSolver {
 
     var uniqueRect4 = AdvancedTechniques.findUniqueRectangleType4(board);
     if (uniqueRect4 != null) return uniqueRect4;
+
+    var bug1 = AdvancedTechniques.findBugPlusOne(board);
+    if (bug1 != null) return bug1;
+
+    var xyChain = AdvancedTechniques.findXyChain(board);
+    if (xyChain != null) return xyChain;
+
+    var aic = AdvancedTechniques.findAic(board);
+    if (aic != null) return aic;
+
+    var niceLoop = AdvancedTechniques.findNiceLoop(board);
+    if (niceLoop != null) return niceLoop;
+
+    var sueDeCoq = AdvancedTechniques.findSueDeCoq(board);
+    if (sueDeCoq != null) return sueDeCoq;
+
+    var groupedAic = AdvancedTechniques.findGroupedAic(board);
+    if (groupedAic != null) return groupedAic;
+
+    var alsXz = AdvancedTechniques.findAlsXz(board);
+    if (alsXz != null) return alsXz;
+
+    var alsXy = AdvancedTechniques.findAlsXyWing(board);
+    if (alsXy != null) return alsXy;
+
+    var deathBlossom = AdvancedTechniques.findDeathBlossom(board);
+    if (deathBlossom != null) return deathBlossom;
+
+    var kraken = AdvancedTechniques.findKrakenFish(board);
+    if (kraken != null) return kraken;
+
+    var nishio = AdvancedTechniques.findNishio(board);
+    if (nishio != null) return nishio;
+
+    var forcingChain = AdvancedTechniques.findForcingChain(board);
+    if (forcingChain != null) return forcingChain;
+
+    var forcingNet = AdvancedTechniques.findForcingNet(board);
+    if (forcingNet != null) return forcingNet;
 
     return null;
   }
@@ -353,7 +407,7 @@ class SudokuSolver {
           row: row,
           col: possibleCols[0],
           value: num,
-          technique: '行摒除',
+          technique: '摒除法（行/列/宫）',
           explanation:
               '${rowRef(row)} 上数字 $num 只能放在 ${cellRef(row, possibleCols[0])}。',
           patternCells: [
@@ -389,7 +443,7 @@ class SudokuSolver {
           row: possibleRows[0],
           col: col,
           value: num,
-          technique: '列摒除',
+          technique: '摒除法（行/列/宫）',
           explanation:
               '${colRef(col)} 上数字 $num 只能放在 ${cellRef(possibleRows[0], col)}。',
           patternCells: [
@@ -429,7 +483,7 @@ class SudokuSolver {
           row: possibleCells[0][0],
           col: possibleCells[0][1],
           value: num,
-          technique: '宫摒除',
+          technique: '摒除法（行/列/宫）',
           explanation: '${_boxLabel(boxRow, boxCol)} 上数字 $num 只能放在 '
               '${cellRef(possibleCells[0][0], possibleCells[0][1])}。',
           patternCells: [
@@ -484,7 +538,7 @@ class SudokuSolver {
           }
           if (elims.isNotEmpty) {
             return SudokuHint.elimination(
-              technique: '显性数对（${u.type}）',
+              technique: '显性数对',
               explanation:
                   '${u.label} 中 ${cellRef(cells[i][0], cells[i][1])} 和 '
                   '${cellRef(cells[j][0], cells[j][1])} 形成数对 '
@@ -536,7 +590,7 @@ class SudokuSolver {
             }
             if (elims.isNotEmpty) {
               return SudokuHint.elimination(
-                technique: '显性三数组（${u.type}）',
+                technique: '显性三数组',
                 explanation: '${u.label} 中 '
                     '${cellRef(cells[i][0], cells[i][1])}、'
                     '${cellRef(cells[j][0], cells[j][1])}、'
@@ -600,7 +654,7 @@ class SudokuSolver {
             }
             if (elims.isNotEmpty) {
               return SudokuHint.elimination(
-                technique: '宫区块（行）',
+                technique: '宫区块',
                 explanation: '${_boxLabel(boxRow, boxCol)} 里数字 $num 只落在 '
                     '${rowRef(row)} 的 ${cellsList(positions)}。'
                     '该宫的 $num 必在 ${rowRef(row)}，故 ${rowRef(row)} 宫外的 $num 可删。',
@@ -628,7 +682,7 @@ class SudokuSolver {
             }
             if (elims.isNotEmpty) {
               return SudokuHint.elimination(
-                technique: '宫区块（列）',
+                technique: '宫区块',
                 explanation: '${_boxLabel(boxRow, boxCol)} 里数字 $num 只落在 '
                     '${colRef(col)} 的 ${cellsList(positions)}。'
                     '该宫的 $num 必在 ${colRef(col)}，故 ${colRef(col)} 宫外的 $num 可删。',
@@ -680,7 +734,7 @@ class SudokuSolver {
         }
         if (elims.isNotEmpty) {
           return SudokuHint.elimination(
-            technique: '行区块',
+            technique: '行/列区块',
             explanation: '${rowRef(row)} 的数字 $num 只落在 '
                 '${_boxLabel(boxRow, boxCol)} 的 '
                 '${cols.map((c) => cellRef(row, c)).join(', ')}。'
@@ -726,7 +780,7 @@ class SudokuSolver {
         }
         if (elims.isNotEmpty) {
           return SudokuHint.elimination(
-            technique: '列区块',
+            technique: '行/列区块',
             explanation: '${colRef(col)} 的数字 $num 只落在 '
                 '${_boxLabel(boxRow, boxCol)} 的 '
                 '${rows.map((r) => cellRef(r, col)).join(', ')}。'
@@ -805,6 +859,7 @@ class SudokuSolver {
                   _strong(row1, col1, row1, col2, num),
                   _strong(row2, col1, row2, col2, num),
                 ],
+                highlightRows: [row1, row2],
               );
             }
           }
@@ -864,6 +919,7 @@ class SudokuSolver {
                   _strong(row1, col1, row2, col1, num),
                   _strong(row1, col2, row2, col2, num),
                 ],
+                highlightCols: [col1, col2],
               );
             }
           }
@@ -933,6 +989,7 @@ class SudokuSolver {
                   num,
                   fishBody(board, rows, allCols, num),
                 ),
+                highlightRows: rows,
               );
             }
           }
@@ -988,6 +1045,7 @@ class SudokuSolver {
                   num,
                   fishBody(board, allRows, cols, num),
                 ),
+                highlightCols: cols,
               );
             }
           }
@@ -1343,6 +1401,8 @@ class SudokuHint {
   final List<HintCell> patternCells;
   final List<HintCandidate> patternCandidates;
   final List<MarkupArrow> links;
+  final List<int> highlightRows;
+  final List<int> highlightCols;
 
   SudokuHint({
     required this.row,
@@ -1355,6 +1415,8 @@ class SudokuHint {
     this.patternCells = const [],
     this.patternCandidates = const [],
     this.links = const [],
+    this.highlightRows = const [],
+    this.highlightCols = const [],
   });
 
   /// 构造一个删除候选数字的提示
@@ -1365,6 +1427,8 @@ class SudokuHint {
     List<HintCell> patternCells = const [],
     List<HintCandidate> patternCandidates = const [],
     List<MarkupArrow> links = const [],
+    List<int> highlightRows = const [],
+    List<int> highlightCols = const [],
   }) {
     final first = eliminations.first;
     return SudokuHint(
@@ -1378,6 +1442,8 @@ class SudokuHint {
       patternCells: patternCells,
       patternCandidates: patternCandidates,
       links: links,
+      highlightRows: highlightRows,
+      highlightCols: highlightCols,
     );
   }
 }

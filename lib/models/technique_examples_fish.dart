@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 import 'board_markup.dart';
 import 'teaching_colors.dart';
 import 'technique_catalog.dart';
@@ -6,19 +8,21 @@ int _ck(int r, int c) => BoardMarkup.cellKey(r, c);
 CandidateRef _cr(int r, int c, int n) => CandidateRef(r, c, n);
 
 const _fishLegend = [
+  TechniqueLegendItem(color: TeachingColors.house, label: '基线'),
   TechniqueLegendItem(color: TeachingColors.pattern, label: '鱼身'),
   TechniqueLegendItem(color: TeachingColors.cover, label: '覆盖单位'),
   TechniqueLegendItem(color: TeachingColors.elimCand, label: '删除'),
 ];
 
 const _finnedFishLegend = [
+  TechniqueLegendItem(color: TeachingColors.house, label: '基线'),
   TechniqueLegendItem(color: TeachingColors.pattern, label: '鱼身'),
   TechniqueLegendItem(color: TeachingColors.cover, label: '覆盖单位'),
   TechniqueLegendItem(color: TeachingColors.elimCand, label: '删除'),
   TechniqueLegendItem(color: TeachingColors.end, label: '鳍'),
 ];
 
-/// 鱼类技巧的标记：鱼身（参与数组的候选格）涂 pattern 色，
+/// 鱼类技巧的标记：定义行/列整条淡亮，鱼身涂 pattern 色，
 /// 覆盖单位挑一个代表格涂 cover 色，删除的候选涂 elimCand 色，
 /// 带鳍的额外候选涂 end 色。
 BoardMarkup _fishMarkup({
@@ -27,18 +31,32 @@ BoardMarkup _fishMarkup({
   required List<List<int>> eliminated,
   required int digit,
   List<List<int>> fin = const [],
-}) =>
-    BoardMarkup(
-      cellColors: {
-        for (final c in pattern) _ck(c[0], c[1]): TeachingColors.pattern,
-        for (final c in cover) _ck(c[0], c[1]): TeachingColors.cover,
-        for (final c in fin) _ck(c[0], c[1]): TeachingColors.end,
-      },
-      candidateColors: {
-        for (final e in eliminated)
-          _cr(e[0], e[1], digit): TeachingColors.elimCand,
-      },
-    );
+  List<int> rows = const [],
+  List<int> cols = const [],
+}) {
+  final cellColors = <int, Color>{
+    for (final r in rows)
+      for (var c = 0; c < 9; c++) _ck(r, c): TeachingColors.house,
+    for (final c in cols)
+      for (var r = 0; r < 9; r++) _ck(r, c): TeachingColors.house,
+  };
+  for (final c in pattern) {
+    cellColors[_ck(c[0], c[1])] = TeachingColors.pattern;
+  }
+  for (final c in cover) {
+    cellColors[_ck(c[0], c[1])] = TeachingColors.cover;
+  }
+  for (final c in fin) {
+    cellColors[_ck(c[0], c[1])] = TeachingColors.end;
+  }
+  return BoardMarkup(
+    cellColors: cellColors,
+    candidateColors: {
+      for (final e in eliminated)
+        _cr(e[0], e[1], digit): TeachingColors.elimCand,
+    },
+  );
+}
 
 /// 鱼类与带鳍/Franken 鱼的七个教学盘面。
 ///
@@ -75,6 +93,7 @@ List<TechniqueInfo> fishTechniqueExamples() => [
             '400000007006030200005702900850473026000806000004020300003209800068000590000000000',
         exampleMarkup: _fishMarkup(
           digit: 6,
+          rows: [2, 6],
           pattern: [
             [2, 4],
             [2, 7],
@@ -115,6 +134,7 @@ List<TechniqueInfo> fishTechniqueExamples() => [
             '137450980000791000005800700304189500851204390209305008002508600000900000543610809',
         exampleMarkup: _fishMarkup(
           digit: 2,
+          rows: [0, 3, 8],
           pattern: [
             [0, 5],
             [0, 8],
@@ -156,6 +176,7 @@ List<TechniqueInfo> fishTechniqueExamples() => [
             '496871523103094786780306914347008169801049357900007048278413695534962871619785432',
         exampleMarkup: _fishMarkup(
           digit: 2,
+          rows: [1, 2, 3, 4],
           pattern: [
             [1, 1],
             [1, 3],
@@ -202,6 +223,7 @@ List<TechniqueInfo> fishTechniqueExamples() => [
             '089250467076948032000367589020694375934715826765823941258136794493572618607489253',
         exampleMarkup: _fishMarkup(
           digit: 1,
+          rows: [2, 3],
           pattern: [
             [2, 0],
             [2, 2],
@@ -242,6 +264,7 @@ List<TechniqueInfo> fishTechniqueExamples() => [
             '089250467076948032002067580820694375934705826065023940058036790493572608607489253',
         exampleMarkup: _fishMarkup(
           digit: 1,
+          rows: [2, 5, 6],
           pattern: [
             [2, 0],
             [2, 3],
@@ -288,6 +311,7 @@ List<TechniqueInfo> fishTechniqueExamples() => [
             '389250467076008032042007089020694375004005026065823940058006094493572608607489253',
         exampleMarkup: _fishMarkup(
           digit: 1,
+          rows: [1, 2, 4, 6],
           pattern: [
             [4, 0],
             [4, 3],
@@ -342,6 +366,7 @@ List<TechniqueInfo> fishTechniqueExamples() => [
             '500000001020600700780005000904001008000908000200500904000300017009006050600000002',
         exampleMarkup: _fishMarkup(
           digit: 2,
+          rows: [7],
           pattern: [
             [7, 3],
             [7, 4],

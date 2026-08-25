@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/sudoku_board.dart';
 import '../models/technique_catalog.dart';
 import '../widgets/sudoku_grid.dart';
@@ -8,6 +9,19 @@ class TechniqueDetailScreen extends StatelessWidget {
 
   const TechniqueDetailScreen({super.key, required this.info});
 
+  Future<void> _copyPuzzle(BuildContext context) async {
+    await Clipboard.setData(ClipboardData(text: info.copyPuzzle));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          info.copiesPracticeBoard ? '已复制练习原题' : '已复制例题',
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final board = SudokuBoard.fromString(info.examplePuzzle);
@@ -15,7 +29,16 @@ class TechniqueDetailScreen extends StatelessWidget {
     final scheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: Text(info.name)),
+      appBar: AppBar(
+        title: Text(info.name),
+        actions: [
+          IconButton(
+            tooltip: '复制例题',
+            icon: const Icon(Icons.copy_outlined),
+            onPressed: () => _copyPuzzle(context),
+          ),
+        ],
+      ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 560),
@@ -59,6 +82,14 @@ class TechniqueDetailScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () => _copyPuzzle(context),
+                      icon: const Icon(Icons.copy_outlined, size: 18),
+                      label: const Text('复制例题'),
+                    ),
+                  ),
                   Row(
                     children: [
                       Icon(
@@ -69,7 +100,9 @@ class TechniqueDetailScreen extends StatelessWidget {
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          '此页为固定示例，不对局、不自动推演。',
+                          info.copiesPracticeBoard
+                              ? '上图是结构示意。复制的是练习原题，贴入对局后连点提示可走到本技巧。'
+                              : '此页为固定示例，不对局、不自动推演。可复制盘面贴入对局。',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: scheme.onSurfaceVariant,
                           ),

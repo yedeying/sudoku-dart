@@ -184,6 +184,7 @@ class GameState extends ChangeNotifier {
         candidateAdded: !had,
       ));
       _board!.toggleUserCandidate(_selectedRow!, _selectedCol!, number);
+      _showCandidates = true;
       notifyListeners();
       return;
     }
@@ -240,8 +241,7 @@ class GameState extends ChangeNotifier {
   SudokuHint? getHint({bool deep = false}) {
     if (_board == null) return null;
 
-    final active =
-        hintSession != null && hintSession!.phase != HintPhase.none;
+    final active = hintSession != null && hintSession!.phase != HintPhase.none;
     if (active && !deep) return null;
 
     var hint = SudokuSolver.getHint(_board!);
@@ -252,6 +252,7 @@ class GameState extends ChangeNotifier {
         fromDeepSearch: deep,
         phase: HintPhase.ready,
       );
+      if (_hintUsesCandidates(hint)) _showCandidates = true;
     } else if (deep) {
       hintMarkup = null;
       hintSession = const HintSession(
@@ -282,6 +283,7 @@ class GameState extends ChangeNotifier {
     if (next == null) return;
     hintMarkup = markupFromHint(next);
     hintSession = HintSession(hint: next, phase: HintPhase.ready);
+    if (_hintUsesCandidates(next)) _showCandidates = true;
     notifyListeners();
   }
 
@@ -322,6 +324,17 @@ class GameState extends ChangeNotifier {
     final m = BoardMarkup();
     final cellRole = <int, HintRole>{};
 
+    for (final r in hint.highlightRows) {
+      for (var c = 0; c < 9; c++) {
+        m.cellColors[BoardMarkup.cellKey(r, c)] = MarkupPalette.house;
+      }
+    }
+    for (final c in hint.highlightCols) {
+      for (var r = 0; r < 9; r++) {
+        m.cellColors[BoardMarkup.cellKey(r, c)] = MarkupPalette.house;
+      }
+    }
+
     void putCell(int row, int col, HintRole role) {
       final key = BoardMarkup.cellKey(row, col);
       final prev = cellRole[key];
@@ -352,17 +365,52 @@ class GameState extends ChangeNotifier {
     return m;
   }
 
-  /// 自动应用提示（填数或删除候选），并计一次提示
-  void applyHint(SudokuHint hint) {
-    _hintsUsed++;
+  /// 当前盘面 81 位数字串（空格为 0），用于分享残局。
+  String exportPuzzle() => _board?.toStringRepresentation() ?? '';
+
+  /// 连续应用教学目录第 1 条（唯余），或第 1–2 条（唯余+摒除）。
+  /// 不计提示次数。返回填入的格子数。
+  int applySimpleFills({required bool includeHiddenSingle}) {
+    if (_board == null) return 0;
+    var filled = 0;
+    while (true) {
+      final hint = SudokuSolver.getHint(_board!);
+      if (hint == null || hint.isElimination) break;
+      final naked = hint.technique == '唯余法';
+      final hidden = hint.technique == '摒除法（行/列/宫）';
+      if (!naked && !(includeHiddenSingle && hidden)) break;
+      applyHint(hint, countHint: false);
+      filled++;
+    }
+    clearHintMarkup();
+    return filled;
+  }
+
+  /// 自动应用提示（填数或删除候选），默认计一次提示
+  void applyHint(SudokuHint hint, {bool countHint = true}) {
+    if (countHint) _hintsUsed++;
     _selectedRow = hint.row;
     _selectedCol = hint.col;
 
     if (hint.isElimination) {
+      final records = <CandidateElimUndo>[];
       for (final e in hint.eliminations) {
-        _board?.eliminateCandidate(e.row, e.col, e.num);
-        // 同步用户笔记中对应候选
+        final hadUser =
+            _board?.userCandidates[e.row][e.col].contains(e.num) ?? false;
+        final changed =
+            _board?.eliminateCandidate(e.row, e.col, e.num) ?? false;
         _board?.userCandidates[e.row][e.col].remove(e.num);
+        if (changed || hadUser) {
+          records.add(CandidateElimUndo(
+            row: e.row,
+            col: e.col,
+            num: e.num,
+            hadUserCandidate: hadUser,
+          ));
+        }
+      }
+      if (records.isNotEmpty) {
+        _addToHistory(GameMove.eliminations(records));
       }
       _showCandidates = true;
       hintMarkup = null;
@@ -398,6 +446,7 @@ class GameState extends ChangeNotifier {
   void setMarkupMode(MarkupMode mode) {
     markupMode = mode;
     arrowAnchor = null;
+    if (_markupUsesCandidates(mode)) _showCandidates = true;
     notifyListeners();
   }
 
@@ -696,8 +745,13 @@ class GameState extends ChangeNotifier {
   void undo() {
     if (!canUndo || _board == null) return;
 
+    hintMarkup = null;
+    hintSession = null;
+
     var move = _history[_historyIndex];
-    if (move.isCandidate) {
+    if (move.eliminations.isNotEmpty) {
+      _applyEliminations(move, forward: false);
+    } else if (move.isCandidate) {
       // 切换在可见集合上是自反的，再切一次即回到上一步。
       _board!.toggleUserCandidate(move.row, move.col, move.candidateNum!);
     } else {
@@ -717,9 +771,14 @@ class GameState extends ChangeNotifier {
   void redo() {
     if (!canRedo || _board == null) return;
 
+    hintMarkup = null;
+    hintSession = null;
+
     _historyIndex++;
     var move = _history[_historyIndex];
-    if (move.isCandidate) {
+    if (move.eliminations.isNotEmpty) {
+      _applyEliminations(move, forward: true);
+    } else if (move.isCandidate) {
       _board!.toggleUserCandidate(move.row, move.col, move.candidateNum!);
     } else {
       _board!.set(move.row, move.col, move.newValue);
@@ -730,6 +789,21 @@ class GameState extends ChangeNotifier {
       _justCompleted = true;
     }
     notifyListeners();
+  }
+
+  void _applyEliminations(GameMove move, {required bool forward}) {
+    for (final e in move.eliminations) {
+      if (forward) {
+        _board!.eliminateCandidate(e.row, e.col, e.num);
+        _board!.userCandidates[e.row][e.col].remove(e.num);
+      } else {
+        _board!.eliminated[e.row][e.col].remove(e.num);
+        if (e.hadUserCandidate) {
+          _board!.userCandidates[e.row][e.col].add(e.num);
+        }
+      }
+    }
+    _board!.refreshCandidates();
   }
 
   void _addToHistory(GameMove move) {
@@ -860,6 +934,15 @@ class GameState extends ChangeNotifier {
     return !canPlace;
   }
 
+  static bool _hintUsesCandidates(SudokuHint hint) =>
+      hint.isElimination || hint.patternCandidates.isNotEmpty;
+
+  static bool _markupUsesCandidates(MarkupMode mode) =>
+      mode == MarkupMode.candidateColor ||
+      mode == MarkupMode.strong ||
+      mode == MarkupMode.weak ||
+      mode == MarkupMode.autoStrong;
+
   void toggleShowCandidates() {
     _showCandidates = !_showCandidates;
     notifyListeners();
@@ -867,6 +950,7 @@ class GameState extends ChangeNotifier {
 
   void toggleCandidateMode() {
     _candidateMode = !_candidateMode;
+    if (_candidateMode) _showCandidates = true;
     notifyListeners();
   }
 
@@ -888,6 +972,20 @@ class GameState extends ChangeNotifier {
   }
 }
 
+class CandidateElimUndo {
+  final int row;
+  final int col;
+  final int num;
+  final bool hadUserCandidate;
+
+  const CandidateElimUndo({
+    required this.row,
+    required this.col,
+    required this.num,
+    required this.hadUserCandidate,
+  });
+}
+
 /// 游戏移动记录
 class GameMove {
   final int row;
@@ -897,6 +995,7 @@ class GameMove {
   final bool isCandidate;
   final int? candidateNum;
   final bool? candidateAdded;
+  final List<CandidateElimUndo> eliminations;
 
   GameMove({
     required this.row,
@@ -905,7 +1004,8 @@ class GameMove {
     required this.newValue,
   })  : isCandidate = false,
         candidateNum = null,
-        candidateAdded = null;
+        candidateAdded = null,
+        eliminations = const [];
 
   GameMove.candidate({
     required this.row,
@@ -914,5 +1014,15 @@ class GameMove {
     required this.candidateAdded,
   })  : oldValue = 0,
         newValue = 0,
-        isCandidate = true;
+        isCandidate = true,
+        eliminations = const [];
+
+  GameMove.eliminations(this.eliminations)
+      : row = 0,
+        col = 0,
+        oldValue = 0,
+        newValue = 0,
+        isCandidate = false,
+        candidateNum = null,
+        candidateAdded = null;
 }

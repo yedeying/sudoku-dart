@@ -52,9 +52,15 @@ void main() {
     await _openAccentPicker(tester);
 
     expect(find.text('蓝'), findsOneWidget);
+    expect(find.text('红'), findsOneWidget);
+    expect(find.text('绿'), findsOneWidget);
+    expect(find.text('紫'), findsOneWidget);
     expect(find.text('青绿'), findsOneWidget);
-    expect(find.text('琥珀'), findsOneWidget);
+    expect(find.text('橙'), findsOneWidget);
     expect(find.text('玫红'), findsOneWidget);
+    expect(find.text('靛'), findsOneWidget);
+    expect(find.text('天蓝'), findsOneWidget);
+    expect(find.text('金'), findsOneWidget);
   });
 
   testWidgets('点选色块会调用 setAccent', (tester) async {

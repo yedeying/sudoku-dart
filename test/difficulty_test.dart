@@ -26,8 +26,8 @@ void main() {
     });
 
     test('四数组使用独立难度分值', () {
-      expect(DifficultyAnalyzer.techniqueScores['显性四数组（行）'], 25);
-      expect(DifficultyAnalyzer.techniqueScores['隐性四数组（行）'], 30);
+      expect(DifficultyAnalyzer.techniqueScores['显性四数组'], 25);
+      expect(DifficultyAnalyzer.techniqueScores['隐性四数组'], 30);
     });
 
     test('简单难度题目验证', () {
@@ -221,8 +221,8 @@ void main() {
       }
 
       // 验证分数递增逻辑
-      expect(scores['唯余法']! < scores['显性数对（行）']!, true);
-      expect(scores['显性数对（行）']! < scores['X-Wing']!, true);
+      expect(scores['唯余法']! < scores['显性数对']!, true);
+      expect(scores['显性数对']! < scores['X-Wing']!, true);
       expect(scores['X-Wing']! < scores['XY-Wing']!, true);
 
       print('\n✓ 技巧分数系统合理\n');

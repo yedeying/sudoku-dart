@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sudoku_app/models/board_markup.dart';
 import 'package:sudoku_app/models/game_state.dart';
 import 'package:sudoku_app/models/sudoku_board.dart';
 
@@ -81,6 +82,57 @@ void main() {
       expect(board.getUserCandidates(0, 2).isEmpty, true);
 
       print('✓ 候选数清除测试通过');
+    });
+
+    test('笔记模式打开时自动显示候选', () {
+      final gameState = GameState();
+      expect(gameState.showCandidates, false);
+      gameState.toggleCandidateMode();
+      expect(gameState.candidateMode, true);
+      expect(gameState.showCandidates, true);
+    });
+
+    test('候选色和链标记打开时自动显示候选', () {
+      final gameState = GameState();
+      expect(gameState.showCandidates, false);
+      gameState.setMarkupMode(MarkupMode.candidateColor);
+      expect(gameState.showCandidates, true);
+
+      gameState.toggleShowCandidates();
+      expect(gameState.showCandidates, false);
+      gameState.setMarkupMode(MarkupMode.strong);
+      expect(gameState.showCandidates, true);
+    });
+
+    test('格色标记不自动打开候选', () {
+      final gameState = GameState();
+      gameState.setMarkupMode(MarkupMode.cellColor);
+      expect(gameState.showCandidates, false);
+    });
+
+    test('笔记模式下改候选会重新显示候选', () {
+      final gameState = GameState()
+        ..loadCustomGame(
+          '530070000600195000098000060800060003400803001700020006060000280000419005000080079',
+        )
+        ..selectCell(0, 2)
+        ..toggleCandidateMode();
+      gameState.toggleShowCandidates();
+      expect(gameState.showCandidates, false);
+      gameState.placeNumber(2);
+      expect(gameState.showCandidates, true);
+    });
+
+    test('用到候选的提示会自动显示候选', () {
+      final gameState = GameState()
+        ..loadCustomGame(
+          '530070000600195000098000060800060003400803001700020006060000280000419005000080079',
+        );
+      expect(gameState.showCandidates, false);
+      final hint = gameState.getHint();
+      expect(hint, isNotNull);
+      expect(hint!.patternCandidates, isNotEmpty);
+      expect(gameState.showCandidates, true);
     });
 
     test('GameState 候选数模式切换', () {

@@ -68,7 +68,7 @@ void main() {
 
     print('覆盖到的技巧（${covered.length} 种）: ${covered.toList()..sort()}');
     expect(covered.length, greaterThanOrEqualTo(10));
-    for (final must in ['唯余法', '宫区块（列）', '行区块']) {
+    for (final must in ['唯余法', '宫区块', '行/列区块']) {
       expect(covered, contains(must));
     }
 

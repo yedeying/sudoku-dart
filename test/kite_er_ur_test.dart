@@ -60,7 +60,7 @@ void main() {
     final hint = SudokuSolver.getHint(board);
 
     expect(hint, isNotNull);
-    expect(hint!.technique, '2-String Kite');
+    expect(hint!.technique, '双线风筝');
     expect(hint.isElimination, isTrue);
     expect(_elimKeys(hint), {'8,7,5'});
     expect(hint.links.where((a) => a.kind == ArrowKind.strong), hasLength(2));
@@ -94,7 +94,7 @@ void main() {
     final hint = SudokuSolver.getHint(board);
 
     expect(hint, isNotNull);
-    expect(hint!.technique, 'Empty Rectangle');
+    expect(hint!.technique, '空矩形');
     expect(hint.isElimination, isTrue);
     expect(_elimKeys(hint), {'5,2,5'});
   });
@@ -113,7 +113,7 @@ void main() {
     final hint = SudokuSolver.getHint(board);
 
     expect(hint, isNotNull);
-    expect(hint!.technique, 'Unique Rectangle Type 2');
+    expect(hint!.technique, '唯一矩形 Type 2');
     expect(hint.explanation, contains('题目保证唯一解'));
     expect(hint.isElimination, isTrue);
     expect(
@@ -136,6 +136,7 @@ void main() {
     _stripDigits(board, 0, 3, [3, 4, 5, 6, 7, 8, 9]);
     _stripDigits(board, 1, 0, [3, 4, 7, 8, 9]);
     _stripDigits(board, 1, 3, [3, 4, 7, 8, 9]);
+    _stripDigits(board, 1, 1, [1, 2, 3, 4, 7, 8, 9]);
     for (var col = 0; col < 9; col++) {
       if (col == 0 || col == 3) continue;
       _stripDigits(board, 0, col, [1, 2]);
@@ -144,14 +145,12 @@ void main() {
     final hint = SudokuSolver.getHint(board);
 
     expect(hint, isNotNull);
-    expect(hint!.technique, 'Unique Rectangle Type 3');
+    expect(hint!.technique, '唯一矩形 Type 3');
     expect(hint.explanation, contains('题目保证唯一解'));
     expect(hint.isElimination, isTrue);
     expect(
       _elimKeys(hint),
       {
-        '1,1,5',
-        '1,1,6',
         '1,2,5',
         '1,2,6',
         '1,4,5',
@@ -189,7 +188,7 @@ void main() {
 
     final type4 = AdvancedTechniques.findUniqueRectangleType4(board);
     expect(type4, isNotNull);
-    expect(type4!.technique, 'Unique Rectangle Type 4');
+    expect(type4!.technique, '唯一矩形 Type 4');
     expect(type4.explanation, contains('题目保证唯一解'));
     expect(type4.isElimination, isTrue);
     expect(_elimKeys(type4), {'1,0,2', '1,3,2'});

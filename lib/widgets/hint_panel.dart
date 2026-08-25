@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 class HintPanel extends StatelessWidget {
   final String title;
   final String body;
+  final String? definition;
   final String cancelLabel;
   final String? actionLabel;
   final VoidCallback onCancel;
@@ -17,6 +18,7 @@ class HintPanel extends StatelessWidget {
     super.key,
     required this.title,
     required this.body,
+    this.definition,
     this.cancelLabel = '取消',
     this.actionLabel,
     required this.onCancel,
@@ -42,7 +44,22 @@ class HintPanel extends StatelessWidget {
               const SizedBox(height: 8),
               Flexible(
                 child: SingleChildScrollView(
-                  child: Text(body, style: theme.textTheme.bodyMedium),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(body, style: theme.textTheme.bodyMedium),
+                      if (definition != null && definition!.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        Text('技巧定义', style: theme.textTheme.titleSmall),
+                        const SizedBox(height: 8),
+                        Text(
+                          definition!,
+                          style: theme.textTheme.bodyMedium
+                              ?.copyWith(height: 1.5),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 12),

@@ -114,11 +114,13 @@ class SudokuGrid extends StatelessWidget {
     bool hasConflict = conflictCells.contains(row * 9 + col);
     final cellKey = BoardMarkup.cellKey(row, col);
     final markColor = markup?.cellColors[cellKey];
+    final markWash =
+        markColor == null ? null : MarkupPalette.wash(markColor);
     final sameDigit = sameDigitCells.contains(cellKey);
 
     Color bgColor;
-    if (markColor != null) {
-      bgColor = markColor;
+    if (markWash != null) {
+      bgColor = markWash;
     } else if (hasConflict) {
       bgColor = palette.conflict;
     } else if (isSelected) {
@@ -151,8 +153,8 @@ class SudokuGrid extends StatelessWidget {
                     height: 1,
                     fontWeight: isInitial ? FontWeight.bold : FontWeight.normal,
                     // 上了色的格子按底色取对照色，不然深底深字全看不见。
-                    color: markColor != null
-                        ? (markColor.computeLuminance() > 0.5
+                    color: markWash != null
+                        ? (markWash.computeLuminance() > 0.5
                             ? Colors.black87
                             : Colors.white)
                         : isInitial
@@ -188,7 +190,8 @@ class SudokuGrid extends StatelessWidget {
 
     final palette = BoardPalette.of(context);
     final filter = markup?.filterDigit;
-    final cellWash = markup?.cellColors[BoardMarkup.cellKey(row, col)];
+    final rawCell = markup?.cellColors[BoardMarkup.cellKey(row, col)];
+    final cellWash = rawCell == null ? null : MarkupPalette.wash(rawCell);
     final fontSize = cellSize * 0.25;
     final chipSize = cellSize * 0.30;
 

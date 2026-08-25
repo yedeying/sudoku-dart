@@ -20,7 +20,7 @@ class AppTheme {
   /// 棋盘、卡片等容器统一圆角。
   static const double radius = 18;
 
-  static const Color _defaultBlue = Color(0xFF1565C0);
+  static const Color _defaultBlue = Color(0xFF42A5F5);
 
   static ThemeData light() => lightFor(_defaultBlue);
 

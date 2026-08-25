@@ -49,5 +49,7 @@ void main() {
     final hasElim = find.textContaining('删 ').evaluate().isNotEmpty;
     expect(hasFill || hasElim, isTrue);
     expect(find.textContaining('位置：第'), findsNothing);
+    expect(find.text('技巧定义'), findsOneWidget);
+    expect(find.textContaining('Naked Single'), findsOneWidget);
   });
 }

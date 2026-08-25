@@ -32,7 +32,7 @@ void main() {
 
   test('markupFromHint 按角色给格底、候选圆圈和箭头上色', () {
     final hint = SudokuHint.elimination(
-      technique: '2-String Kite',
+      technique: '双线风筝',
       explanation: 'test',
       eliminations: [CandidateElim(8, 7, 5)],
       patternCells: const [
@@ -66,5 +66,48 @@ void main() {
     expect(m.struck, contains(const CandidateRef(8, 7, 5)));
     expect(m.arrows, hasLength(1));
     expect(m.arrows.first.kind, ArrowKind.strong);
+  });
+
+  test('行向鱼把定义行整行淡亮，鱼身格仍用结构色', () {
+    final hint = SudokuHint.elimination(
+      technique: 'X-Wing',
+      explanation: 'test',
+      eliminations: [CandidateElim(0, 4, 6)],
+      patternCells: const [
+        HintCell(2, 4, HintRole.pattern),
+        HintCell(2, 7, HintRole.pattern),
+        HintCell(6, 4, HintRole.pattern),
+        HintCell(6, 7, HintRole.pattern),
+      ],
+      highlightRows: const [2, 6],
+    );
+
+    final m = GameState.markupFromHint(hint);
+    expect(m.cellColors[BoardMarkup.cellKey(2, 0)], MarkupPalette.house);
+    expect(m.cellColors[BoardMarkup.cellKey(6, 3)], MarkupPalette.house);
+    expect(m.cellColors[BoardMarkup.cellKey(2, 4)], const Color(0xFFBBDEFB));
+    expect(m.cellColors[BoardMarkup.cellKey(0, 4)], const Color(0xFFFFCDD2));
+    expect(m.cellColors.containsKey(BoardMarkup.cellKey(0, 0)), isFalse);
+  });
+
+  test('列向鱼把定义列整列淡亮', () {
+    final hint = SudokuHint.elimination(
+      technique: 'X-Wing',
+      explanation: 'test',
+      eliminations: [CandidateElim(1, 0, 4)],
+      patternCells: const [
+        HintCell(1, 2, HintRole.pattern),
+        HintCell(5, 2, HintRole.pattern),
+        HintCell(1, 7, HintRole.pattern),
+        HintCell(5, 7, HintRole.pattern),
+      ],
+      highlightCols: const [2, 7],
+    );
+
+    final m = GameState.markupFromHint(hint);
+    expect(m.cellColors[BoardMarkup.cellKey(0, 2)], MarkupPalette.house);
+    expect(m.cellColors[BoardMarkup.cellKey(8, 7)], MarkupPalette.house);
+    expect(m.cellColors[BoardMarkup.cellKey(1, 2)], const Color(0xFFBBDEFB));
+    expect(m.cellColors.containsKey(BoardMarkup.cellKey(0, 0)), isFalse);
   });
 }

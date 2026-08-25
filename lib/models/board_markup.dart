@@ -3,16 +3,21 @@ import 'package:flutter/material.dart';
 enum MarkupMode { off, cellColor, candidateColor, strong, weak, autoStrong }
 
 class MarkupPalette {
-  static const blue = Color(0xFF1565C0);
-  static const red = Color(0xFFC62828);
-  static const green = Color(0xFF2E7D32);
-  static const purple = Color(0xFF6A1B9A);
-  static const teal = Color(0xFF00838F);
-  static const orange = Color(0xFFE65100);
-  static const rose = Color(0xFFAD1457);
-  static const brown = Color(0xFF4E342E);
-  static const skyBlue = Color(0xFF4FC3F7);
-  static const gold = Color(0xFFC9A227);
+  /// 中等浅色：比旧的 800 档淡，候选圆和箭头仍分得清。
+  /// 格底请用 [wash]，不要直接铺这些颜色。
+  static const blue = Color(0xFF42A5F5);
+  static const red = Color(0xFFEF5350);
+  static const green = Color(0xFF66BB6A);
+  static const purple = Color(0xFFAB47BC);
+  static const teal = Color(0xFF26A69A);
+  static const orange = Color(0xFFFFA726);
+  static const rose = Color(0xFFEC407A);
+  static const indigo = Color(0xFF5C6BC0);
+  static const skyBlue = Color(0xFF80DEEA);
+  static const gold = Color(0xFFFFE082);
+
+  /// 鱼类基线：整行/整列的淡底，比鱼身 [pattern] 更浅。
+  static const house = Color(0xFFD6E6F2);
 
   /// 十个色相/明度都拉开的颜色，够同时标几条链而不互相冒充。
   /// 常用的蓝红绿紫排在前面，第一个也就是默认色；金黄压到最后。
@@ -24,10 +29,17 @@ class MarkupPalette {
     teal,
     orange,
     rose,
-    brown,
+    indigo,
     skyBlue,
     gold,
   ];
+
+  /// 格子底色用的淡洗，数字保持深色可读。
+  static Color wash(Color color) {
+    final hsl = HSLColor.fromColor(color);
+    if (hsl.lightness >= 0.84) return color;
+    return hsl.withLightness(0.86).toColor();
+  }
 }
 
 /// 某个格子上的一个候选数字

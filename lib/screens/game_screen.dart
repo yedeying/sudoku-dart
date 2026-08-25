@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/game_state.dart';
 import '../models/board_markup.dart';
 import '../models/notation.dart';
+import '../models/technique_catalog.dart';
 import '../services/sudoku_solver.dart';
 import '../widgets/accent_picker.dart';
 import '../widgets/sudoku_grid.dart';
@@ -45,67 +47,22 @@ class _GameScreenState extends State<GameScreen> {
       appBar: AppBar(
         title: const Text('数独游戏'),
         actions: [
-          // 计时器
-          Consumer<GameState>(
-            builder: (context, gameState, child) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.timer_outlined, size: 20),
-                      const SizedBox(width: 4),
-                      Text(
-                        gameState.getFormattedTime(),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
           IconButton(
             tooltip: '强调色',
             icon: const Icon(Icons.palette_outlined),
             onPressed: () => AccentPicker.open(context),
           ),
-          // 更多选项
           PopupMenuButton<String>(
+            tooltip: '更多',
             onSelected: (value) => _handleMenuAction(context, value),
             itemBuilder: (context) => [
               const PopupMenuItem(
-                value: 'validate',
-                child: Row(
-                  children: [
-                    Icon(Icons.check_circle_outline),
-                    SizedBox(width: 8),
-                    Text('验证答案'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'autofill',
-                child: Row(
-                  children: [
-                    Icon(Icons.auto_fix_high),
-                    SizedBox(width: 8),
-                    Text('自动填充候选'),
-                  ],
-                ),
+                value: 'copy',
+                child: Text('一键复制'),
               ),
               const PopupMenuItem(
                 value: 'reset',
-                child: Row(
-                  children: [
-                    Icon(Icons.refresh),
-                    SizedBox(width: 8),
-                    Text('重新开始'),
-                  ],
-                ),
+                child: Text('重新开始'),
               ),
             ],
           ),
@@ -170,7 +127,6 @@ class _GameScreenState extends State<GameScreen> {
                                     board: gameState.board!,
                                     selectedRow: gameState.displaySelectedRow,
                                     selectedCol: gameState.displaySelectedCol,
-                                    // 候选显示只受这个视图开关控制；标记和提示不能偷偷打开。
                                     showCandidates: gameState.showCandidates,
                                     conflictCells: gameState.getConflictCells(),
                                     markup: gameState.displayMarkup,
@@ -236,6 +192,11 @@ class _GameScreenState extends State<GameScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
+          _buildInfoItem(
+            icon: Icons.timer_outlined,
+            label: '用时',
+            value: gameState.getFormattedTime(),
+          ),
           _buildInfoItem(
             icon: Icons.signal_cellular_alt,
             label: '难度',
@@ -356,6 +317,11 @@ class _GameScreenState extends State<GameScreen> {
                 label: gameState.markupEnabled ? '标记中' : '标记',
                 onPressed: () => gameState.toggleMarkupEnabled(),
                 active: gameState.markupEnabled,
+              ),
+              _buildControlButton(
+                icon: Icons.flash_on_outlined,
+                label: '快速填充',
+                onPressed: () => _applySimpleFills(context),
               ),
             ],
           ),
@@ -617,6 +583,7 @@ class _GameScreenState extends State<GameScreen> {
         return HintPanel(
           title: title,
           body: '${hint.explanation}$chain\n\n$detail',
+          definition: TechniqueCatalog.byName(hint.technique)?.definition,
           actionLabel: isElim ? '应用删除' : '应用本步',
           onCancel: () => gameState.clearHintMarkup(),
           onApply: () => gameState.applyHintAndAdvance(hint),
@@ -637,30 +604,9 @@ class _GameScreenState extends State<GameScreen> {
     final gameState = context.read<GameState>();
 
     switch (action) {
-      case 'validate':
-        final hasConflicts = gameState.getConflictCells().isNotEmpty;
-        final isCorrect = gameState.validate();
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text(isCorrect ? '正确' : '有误'),
-            content: Text(
-              isCorrect
-                  ? '目前已填数字均与唯一解一致，继续加油！'
-                  : hasConflicts
-                      ? '存在同行/列/宫冲突，请检查红色高亮格子。'
-                      : '当前无冲突，但有数字与正确解不一致。',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('确定'),
-              ),
-            ],
-          ),
-        );
+      case 'copy':
+        _copyPuzzle(context);
         break;
-
       case 'reset':
         showDialog(
           context: context,
@@ -683,11 +629,28 @@ class _GameScreenState extends State<GameScreen> {
           ),
         );
         break;
-
-      case 'autofill':
-        _showAutoFillDialog(context, gameState);
-        break;
     }
+  }
+
+  Future<void> _copyPuzzle(BuildContext context) async {
+    final text = context.read<GameState>().exportPuzzle();
+    if (text.isEmpty) return;
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('已复制残局'), duration: Duration(seconds: 2)),
+    );
+  }
+
+  void _applySimpleFills(BuildContext context) {
+    final gameState = context.read<GameState>();
+    final n = gameState.applySimpleFills(includeHiddenSingle: true);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(n == 0 ? '没有可填的唯余或摒除' : '已用唯余/摒除填写 $n 格'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   void _showVictoryDialog(BuildContext context, GameState gameState) {
@@ -704,36 +667,6 @@ class _GameScreenState extends State<GameScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('继续'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAutoFillDialog(BuildContext context, GameState gameState) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('自动填充候选数'),
-        content: const Text('自动为所有空格填充可能的候选数字。\n\n'
-            '这将覆盖您手动设置的候选数，确定要继续吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              gameState.autoFillCandidates();
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('已自动填充所有候选数'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            },
-            child: const Text('确定'),
           ),
         ],
       ),

@@ -21,6 +21,27 @@ void main() {
     expect(find.text('取消'), findsOneWidget);
   });
 
+  testWidgets('HintPanel 在解法后面展示技巧定义', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: HintPanel(
+          title: '唯余法',
+          body: 'r1c3 只能填 4',
+          definition: '唯余法（Naked Single）指某个空格只剩下一个候选数字。',
+          actionLabel: '应用本步',
+          onCancel: () {},
+          onApply: () {},
+        ),
+      ),
+    ));
+    expect(find.text('技巧定义'), findsOneWidget);
+    expect(find.textContaining('Naked Single'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.textContaining('Naked Single')).dy,
+      greaterThan(tester.getTopLeft(find.textContaining('只能填 4')).dy),
+    );
+  });
+
   testWidgets('长正文超过高度上限时卡片本身不溢出，内容改为内部滚动', (tester) async {
     final longBody = List.generate(60, (i) => '第 $i 行很长的提示说明文字').join('\n');
     await tester.pumpWidget(MaterialApp(

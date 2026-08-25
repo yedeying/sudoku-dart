@@ -55,6 +55,7 @@ void main() {
           reason: '${t.id} walkthrough 仍用第x行第x列');
       expect(t.caveats.length, greaterThanOrEqualTo(20), reason: t.id);
       expect(t.legend, isNotEmpty, reason: t.id);
+      expect(t.copyPuzzle.length, 81, reason: t.id);
       final marked = t.exampleMarkup.cellColors.isNotEmpty ||
           t.exampleMarkup.candidateColors.isNotEmpty ||
           t.exampleMarkup.arrows.isNotEmpty ||
@@ -201,5 +202,47 @@ void main() {
         });
       }
     },
+  );
+
+  test(
+    '练习原题连点提示能走到对应技巧',
+    () {
+      void apply(SudokuBoard board, SudokuHint hint) {
+        if (hint.isElimination) {
+          for (final e in hint.eliminations) {
+            board.eliminateCandidate(e.row, e.col, e.num);
+          }
+        } else {
+          board.set(hint.row, hint.col, hint.value);
+        }
+      }
+
+      const sample = {
+        'nice_loop',
+        'wxyz_wing',
+        'sue_de_coq',
+        'death_blossom',
+        'grouped_aic',
+        'bug1',
+      };
+      for (final t in TechniqueCatalog.all) {
+        if (!sample.contains(t.id)) continue;
+        final puzzle = TechniqueCatalog.practicePuzzles[t.id];
+        if (puzzle == null) continue;
+        final board = SudokuBoard.fromString(puzzle);
+        var hit = false;
+        for (var i = 0; i < 200; i++) {
+          final hint = SudokuSolver.getHint(board);
+          if (hint == null) break;
+          if (hint.technique == t.name) {
+            hit = true;
+            break;
+          }
+          apply(board, hint);
+        }
+        expect(hit, isTrue, reason: '${t.id} 练习原题走不到 ${t.name}');
+      }
+    },
+    timeout: const Timeout(Duration(minutes: 2)),
   );
 }

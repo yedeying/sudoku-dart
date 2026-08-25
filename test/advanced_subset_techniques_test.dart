@@ -38,7 +38,7 @@ void main() {
     final hint = SudokuSolver.getHint(board);
 
     expect(hint, isNotNull);
-    expect(hint!.technique, '显性四数组（行）');
+    expect(hint!.technique, '显性四数组');
     expect(hint.isElimination, isTrue);
     expect(
       _eliminationKeys(hint),
@@ -80,7 +80,7 @@ void main() {
     final hint = SudokuSolver.getHint(board);
 
     expect(hint, isNotNull);
-    expect(hint!.technique, '隐性四数组（行）');
+    expect(hint!.technique, '隐性四数组');
     expect(hint.isElimination, isTrue);
     expect(
       _eliminationKeys(hint),

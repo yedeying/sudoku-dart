@@ -24,7 +24,7 @@ void main() {
   test('默认强调色是蓝色种子', () {
     expect(
       AppTheme.light().colorScheme.primary,
-      const Color(0xFF1565C0),
+      const Color(0xFF42A5F5),
     );
     for (final scheme in [
       AppTheme.light().colorScheme,

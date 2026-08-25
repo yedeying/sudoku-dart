@@ -97,7 +97,7 @@ class AdvancedTechniques {
         if (eliminations.isNotEmpty) {
           final sortedDigits = digits.toList()..sort();
           return SudokuHint.elimination(
-            technique: '显性四数组（${unit.type}）',
+            technique: '显性四数组',
             explanation: '${unit.label} 中 ${cellsList(quad)} '
                 '候选并集只有 ${sortedDigits.join('、')}，'
                 '这四个数字占满这些格，可从该单元其它格删除它们。',
@@ -160,7 +160,7 @@ class AdvancedTechniques {
             }
             if (elims.isNotEmpty) {
               return SudokuHint.elimination(
-                technique: '隐性数对（${u.type}）',
+                technique: '隐性数对',
                 explanation: '${u.label} 中数字 ${nums[i]} 和 ${nums[j]} 只能出现在 '
                     '${cellRef(p1[0][0], p1[0][1])} 和 '
                     '${cellRef(p1[1][0], p1[1][1])}，'
@@ -226,7 +226,7 @@ class AdvancedTechniques {
             }
             if (elims.isNotEmpty) {
               return SudokuHint.elimination(
-                technique: '隐性三数组（${u.type}）',
+                technique: '隐性三数组',
                 explanation: '${u.label} 中数字 ${nums[i]}、${nums[j]}、${nums[k]} '
                     '只能出现在 '
                     '${union.map((k) => cellRef(keyToCell[k]![0], keyToCell[k]![1])).join(', ')}，'
@@ -300,7 +300,7 @@ class AdvancedTechniques {
         if (eliminations.isNotEmpty) {
           final sortedDigits = digits.toList()..sort();
           return SudokuHint.elimination(
-            technique: '隐性四数组（${unit.type}）',
+            technique: '隐性四数组',
             explanation: '${unit.label} 中数字 ${sortedDigits.join('、')} '
                 '只可能出现在 '
                 '${positions.map((k) => cellRef(cellsByKey[k]![0], cellsByKey[k]![1])).join(', ')}，'
@@ -399,6 +399,7 @@ class AdvancedTechniques {
                   num,
                   fishBody(board, rows, allCols, num),
                 ),
+                highlightRows: rows,
               );
             }
           }
@@ -466,6 +467,7 @@ class AdvancedTechniques {
                   num,
                   fishBody(board, allRows, cols, num),
                 ),
+                highlightCols: cols,
               );
             }
           }
@@ -510,7 +512,7 @@ class AdvancedTechniques {
                 row: i2,
                 col: j2,
                 value: extraNum,
-                technique: 'Unique Rectangle Type 1',
+                technique: '唯一矩形 Type 1',
                 explanation: '题目保证唯一解。${cellRef(i, j)}, ${cellRef(i, j2)}, '
                     '${cellRef(i2, j)}, ${cellRef(i2, j2)} 形成唯一矩形，'
                     '为避免多解，${cellRef(i2, j2)} 必须填 $extraNum。',
@@ -540,7 +542,7 @@ class AdvancedTechniques {
                 row: i2,
                 col: j,
                 value: extraNum,
-                technique: 'Unique Rectangle Type 1',
+                technique: '唯一矩形 Type 1',
                 explanation: '题目保证唯一解。${cellRef(i, j)}, ${cellRef(i, j2)}, '
                     '${cellRef(i2, j)}, ${cellRef(i2, j2)} 形成唯一矩形，'
                     '为避免多解，${cellRef(i2, j)} 必须填 $extraNum。',
@@ -644,7 +646,7 @@ class AdvancedTechniques {
             }
             if (elims.isNotEmpty) {
               return SudokuHint.elimination(
-                technique: 'Unique Rectangle Type 2',
+                technique: '唯一矩形 Type 2',
                 explanation: '题目保证唯一解。四个格子形成唯一矩形，额外数字 $digit '
                     '出现在同一侧两格，可从它们共同可见处删除 $digit。',
                 eliminations: elims,
@@ -705,29 +707,22 @@ class AdvancedTechniques {
               '$r2,$c2',
             };
 
-            final virtual = <_VirtualCell>[
-              _VirtualCell(
-                extras[0][0],
-                extras[0][1],
-                board
-                    .getCandidates(extras[0][0], extras[0][1])
-                    .difference(pair),
-              ),
-              _VirtualCell(
-                extras[1][0],
-                extras[1][1],
-                board
-                    .getCandidates(extras[1][0], extras[1][1])
-                    .difference(pair),
-              ),
-            ];
-            if (virtual.any((cell) => cell.cands.isEmpty)) continue;
+            final extraDigits = {
+              ...board
+                  .getCandidates(extras[0][0], extras[0][1])
+                  .difference(pair),
+              ...board
+                  .getCandidates(extras[1][0], extras[1][1])
+                  .difference(pair),
+            };
+            if (extraDigits.isEmpty) continue;
+            final partners = <_VirtualCell>[];
             for (final cell in house) {
               final key = '${cell[0]},${cell[1]}';
               if (urKeys.contains(key) || board.get(cell[0], cell[1]) != 0) {
                 continue;
               }
-              virtual.add(
+              partners.add(
                 _VirtualCell(
                   cell[0],
                   cell[1],
@@ -736,17 +731,11 @@ class AdvancedTechniques {
               );
             }
 
-            for (var size = 2; size <= 4 && size <= virtual.length; size++) {
-              for (final combo in _combinations(virtual, size)) {
-                if (!combo.any(
-                    (c) => c.row == extras[0][0] && c.col == extras[0][1])) {
-                  continue;
-                }
-                if (!combo.any(
-                    (c) => c.row == extras[1][0] && c.col == extras[1][1])) {
-                  continue;
-                }
-                final union = <int>{};
+            // 两格额外候选只能保证「至少有一个多余数字成立」，
+            // 应合成一个虚拟格再去配数组；把它们当成两格纯多余数字会误删。
+            for (var size = 2; size <= 4 && size - 1 <= partners.length; size++) {
+              for (final combo in _combinations(partners, size - 1)) {
+                final union = {...extraDigits};
                 for (final cell in combo) {
                   union.addAll(cell.cands);
                 }
@@ -754,10 +743,16 @@ class AdvancedTechniques {
                 final comboKeys = {
                   for (final cell in combo) '${cell.row},${cell.col}',
                 };
+                final extraKeys = {
+                  for (final cell in extras) '${cell[0]},${cell[1]}',
+                };
                 final elims = <CandidateElim>[];
                 for (final cell in house) {
                   if (board.get(cell[0], cell[1]) != 0) continue;
-                  if (comboKeys.contains('${cell[0]},${cell[1]}')) continue;
+                  final key = '${cell[0]},${cell[1]}';
+                  if (comboKeys.contains(key) || extraKeys.contains(key)) {
+                    continue;
+                  }
                   for (final digit in union) {
                     if (board.getCandidates(cell[0], cell[1]).contains(digit)) {
                       elims.add(CandidateElim(cell[0], cell[1], digit));
@@ -767,7 +762,7 @@ class AdvancedTechniques {
                 if (elims.isNotEmpty) {
                   final digits = union.toList()..sort();
                   return SudokuHint.elimination(
-                    technique: 'Unique Rectangle Type 3',
+                    technique: '唯一矩形 Type 3',
                     explanation: '题目保证唯一解。唯一矩形的额外候选与同区域其它格子组成数组 '
                         '${digits.join('、')}，可删除该区域中的这些候选。',
                     eliminations: elims,
@@ -786,6 +781,15 @@ class AdvancedTechniques {
                       ..._targetCells(elims),
                     ],
                     patternCandidates: [
+                      for (final cell in extras)
+                        for (final digit in extraDigits)
+                          if (board
+                              .getCandidates(cell[0], cell[1])
+                              .contains(digit))
+                            HintCandidate(
+                              CandidateRef(cell[0], cell[1], digit),
+                              HintRole.extra,
+                            ),
                       for (final cell in combo)
                         for (final digit in cell.cands)
                           HintCandidate(
@@ -853,7 +857,7 @@ class AdvancedTechniques {
               }
               if (elims.isNotEmpty) {
                 return SudokuHint.elimination(
-                  technique: 'Unique Rectangle Type 4',
+                  technique: '唯一矩形 Type 4',
                   explanation: '题目保证唯一解。唯一矩形所在区域中数字 $conjugate 形成强链，'
                       '因此这两格可删除数字 $other。',
                   eliminations: elims,
@@ -1259,9 +1263,9 @@ class AdvancedTechniques {
         }
         if (elims.isNotEmpty) {
           return SudokuHint.elimination(
-            technique: 'Skyscraper',
+            technique: '摩天楼',
             explanation: '数字 $num 在 ${rowRef(r1)} 和 ${rowRef(r2)} 各只有两个候选，'
-                '在 ${colRef(baseCol)} 对齐形成 Skyscraper，'
+                '在 ${colRef(baseCol)} 对齐形成摩天楼，'
                 '同时看见两个屋顶处的 $num 可删。',
             eliminations: elims,
             patternCells: [
@@ -1346,9 +1350,9 @@ class AdvancedTechniques {
         }
         if (elims.isNotEmpty) {
           return SudokuHint.elimination(
-            technique: 'Skyscraper',
+            technique: '摩天楼',
             explanation: '数字 $num 在 ${colRef(c1)} 和 ${colRef(c2)} 各只有两个候选，'
-                '在 ${rowRef(baseRow)} 对齐形成 Skyscraper，'
+                '在 ${rowRef(baseRow)} 对齐形成摩天楼，'
                 '同时看见两个屋顶处的 $num 可删。',
             eliminations: elims,
             patternCells: [
@@ -1444,7 +1448,7 @@ class AdvancedTechniques {
             }
             if (elims.isNotEmpty) {
               return SudokuHint.elimination(
-                technique: '2-String Kite',
+                technique: '双线风筝',
                 explanation:
                     '数字 $digit 在 ${rowRef(row)} 和 ${colRef(col)} 各有一条强链，'
                     '同宫拐弯形成双线风筝，同时看见两个远端的 $digit 可删。',
@@ -1546,7 +1550,7 @@ class AdvancedTechniques {
                   board.getCandidates(otherRow, coverCol).contains(digit) &&
                   !(otherRow ~/ 3 == boxRow && coverCol ~/ 3 == boxCol)) {
                 return SudokuHint.elimination(
-                  technique: 'Empty Rectangle',
+                  technique: '空矩形',
                   explanation: '数字 $digit 在 ${boxRef(boxRow, boxCol)} 形成空矩形，'
                       '并与 ${colRef(linkCol)} 的强链配合，可删 '
                       '${candRef(otherRow, coverCol, digit)}。',
@@ -1596,7 +1600,7 @@ class AdvancedTechniques {
                   board.getCandidates(coverRow, otherCol).contains(digit) &&
                   !(coverRow ~/ 3 == boxRow && otherCol ~/ 3 == boxCol)) {
                 return SudokuHint.elimination(
-                  technique: 'Empty Rectangle',
+                  technique: '空矩形',
                   explanation: '数字 $digit 在 ${boxRef(boxRow, boxCol)} 形成空矩形，'
                       '并与 ${rowRef(linkRow)} 的强链配合，可删 '
                       '${candRef(coverRow, otherCol, digit)}。',
@@ -1636,6 +1640,1691 @@ class AdvancedTechniques {
     }
     return null;
   }
+
+  // ---------------------------------------------------------------------------
+  // ALS-XZ / ALS-XY-Wing（同一行/列/宫的几乎锁定集）
+  // ---------------------------------------------------------------------------
+
+  static SudokuHint? findAlsXz(SudokuBoard board) {
+    final als = _houseAls(board);
+    for (var i = 0; i < als.length; i++) {
+      for (var j = i + 1; j < als.length; j++) {
+        final a = als[i];
+        final b = als[j];
+        if (a.overlaps(b)) continue;
+        final common = a.digits.intersection(b.digits);
+        if (common.length < 2) continue;
+        for (final x in common) {
+          if (!_restrictedCommon(board, a, b, x)) continue;
+          for (final z in common) {
+            if (z == x) continue;
+            final zCells = [
+              ...a.cellsWith(board, z),
+              ...b.cellsWith(board, z),
+            ];
+            final elims = _seenByAll(board, z, zCells);
+            if (elims.isEmpty) continue;
+            return _alsXzHint(board, a, b, x, z, elims);
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  static SudokuHint? findAlsXyWing(SudokuBoard board) {
+    final als = _houseAls(board);
+    final byDigit = <int, List<_Als>>{};
+    for (final set in als) {
+      for (final digit in set.digits) {
+        byDigit.putIfAbsent(digit, () => []).add(set);
+      }
+    }
+    for (final pivot in als) {
+      for (final x in pivot.digits) {
+        for (final wingA in byDigit[x] ?? const <_Als>[]) {
+          if (identical(wingA, pivot) || pivot.overlaps(wingA)) continue;
+          if (!_restrictedCommon(board, pivot, wingA, x)) continue;
+          for (final y in pivot.digits) {
+            if (y == x) continue;
+            for (final wingB in byDigit[y] ?? const <_Als>[]) {
+              if (identical(wingB, pivot) ||
+                  identical(wingB, wingA) ||
+                  pivot.overlaps(wingB) ||
+                  wingA.overlaps(wingB)) {
+                continue;
+              }
+              if (!_restrictedCommon(board, pivot, wingB, y)) continue;
+              final zs = wingA.digits.intersection(wingB.digits);
+              for (final z in zs) {
+                if (z == x || z == y) continue;
+                final zCells = [
+                  ...wingA.cellsWith(board, z),
+                  ...wingB.cellsWith(board, z),
+                ];
+                final elims = _seenByAll(board, z, zCells);
+                if (elims.isEmpty) continue;
+                return _alsXyHint(board, pivot, wingA, wingB, x, y, z, elims);
+              }
+            }
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  static List<_Als> _houseAls(SudokuBoard board, {int maxSize = 5}) {
+    final out = <_Als>[];
+    final seen = <String>{};
+    for (final unit in _allUnits()) {
+      final empty = [
+        for (final cell in unit.cells)
+          if (board.get(cell[0], cell[1]) == 0) cell
+      ];
+      final n = empty.length;
+      if (n == 0) continue;
+      for (var mask = 1; mask < (1 << n); mask++) {
+        final cells = <List<int>>[];
+        for (var i = 0; i < n; i++) {
+          if (mask & (1 << i) != 0) cells.add(empty[i]);
+        }
+        if (cells.isEmpty || cells.length > maxSize) continue;
+        final digits = <int>{};
+        for (final cell in cells) {
+          digits.addAll(board.getCandidates(cell[0], cell[1]));
+        }
+        if (digits.length != cells.length + 1) continue;
+        final keys = {for (final cell in cells) '${cell[0]},${cell[1]}'};
+        final id = (keys.toList()..sort()).join('|');
+        if (!seen.add(id)) continue;
+        out.add(_Als(cells, digits, keys));
+      }
+    }
+    out.sort((a, b) {
+      final bySize = a.cells.length.compareTo(b.cells.length);
+      if (bySize != 0) return bySize;
+      return a.id.compareTo(b.id);
+    });
+    return out;
+  }
+
+  static bool _restrictedCommon(
+    SudokuBoard board,
+    _Als a,
+    _Als b,
+    int digit,
+  ) {
+    final aCells = a.cellsWith(board, digit);
+    final bCells = b.cellsWith(board, digit);
+    if (aCells.isEmpty || bCells.isEmpty) return false;
+    return aCells.every(
+      (left) => bCells.every(
+        (right) => _canSee(left[0], left[1], right[0], right[1]),
+      ),
+    );
+  }
+
+  static List<CandidateElim> _seenByAll(
+    SudokuBoard board,
+    int digit,
+    List<List<int>> sources,
+  ) {
+    final sourceKeys = {for (final cell in sources) '${cell[0]},${cell[1]}'};
+    final elims = <CandidateElim>[];
+    for (var row = 0; row < 9; row++) {
+      for (var col = 0; col < 9; col++) {
+        if (board.get(row, col) != 0) continue;
+        if (sourceKeys.contains('$row,$col')) continue;
+        if (!board.getCandidates(row, col).contains(digit)) continue;
+        if (sources.every((cell) => _canSee(row, col, cell[0], cell[1]))) {
+          elims.add(CandidateElim(row, col, digit));
+        }
+      }
+    }
+    return elims;
+  }
+
+  static SudokuHint _alsXzHint(
+    SudokuBoard board,
+    _Als a,
+    _Als b,
+    int x,
+    int z,
+    List<CandidateElim> elims,
+  ) {
+    final aRefs = a.cells.map((c) => cellRef(c[0], c[1])).join(', ');
+    final bRefs = b.cells.map((c) => cellRef(c[0], c[1])).join(', ');
+    final delRefs = elims.map((e) => candRef(e.row, e.col, e.num)).join(', ');
+    return SudokuHint.elimination(
+      technique: 'ALS-XZ',
+      explanation: 'ALS A（$aRefs）与 ALS B（$bRefs）以 $x 为限制公共候选，'
+          '无论 $x 落在哪一侧，Z=$z 都会出现在某个 ALS 里，因此同时看见两边所有 '
+          '$z 的 $delRefs 可删。',
+      eliminations: elims,
+      patternCells: [
+        ...hintCells(HintRole.pattern, a.cells),
+        ...hintCells(HintRole.extra, b.cells),
+        ..._targetCells(elims),
+      ],
+      patternCandidates: [
+        for (final cell in a.cells)
+          ...hintDigits(
+              HintRole.pattern, cell, board.getCandidates(cell[0], cell[1])),
+        for (final cell in b.cells)
+          ...hintDigits(
+              HintRole.extra, cell, board.getCandidates(cell[0], cell[1])),
+        ..._targetCands(elims),
+      ],
+      links: [
+        for (final left in a.cellsWith(board, x))
+          for (final right in b.cellsWith(board, x))
+            MarkupArrow(
+              from: CandidateRef(left[0], left[1], x),
+              to: CandidateRef(right[0], right[1], x),
+              kind: ArrowKind.strong,
+            ),
+      ],
+    );
+  }
+
+  static SudokuHint _alsXyHint(
+    SudokuBoard board,
+    _Als pivot,
+    _Als wingA,
+    _Als wingB,
+    int x,
+    int y,
+    int z,
+    List<CandidateElim> elims,
+  ) {
+    final pRefs = pivot.cells.map((c) => cellRef(c[0], c[1])).join(', ');
+    final aRefs = wingA.cells.map((c) => cellRef(c[0], c[1])).join(', ');
+    final bRefs = wingB.cells.map((c) => cellRef(c[0], c[1])).join(', ');
+    final delRefs = elims.map((e) => candRef(e.row, e.col, e.num)).join(', ');
+    return SudokuHint.elimination(
+      technique: 'ALS-XY-Wing',
+      explanation: '支点 ALS（$pRefs）用 $x 连接翼 A（$aRefs）、用 $y 连接翼 B（$bRefs）。'
+          '无论支点用掉 $x 还是 $y，Z=$z 都会落在某个翼里，因此同时看见两翼所有 '
+          '$z 的 $delRefs 可删。',
+      eliminations: elims,
+      patternCells: [
+        ...hintCells(HintRole.pattern, pivot.cells),
+        ...hintCells(HintRole.extra, [...wingA.cells, ...wingB.cells]),
+        ..._targetCells(elims),
+      ],
+      patternCandidates: [
+        for (final cell in pivot.cells)
+          ...hintDigits(
+              HintRole.pattern, cell, board.getCandidates(cell[0], cell[1])),
+        for (final cell in [...wingA.cells, ...wingB.cells])
+          ...hintDigits(
+              HintRole.extra, cell, board.getCandidates(cell[0], cell[1])),
+        ..._targetCands(elims),
+      ],
+      links: [
+        for (final left in pivot.cellsWith(board, x))
+          for (final right in wingA.cellsWith(board, x))
+            MarkupArrow(
+              from: CandidateRef(left[0], left[1], x),
+              to: CandidateRef(right[0], right[1], x),
+              kind: ArrowKind.strong,
+            ),
+        for (final left in pivot.cellsWith(board, y))
+          for (final right in wingB.cellsWith(board, y))
+            MarkupArrow(
+              from: CandidateRef(left[0], left[1], y),
+              to: CandidateRef(right[0], right[1], y),
+              kind: ArrowKind.strong,
+            ),
+      ],
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Grouped AIC：节点可以是同宫一行/一列的一组候选，强弱交替，两端同数字
+  // ---------------------------------------------------------------------------
+
+  static SudokuHint? findGroupedAic(SudokuBoard board) {
+    final nodes = _aicNodes(board);
+    if (nodes.isEmpty) return null;
+    final byId = {for (final n in nodes) n.id: n};
+    final strong = _aicStrong(board, nodes);
+    nodes.sort((a, b) => b.cells.length.compareTo(a.cells.length));
+
+    for (final start in nodes) {
+      var frontier = <List<String>>[
+        [start.id]
+      ];
+      var needStrong = true;
+      final seenStrong = {start.id};
+      for (var links = 0; links < 12; links++) {
+        final nextFrontier = <List<String>>[];
+        final nextSeen = <String>{};
+        for (final path in frontier) {
+          final cur = byId[path.last]!;
+          final nbrs = needStrong
+              ? (strong[cur.id] ?? const <String>{})
+              : _aicWeak(cur, nodes);
+          for (final nxtId in nbrs) {
+            if (nxtId == start.id) continue;
+            if (path.contains(nxtId)) continue;
+            final nxt = byId[nxtId]!;
+            if (needStrong &&
+                nxt.digit == start.digit &&
+                (start.cells.length > 1 || nxt.cells.length > 1)) {
+              final elims = _aicElims(board, start, nxt);
+              if (elims.isNotEmpty) {
+                return _groupedAicHint(
+                  board,
+                  [for (final id in [...path, nxtId]) byId[id]!],
+                  elims,
+                );
+              }
+            }
+            if (needStrong && seenStrong.contains(nxtId)) continue;
+            nextFrontier.add([...path, nxtId]);
+            nextSeen.add(nxtId);
+          }
+        }
+        if (needStrong) seenStrong.addAll(nextSeen);
+        if (nextFrontier.isEmpty) break;
+        frontier = nextFrontier;
+        needStrong = !needStrong;
+      }
+    }
+    return null;
+  }
+
+  static List<_AicNode> _aicNodes(SudokuBoard board) {
+    final out = <String, _AicNode>{};
+    void add(List<List<int>> cells, int digit) {
+      if (cells.isEmpty) return;
+      final node = _AicNode(cells, digit);
+      out.putIfAbsent(node.id, () => node);
+    }
+
+    for (var row = 0; row < 9; row++) {
+      for (var col = 0; col < 9; col++) {
+        if (board.get(row, col) != 0) continue;
+        for (final digit in board.getCandidates(row, col)) {
+          add([
+            [row, col]
+          ], digit);
+        }
+      }
+    }
+    for (var boxRow = 0; boxRow < 3; boxRow++) {
+      for (var boxCol = 0; boxCol < 3; boxCol++) {
+        for (var digit = 1; digit <= 9; digit++) {
+          for (var i = 0; i < 3; i++) {
+            final row = boxRow * 3 + i;
+            final cells = [
+              for (var j = 0; j < 3; j++)
+                if (board.get(row, boxCol * 3 + j) == 0 &&
+                    board.getCandidates(row, boxCol * 3 + j).contains(digit))
+                  [row, boxCol * 3 + j]
+            ];
+            if (cells.length >= 2) add(cells, digit);
+          }
+          for (var j = 0; j < 3; j++) {
+            final col = boxCol * 3 + j;
+            final cells = [
+              for (var i = 0; i < 3; i++)
+                if (board.get(boxRow * 3 + i, col) == 0 &&
+                    board.getCandidates(boxRow * 3 + i, col).contains(digit))
+                  [boxRow * 3 + i, col]
+            ];
+            if (cells.length >= 2) add(cells, digit);
+          }
+        }
+      }
+    }
+    return out.values.toList();
+  }
+
+  static Map<String, Set<String>> _aicStrong(
+    SudokuBoard board,
+    List<_AicNode> nodes,
+  ) {
+    final strong = {for (final n in nodes) n.id: <String>{}};
+    for (final house in _allUnits()) {
+      for (var digit = 1; digit <= 9; digit++) {
+        final spots = [
+          for (final cell in house.cells)
+            if (board.get(cell[0], cell[1]) == 0 &&
+                board.getCandidates(cell[0], cell[1]).contains(digit))
+              cell
+        ];
+        if (spots.length < 2) continue;
+        final spotKeys = {for (final c in spots) '${c[0]},${c[1]}'};
+        final covering = [
+          for (final n in nodes)
+            if (n.digit == digit && n.keys.difference(spotKeys).isEmpty) n
+        ];
+        for (var i = 0; i < covering.length; i++) {
+          for (var j = i + 1; j < covering.length; j++) {
+            final a = covering[i];
+            final b = covering[j];
+            if (a.overlaps(b)) continue;
+            final union = {...a.keys, ...b.keys};
+            if (union.length == spotKeys.length &&
+                union.containsAll(spotKeys)) {
+              strong[a.id]!.add(b.id);
+              strong[b.id]!.add(a.id);
+            }
+          }
+        }
+      }
+    }
+    return strong;
+  }
+
+  static Set<String> _aicWeak(_AicNode cur, List<_AicNode> nodes) {
+    final out = <String>{};
+    for (final other in nodes) {
+      if (other.id == cur.id) continue;
+      if (cur.digit == other.digit) {
+        if (cur.cells.every(
+            (a) => other.cells.every((b) => _canSee(a[0], a[1], b[0], b[1])))) {
+          out.add(other.id);
+        }
+      } else if (cur.cells.length == 1 &&
+          other.cells.length == 1 &&
+          cur.cells[0][0] == other.cells[0][0] &&
+          cur.cells[0][1] == other.cells[0][1]) {
+        out.add(other.id);
+      }
+    }
+    return out;
+  }
+
+  static List<CandidateElim> _aicElims(
+    SudokuBoard board,
+    _AicNode start,
+    _AicNode end,
+  ) {
+    final used = {...start.keys, ...end.keys};
+    final elims = <CandidateElim>[];
+    for (var row = 0; row < 9; row++) {
+      for (var col = 0; col < 9; col++) {
+        if (board.get(row, col) != 0) continue;
+        if (used.contains('$row,$col')) continue;
+        if (!board.getCandidates(row, col).contains(start.digit)) continue;
+        if (start.cells.every((c) => _canSee(row, col, c[0], c[1])) &&
+            end.cells.every((c) => _canSee(row, col, c[0], c[1]))) {
+          elims.add(CandidateElim(row, col, start.digit));
+        }
+      }
+    }
+    return elims;
+  }
+
+  static SudokuHint _groupedAicHint(
+    SudokuBoard board,
+    List<_AicNode> chain,
+    List<CandidateElim> elims,
+  ) {
+    final start = chain.first;
+    final end = chain.last;
+    final startRefs =
+        start.cells.map((c) => candRef(c[0], c[1], start.digit)).join(', ');
+    final endRefs =
+        end.cells.map((c) => candRef(c[0], c[1], end.digit)).join(', ');
+    final delRefs = elims.map((e) => candRef(e.row, e.col, e.num)).join(', ');
+    final mid = chain.skip(1).take(chain.length - 2);
+    return SudokuHint.elimination(
+      technique: 'Grouped AIC',
+      explanation: '成组节点 {$startRefs} 与 {$endRefs} 经强弱交替相连，'
+          '两端数字 ${start.digit} 至少有一处为真，因此同时看见两端的 $delRefs 可删。',
+      eliminations: elims,
+      patternCells: [
+        ...hintCells(HintRole.pattern, start.cells),
+        ...hintCells(HintRole.extra, end.cells),
+        ...hintCells(HintRole.link, [for (final node in mid) ...node.cells]),
+        ..._targetCells(elims),
+      ],
+      patternCandidates: [
+        ...hintCands(HintRole.pattern, start.digit, start.cells),
+        ...hintCands(HintRole.extra, end.digit, end.cells),
+        for (final node in mid)
+          ...hintCands(HintRole.link, node.digit, node.cells),
+        ..._targetCands(elims),
+      ],
+      links: [
+        for (var i = 0; i < chain.length - 1; i++)
+          for (final a in chain[i].cells)
+            for (final b in chain[i + 1].cells)
+              MarkupArrow(
+                from: CandidateRef(a[0], a[1], chain[i].digit),
+                to: CandidateRef(b[0], b[1], chain[i + 1].digit),
+                kind: i.isEven ? ArrowKind.strong : ArrowKind.weak,
+              ),
+      ],
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Nishio：假设一个候选，只用唯余/摒除往下推，若某格候选被排空则删除该假设
+  // ---------------------------------------------------------------------------
+
+  static SudokuHint? findNishio(SudokuBoard board) {
+    final tries = <List<int>>[];
+    for (var row = 0; row < 9; row++) {
+      for (var col = 0; col < 9; col++) {
+        if (board.get(row, col) != 0) continue;
+        final cands = board.getCandidates(row, col);
+        if (cands.length < 2 || cands.length > 3) continue;
+        for (final digit in cands) {
+          tries.add([row, col, digit]);
+        }
+      }
+    }
+    tries.sort((a, b) {
+      final bySize = board
+          .getCandidates(a[0], a[1])
+          .length
+          .compareTo(board.getCandidates(b[0], b[1]).length);
+      if (bySize != 0) return bySize;
+      return a[2].compareTo(b[2]);
+    });
+
+    for (final trial in tries) {
+      final row = trial[0];
+      final col = trial[1];
+      final digit = trial[2];
+      final work = board.copy();
+      work.set(row, col, digit);
+      final result = _propagateSingles(work);
+      if (result.contradiction == null) continue;
+      final chain = [
+        [row, col, digit],
+        ...result.path,
+      ];
+      return SudokuHint.elimination(
+        technique: 'Nishio',
+        explanation: '假设 ${candRef(row, col, digit)}'
+            '${result.path.isEmpty ? '' : ' → ${_pathText(result.path)}'}，'
+            '推到 ${cellRef(result.contradiction![0], result.contradiction![1])} '
+            '候选被排空，矛盾，因此该假设不成立，删除 '
+            '${candRef(row, col, digit)}。',
+        eliminations: [CandidateElim(row, col, digit)],
+        patternCells: [
+          HintCell(row, col, HintRole.pattern),
+          ...hintCells(HintRole.link, [
+            for (final step in result.path) [step[0], step[1]]
+          ]),
+          HintCell(
+            result.contradiction![0],
+            result.contradiction![1],
+            HintRole.extra,
+          ),
+          HintCell(row, col, HintRole.target),
+        ],
+        patternCandidates: [
+          HintCandidate(CandidateRef(row, col, digit), HintRole.pattern),
+          ..._pathCands(result.path),
+          ..._targetCands([CandidateElim(row, col, digit)]),
+        ],
+        links: _implicationArrows(chain),
+      );
+    }
+    return null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // 教学向浅层技巧：先于 Grouped AIC / ALS 报出更易懂的形态
+  // ---------------------------------------------------------------------------
+
+  static SudokuHint? findFinnedXWing(SudokuBoard board) =>
+      _findFinnedFish(board, 2, '带鳍 X-Wing');
+
+  static SudokuHint? findFinnedSwordfish(SudokuBoard board) =>
+      _findFinnedFish(board, 3, '带鳍 Swordfish');
+
+  static SudokuHint? findFinnedJellyfish(SudokuBoard board) =>
+      _findFinnedFish(board, 4, '带鳍 Jellyfish');
+
+  static SudokuHint? _findFinnedFish(
+    SudokuBoard board,
+    int size,
+    String name,
+  ) {
+    for (var digit = 1; digit <= 9; digit++) {
+      final rows = _finnedOnLines(board, size, digit, true, name);
+      if (rows != null) return rows;
+      final cols = _finnedOnLines(board, size, digit, false, name);
+      if (cols != null) return cols;
+    }
+    return null;
+  }
+
+  static List<int> _digitOnLine(
+    SudokuBoard board,
+    int line,
+    int digit, {
+    required bool byRow,
+  }) =>
+      [
+        for (var i = 0; i < 9; i++)
+          if (board.get(byRow ? line : i, byRow ? i : line) == 0 &&
+              board
+                  .getCandidates(byRow ? line : i, byRow ? i : line)
+                  .contains(digit))
+            i
+      ];
+
+  static SudokuHint? _finnedOnLines(
+    SudokuBoard board,
+    int size,
+    int digit,
+    bool byRow,
+    String name,
+  ) {
+    final lines = [for (var i = 0; i < 9; i++) i];
+    for (final base in _combinations(lines, size)) {
+      final sets = [
+        for (final line in base)
+          _digitOnLine(board, line, digit, byRow: byRow).toSet(),
+      ];
+      if (sets.any((s) => s.isEmpty)) continue;
+      for (var finIndex = 0; finIndex < size; finIndex++) {
+        final cover = <int>{};
+        var ok = true;
+        for (var i = 0; i < size; i++) {
+          if (i == finIndex) continue;
+          cover.addAll(sets[i]);
+        }
+        if (cover.length != size) continue;
+        for (var i = 0; i < size; i++) {
+          if (i == finIndex) continue;
+          if (!sets[i].every(cover.contains)) {
+            ok = false;
+            break;
+          }
+        }
+        if (!ok) continue;
+        final finned = sets[finIndex];
+        if (!cover.every(finned.contains)) continue;
+        final fins = finned.difference(cover);
+        if (fins.isEmpty) continue;
+        final finLine = base[finIndex];
+        for (final coverCross in cover) {
+          if (!fins.every((pos) => pos ~/ 3 == coverCross ~/ 3)) continue;
+          final boxLine = finLine ~/ 3;
+          final elims = <CandidateElim>[];
+          for (var i = boxLine * 3; i < boxLine * 3 + 3; i++) {
+            if (base.contains(i)) continue;
+            final row = byRow ? i : coverCross;
+            final col = byRow ? coverCross : i;
+            if (board.get(row, col) == 0 &&
+                board.getCandidates(row, col).contains(digit)) {
+              elims.add(CandidateElim(row, col, digit));
+            }
+          }
+          if (elims.isEmpty) continue;
+          final body = <List<int>>[
+            for (final line in base)
+              for (final cross in cover)
+                if (board.get(byRow ? line : cross, byRow ? cross : line) ==
+                        0 &&
+                    board
+                        .getCandidates(
+                            byRow ? line : cross, byRow ? cross : line)
+                        .contains(digit))
+                  [byRow ? line : cross, byRow ? cross : line]
+          ];
+          final finCells = [
+            for (final pos in fins)
+              [byRow ? finLine : pos, byRow ? pos : finLine]
+          ];
+          return SudokuHint.elimination(
+            technique: name,
+            explanation: '数字 $digit 在 $size 条${byRow ? '行' : '列'}上几乎构成'
+                '覆盖，多出的鳍 ${finCells.map((c) => cellRef(c[0], c[1])).join('、')} '
+                '与一条覆盖线同宫，因此该宫内这条线上的 $digit 可删。',
+            eliminations: elims,
+            patternCells: [
+              ...hintCells(HintRole.pattern, body),
+              ...hintCells(HintRole.extra, finCells),
+              ..._targetCells(elims),
+            ],
+            patternCandidates: [
+              ...hintCands(HintRole.pattern, digit, body),
+              ...hintCands(HintRole.extra, digit, finCells),
+              ..._targetCands(elims),
+            ],
+            highlightRows: byRow ? base : const [],
+            highlightCols: byRow ? const [] : base,
+          );
+        }
+      }
+    }
+    return null;
+  }
+
+  static SudokuHint? findFrankenFish(SudokuBoard board) {
+    for (var digit = 1; digit <= 9; digit++) {
+      final rowBox = _frankenLineAndBox(board, digit, true);
+      if (rowBox != null) return rowBox;
+      final colBox = _frankenLineAndBox(board, digit, false);
+      if (colBox != null) return colBox;
+    }
+    return null;
+  }
+
+  static SudokuHint? _frankenLineAndBox(
+    SudokuBoard board,
+    int digit,
+    bool byRow,
+  ) {
+    for (var line = 0; line < 9; line++) {
+      final lineCells = [
+        for (var i = 0; i < 9; i++)
+          if (board.get(byRow ? line : i, byRow ? i : line) == 0 &&
+              board
+                  .getCandidates(byRow ? line : i, byRow ? i : line)
+                  .contains(digit))
+            [byRow ? line : i, byRow ? i : line]
+      ];
+      if (lineCells.isEmpty) continue;
+      for (var boxRow = 0; boxRow < 3; boxRow++) {
+        for (var boxCol = 0; boxCol < 3; boxCol++) {
+          final boxCells = <List<int>>[];
+          var overlap = false;
+          for (var i = 0; i < 3; i++) {
+            for (var j = 0; j < 3; j++) {
+              final row = boxRow * 3 + i;
+              final col = boxCol * 3 + j;
+              if (board.get(row, col) != 0) continue;
+              if (!board.getCandidates(row, col).contains(digit)) continue;
+              if (byRow ? row == line : col == line) {
+                overlap = true;
+              } else {
+                boxCells.add([row, col]);
+              }
+            }
+          }
+          if (overlap || boxCells.isEmpty) continue;
+          final cover = {
+            for (final cell in [...lineCells, ...boxCells])
+              byRow ? cell[1] : cell[0]
+          };
+          if (cover.length != 2) continue;
+          final elims = <CandidateElim>[];
+          final boxKeys = {for (final cell in boxCells) '${cell[0]},${cell[1]}'};
+          for (final cross in cover) {
+            for (var i = 0; i < 9; i++) {
+              if (byRow ? i == line : i == line) continue;
+              final row = byRow ? i : cross;
+              final col = byRow ? cross : i;
+              if (boxKeys.contains('$row,$col')) continue;
+              if (board.get(row, col) == 0 &&
+                  board.getCandidates(row, col).contains(digit)) {
+                elims.add(CandidateElim(row, col, digit));
+              }
+            }
+          }
+          if (elims.isEmpty) continue;
+          final body = [...lineCells, ...boxCells];
+          return SudokuHint.elimination(
+            technique: 'Franken/Mutant Fish',
+            explanation: '数字 $digit 在 ${byRow ? rowRef(line) : colRef(line)} '
+                '与 ${boxRef(boxRow, boxCol)} 合起来只落在两条线上，这两条线其它位置的 '
+                '$digit 可删。',
+            eliminations: elims,
+            patternCells: [
+              ...hintCells(HintRole.pattern, body),
+              ..._targetCells(elims),
+            ],
+            patternCandidates: [
+              ...hintCands(HintRole.pattern, digit, body),
+              ..._targetCands(elims),
+            ],
+            highlightRows: byRow ? [line] : const [],
+            highlightCols: byRow ? const [] : [line],
+          );
+        }
+      }
+    }
+    return null;
+  }
+
+  static SudokuHint? findWxyzWing(SudokuBoard board) {
+    for (var pRow = 0; pRow < 9; pRow++) {
+      for (var pCol = 0; pCol < 9; pCol++) {
+        if (board.get(pRow, pCol) != 0) continue;
+        final pivot = {...board.getCandidates(pRow, pCol)};
+        if (pivot.length != 4) continue;
+        final wings = <({int row, int col, Set<int> cands})>[];
+        for (var row = 0; row < 9; row++) {
+          for (var col = 0; col < 9; col++) {
+            if (row == pRow && col == pCol) continue;
+            if (board.get(row, col) != 0) continue;
+            final cands = {...board.getCandidates(row, col)};
+            if (cands.length != 2) continue;
+            if (!cands.every(pivot.contains)) continue;
+            if (!_canSee(pRow, pCol, row, col)) continue;
+            wings.add((row: row, col: col, cands: cands));
+          }
+        }
+        for (var i = 0; i < wings.length; i++) {
+          for (var j = i + 1; j < wings.length; j++) {
+            for (var k = j + 1; k < wings.length; k++) {
+              final triple = [wings[i], wings[j], wings[k]];
+              final common = pivot.intersection(triple[0].cands)
+                  .intersection(triple[1].cands)
+                  .intersection(triple[2].cands);
+              if (common.length != 1) continue;
+              final z = common.single;
+              final wingDigits = {
+                for (final wing in triple) ...wing.cands,
+              };
+              final needed = pivot.difference({z});
+              final covered = wingDigits.difference({z});
+              if (covered.length != needed.length ||
+                  !covered.containsAll(needed)) {
+                continue;
+              }
+              final cells = [
+                [pRow, pCol],
+                ...triple.map((w) => [w.row, w.col]),
+              ];
+              final elims = _seenByAll(board, z, cells);
+              if (elims.isEmpty) continue;
+              return SudokuHint.elimination(
+                technique: 'WXYZ-Wing',
+                explanation: '${cellRef(pRow, pCol)} 是四值支点，三翼 '
+                    '${triple.map((w) => cellRef(w.row, w.col)).join('、')} '
+                    '都含 $z，四格中 $z 必有其一，同时看见这四格处的 $z 可删。',
+                eliminations: elims,
+                patternCells: [
+                  HintCell(pRow, pCol, HintRole.extra),
+                  ...hintCells(HintRole.pattern, [
+                    for (final wing in triple) [wing.row, wing.col]
+                  ]),
+                  ..._targetCells(elims),
+                ],
+                patternCandidates: [
+                  ...hintDigits(HintRole.extra, [pRow, pCol], pivot),
+                  ...[
+                    for (final wing in triple)
+                      ...hintDigits(
+                          HintRole.pattern, [wing.row, wing.col], wing.cands)
+                  ],
+                  ..._targetCands(elims),
+                ],
+                links: [
+                  for (final wing in triple)
+                    MarkupArrow(
+                      from: CandidateRef(pRow, pCol, z),
+                      to: CandidateRef(wing.row, wing.col, z),
+                      kind: ArrowKind.weak,
+                    ),
+                ],
+              );
+            }
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  static SudokuHint? findBugPlusOne(SudokuBoard board) {
+    final triples = <List<int>>[];
+    for (var row = 0; row < 9; row++) {
+      for (var col = 0; col < 9; col++) {
+        if (board.get(row, col) != 0) continue;
+        final n = board.getCandidates(row, col).length;
+        if (n == 3) {
+          triples.add([row, col]);
+        } else if (n != 2) {
+          return null;
+        }
+      }
+    }
+    if (triples.length != 1) return null;
+    final row = triples[0][0];
+    final col = triples[0][1];
+    final cands = board.getCandidates(row, col);
+    int? fill;
+    for (final digit in cands) {
+      if (_bugCount(board, row, true, digit).isOdd &&
+          _bugCount(board, col, false, digit).isOdd &&
+          _bugBoxCount(board, row, col, digit).isOdd) {
+        fill = digit;
+        break;
+      }
+    }
+    if (fill == null) return null;
+    return SudokuHint(
+      row: row,
+      col: col,
+      value: fill,
+      technique: 'BUG+1',
+      explanation: '${cellRef(row, col)} 是盘面唯一的非双值格。候选 $fill '
+          '在其所在行、列、宫都出现奇数次；若填其余候选会退化成双值墓地、题目多解，'
+          '因此这里必须填 $fill。',
+      patternCells: [HintCell(row, col, HintRole.pattern)],
+      patternCandidates: [
+        HintCandidate(CandidateRef(row, col, fill), HintRole.pattern),
+      ],
+    );
+  }
+
+  static int _bugCount(SudokuBoard board, int line, bool byRow, int digit) {
+    var n = 0;
+    for (var i = 0; i < 9; i++) {
+      final row = byRow ? line : i;
+      final col = byRow ? i : line;
+      if (board.get(row, col) == 0 &&
+          board.getCandidates(row, col).contains(digit)) {
+        n++;
+      }
+    }
+    return n;
+  }
+
+  static int _bugBoxCount(SudokuBoard board, int row, int col, int digit) {
+    var n = 0;
+    final br = (row ~/ 3) * 3;
+    final bc = (col ~/ 3) * 3;
+    for (var i = 0; i < 3; i++) {
+      for (var j = 0; j < 3; j++) {
+        final r = br + i;
+        final c = bc + j;
+        if (board.get(r, c) == 0 &&
+            board.getCandidates(r, c).contains(digit)) {
+          n++;
+        }
+      }
+    }
+    return n;
+  }
+
+  static SudokuHint? findXyChain(SudokuBoard board) =>
+      _findCellAic(board, bivalueOnly: true, requireCycle: false, name: 'XY-Chain');
+
+  static SudokuHint? findAic(SudokuBoard board) =>
+      _findCellAic(board, bivalueOnly: false, requireCycle: false, name: 'AIC 开链');
+
+  static SudokuHint? findNiceLoop(SudokuBoard board) => _findCellAic(
+        board,
+        bivalueOnly: false,
+        requireCycle: true,
+        name: 'Nice Loop / AIC 环',
+      );
+
+  static SudokuHint? _findCellAic(
+    SudokuBoard board, {
+    required bool bivalueOnly,
+    required bool requireCycle,
+    required String name,
+  }) {
+    final nodes = <String, List<int>>{};
+    void add(int row, int col, int digit) {
+      nodes['$row,$col,$digit'] = [row, col, digit];
+    }
+
+    for (var row = 0; row < 9; row++) {
+      for (var col = 0; col < 9; col++) {
+        if (board.get(row, col) != 0) continue;
+        final cands = board.getCandidates(row, col);
+        if (bivalueOnly && cands.length != 2) continue;
+        for (final digit in cands) {
+          add(row, col, digit);
+        }
+      }
+    }
+    if (nodes.isEmpty) return null;
+
+    final strong = {for (final id in nodes.keys) id: <String>{}};
+    final weak = {for (final id in nodes.keys) id: <String>{}};
+
+    void link(Map<String, Set<String>> map, String a, String b) {
+      if (a == b) return;
+      if (!nodes.containsKey(a) || !nodes.containsKey(b)) return;
+      map[a]!.add(b);
+      map[b]!.add(a);
+    }
+
+    for (var row = 0; row < 9; row++) {
+      for (var col = 0; col < 9; col++) {
+        if (board.get(row, col) != 0) continue;
+        final cands = board.getCandidates(row, col).toList();
+        if (bivalueOnly && cands.length != 2) continue;
+        for (var i = 0; i < cands.length; i++) {
+          for (var j = i + 1; j < cands.length; j++) {
+            final a = '$row,$col,${cands[i]}';
+            final b = '$row,$col,${cands[j]}';
+            link(weak, a, b);
+            if (cands.length == 2) link(strong, a, b);
+          }
+        }
+      }
+    }
+
+    for (final house in _allUnits()) {
+      for (var digit = 1; digit <= 9; digit++) {
+        final allSpots = [
+          for (final cell in house.cells)
+            if (board.get(cell[0], cell[1]) == 0 &&
+                board.getCandidates(cell[0], cell[1]).contains(digit))
+              cell
+        ];
+        final spots = [
+          for (final cell in allSpots)
+            if (nodes.containsKey('${cell[0]},${cell[1]},$digit')) cell
+        ];
+        for (var i = 0; i < spots.length; i++) {
+          for (var j = i + 1; j < spots.length; j++) {
+            final a = '${spots[i][0]},${spots[i][1]},$digit';
+            final b = '${spots[j][0]},${spots[j][1]},$digit';
+            link(weak, a, b);
+            if (allSpots.length == 2) link(strong, a, b);
+          }
+        }
+      }
+    }
+
+    for (final startId in nodes.keys) {
+      final start = nodes[startId]!;
+      var frontier = [
+        for (final nxt in strong[startId]!) [nxt]
+      ];
+      final seen = {startId};
+      var needStrong = false;
+      for (var links = 1; links < 14; links++) {
+        final nextFrontier = <List<String>>[];
+        final nextSeen = <String>{};
+        for (final path in frontier) {
+          final curId = path.last;
+          final nbrs = needStrong ? strong[curId]! : weak[curId]!;
+          for (final nxtId in nbrs) {
+            if (nxtId == startId) continue;
+            if (seen.contains(nxtId)) continue;
+            final nxt = nodes[nxtId]!;
+            if (needStrong && nxt[2] == start[2] &&
+                (nxt[0] != start[0] || nxt[1] != start[1])) {
+              final closes = weak[nxtId]!.contains(startId);
+              if (requireCycle != closes) continue;
+              final elims = _seenByAll(board, start[2], [
+                [start[0], start[1]],
+                [nxt[0], nxt[1]],
+              ]);
+              if (elims.isNotEmpty) {
+                final chain = <List<int>>[
+                  start,
+                  for (final id in path) nodes[id]!,
+                  nxt,
+                ];
+                return SudokuHint.elimination(
+                  technique: name,
+                  explanation: '${candRef(start[0], start[1], start[2])} 与 '
+                      '${candRef(nxt[0], nxt[1], nxt[2])} 经强弱交替相连，'
+                      '两端数字 ${start[2]} 至少有一处为真，同时看见两端的候选可删。\n'
+                      '${_aicNotation(chain, cycle: requireCycle)}',
+                  eliminations: elims,
+                  patternCells: [
+                    HintCell(start[0], start[1], HintRole.pattern),
+                    HintCell(nxt[0], nxt[1], HintRole.extra),
+                    ...hintCells(
+                      HintRole.link,
+                      [
+                        for (final node in chain.skip(1).take(chain.length - 2))
+                          [node[0], node[1]]
+                      ],
+                    ),
+                    ..._targetCells(elims),
+                  ],
+                  patternCandidates: [
+                    for (var i = 0; i < chain.length; i++)
+                      HintCandidate(
+                        CandidateRef(chain[i][0], chain[i][1], chain[i][2]),
+                        i == 0
+                            ? HintRole.pattern
+                            : i == chain.length - 1
+                                ? HintRole.extra
+                                : HintRole.link,
+                      ),
+                    ..._targetCands(elims),
+                  ],
+                  links: _aicArrows(chain, cycle: requireCycle),
+                );
+              }
+            }
+            nextFrontier.add([...path, nxtId]);
+            nextSeen.add(nxtId);
+          }
+        }
+        if (nextFrontier.isEmpty) break;
+        seen.addAll(nextSeen);
+        frontier = nextFrontier;
+        needStrong = !needStrong;
+      }
+    }
+    return null;
+  }
+
+  static SudokuHint? findSueDeCoq(SudokuBoard board) {
+    for (var boxRow = 0; boxRow < 3; boxRow++) {
+      for (var boxCol = 0; boxCol < 3; boxCol++) {
+        final boxCells = [
+          for (var i = 0; i < 3; i++)
+            for (var j = 0; j < 3; j++) [boxRow * 3 + i, boxCol * 3 + j]
+        ];
+        final lines = <List<List<int>>>[
+          for (var i = 0; i < 3; i++)
+            [
+              for (var col = 0; col < 9; col++) [boxRow * 3 + i, col]
+            ],
+          for (var j = 0; j < 3; j++)
+            [
+              for (var row = 0; row < 9; row++) [row, boxCol * 3 + j]
+            ],
+        ];
+        for (final line in lines) {
+          final inter = [
+            for (final cell in boxCells)
+              if (line.any((c) => c[0] == cell[0] && c[1] == cell[1]) &&
+                  board.get(cell[0], cell[1]) == 0)
+                cell
+          ];
+          if (inter.length < 2 || inter.length > 3) continue;
+          final digits = <int>{
+            for (final cell in inter)
+              ...board.getCandidates(cell[0], cell[1])
+          };
+          if (digits.length < inter.length + 2) continue;
+          final boxOut = [
+            for (final cell in boxCells)
+              if (board.get(cell[0], cell[1]) == 0 &&
+                  !inter.any((c) => c[0] == cell[0] && c[1] == cell[1]))
+                cell
+          ];
+          final lineOut = [
+            for (final cell in line)
+              if (board.get(cell[0], cell[1]) == 0 &&
+                  !inter.any((c) => c[0] == cell[0] && c[1] == cell[1]))
+                cell
+          ];
+          final digitList = digits.toList()..sort();
+          for (var mask = 1; mask < (1 << digitList.length) - 1; mask++) {
+            final pileA = <int>{
+              for (var i = 0; i < digitList.length; i++)
+                if (mask & (1 << i) != 0) digitList[i]
+            };
+            if (pileA.length < 2) continue;
+            final pileB = digits.difference(pileA);
+            if (pileB.length < 2) continue;
+            final coverA = _exactCover(board, boxOut, pileA);
+            if (coverA == null) continue;
+            final coverB = _exactCover(board, lineOut, pileB);
+            if (coverB == null) continue;
+            final elims = <CandidateElim>[];
+            final skipA = {
+              for (final cell in [...inter, ...coverA]) '${cell[0]},${cell[1]}'
+            };
+            final skipB = {
+              for (final cell in [...inter, ...coverB]) '${cell[0]},${cell[1]}'
+            };
+            for (final cell in boxCells) {
+              if (skipA.contains('${cell[0]},${cell[1]}')) continue;
+              if (board.get(cell[0], cell[1]) != 0) continue;
+              for (final digit in pileA) {
+                if (board.getCandidates(cell[0], cell[1]).contains(digit)) {
+                  elims.add(CandidateElim(cell[0], cell[1], digit));
+                }
+              }
+            }
+            for (final cell in line) {
+              if (skipB.contains('${cell[0]},${cell[1]}')) continue;
+              if (board.get(cell[0], cell[1]) != 0) continue;
+              for (final digit in pileB) {
+                if (board.getCandidates(cell[0], cell[1]).contains(digit)) {
+                  elims.add(CandidateElim(cell[0], cell[1], digit));
+                }
+              }
+            }
+            if (elims.isEmpty) continue;
+            return SudokuHint.elimination(
+              technique: 'Sue de Coq',
+              explanation:
+                  '${inter.map((c) => cellRef(c[0], c[1])).join('、')} 把候选拆成 '
+                  '${(pileA.toList()..sort()).join('、')} 与 '
+                  '${(pileB.toList()..sort()).join('、')}，分别由宫内、线上的'
+                  '几乎锁定集消化，这两堆数字在对应区域的其它格子可删。',
+              eliminations: elims,
+              patternCells: [
+                ...hintCells(HintRole.extra, inter),
+                ...hintCells(HintRole.pattern, [...coverA, ...coverB]),
+                ..._targetCells(elims),
+              ],
+              patternCandidates: [
+                for (final cell in inter)
+                  ...hintDigits(
+                    HintRole.extra,
+                    cell,
+                    board.getCandidates(cell[0], cell[1]),
+                  ),
+                for (final cell in [...coverA, ...coverB])
+                  ...hintDigits(
+                    HintRole.pattern,
+                    cell,
+                    board.getCandidates(cell[0], cell[1]),
+                  ),
+                ..._targetCands(elims),
+              ],
+            );
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  static List<List<int>>? _exactCover(
+    SudokuBoard board,
+    List<List<int>> cells,
+    Set<int> target,
+  ) {
+    final useful = [
+      for (final cell in cells)
+        if (board.getCandidates(cell[0], cell[1]).isNotEmpty &&
+            board.getCandidates(cell[0], cell[1]).every(target.contains))
+          cell
+    ];
+    for (final size in {target.length - 1, target.length}) {
+      if (size < 1 || size > useful.length) continue;
+      for (final combo in _combinations(useful, size)) {
+        final union = <int>{
+          for (final cell in combo) ...board.getCandidates(cell[0], cell[1])
+        };
+        if (union.containsAll(target) && target.containsAll(union)) {
+          return combo;
+        }
+      }
+    }
+    return null;
+  }
+
+  static SudokuHint? findDeathBlossom(SudokuBoard board) {
+    final als = _houseAls(board);
+    for (var row = 0; row < 9; row++) {
+      for (var col = 0; col < 9; col++) {
+        if (board.get(row, col) != 0) continue;
+        final stem = board.getCandidates(row, col);
+        if (stem.length < 2 || stem.length > 4) continue;
+        final options = <int, List<_Als>>{};
+        var possible = true;
+        for (final digit in stem) {
+          final petals = [
+            for (final set in als)
+              if (!set.keys.contains('$row,$col') &&
+                  set.digits.contains(digit) &&
+                  set.cellsWith(board, digit).every(
+                        (cell) => _canSee(row, col, cell[0], cell[1]),
+                      ))
+                set
+          ];
+          if (petals.isEmpty) {
+            possible = false;
+            break;
+          }
+          options[digit] = petals.take(8).toList();
+        }
+        if (!possible) continue;
+        final digits = stem.toList()..sort();
+        var combo = <_Als>[];
+        SudokuHint? found;
+        void search(int index, Set<String> used) {
+          if (found != null) return;
+          if (index == digits.length) {
+            final zs = combo.first.digits.difference({digits.first});
+            for (var i = 1; i < combo.length; i++) {
+              zs.removeWhere(
+                (z) => !combo[i].digits.difference({digits[i]}).contains(z),
+              );
+            }
+            for (final z in zs) {
+              final zCells = [
+                for (final petal in combo) ...petal.cellsWith(board, z)
+              ];
+              if (zCells.isEmpty) continue;
+              final elims = _seenByAll(board, z, zCells);
+              if (elims.isEmpty) continue;
+              found = SudokuHint.elimination(
+                technique: 'Death Blossom',
+                explanation: '${cellRef(row, col)} 的每个候选都连到一个几乎锁定集，'
+                    '这些花瓣都会挤出 $z，同时看见所有花瓣 $z 的格子可删。',
+                eliminations: elims,
+                patternCells: [
+                  HintCell(row, col, HintRole.extra),
+                  ...hintCells(HintRole.pattern, [
+                    for (final petal in combo) ...petal.cells
+                  ]),
+                  ..._targetCells(elims),
+                ],
+                patternCandidates: [
+                  ...hintDigits(HintRole.extra, [row, col], stem),
+                  for (final petal in combo)
+                    for (final cell in petal.cells)
+                      ...hintDigits(
+                        HintRole.pattern,
+                        cell,
+                        board.getCandidates(cell[0], cell[1]),
+                      ),
+                  ..._targetCands(elims),
+                ],
+                links: [
+                  for (var i = 0; i < digits.length; i++)
+                    for (final cell
+                        in combo[i].cellsWith(board, digits[i]))
+                      MarkupArrow(
+                        from: CandidateRef(row, col, digits[i]),
+                        to: CandidateRef(cell[0], cell[1], digits[i]),
+                        kind: ArrowKind.weak,
+                      ),
+                ],
+              );
+              return;
+            }
+            return;
+          }
+          for (final petal in options[digits[index]]!) {
+            if (petal.keys.any(used.contains)) continue;
+            combo.add(petal);
+            search(index + 1, {...used, ...petal.keys});
+            combo.removeLast();
+          }
+        }
+
+        search(0, {});
+        if (found != null) return found;
+      }
+    }
+    return null;
+  }
+
+  static SudokuHint? findKrakenFish(SudokuBoard board) {
+    for (var digit = 1; digit <= 9; digit++) {
+      for (final house in _allUnits()) {
+        final spots = [
+          for (final cell in house.cells)
+            if (board.get(cell[0], cell[1]) == 0 &&
+                board.getCandidates(cell[0], cell[1]).contains(digit))
+              cell
+        ];
+        if (spots.length != 2) continue;
+        for (var row = 0; row < 9; row++) {
+          for (var col = 0; col < 9; col++) {
+            if (board.get(row, col) != 0) continue;
+            if (!board.getCandidates(row, col).contains(digit)) continue;
+            if (spots.any((s) => s[0] == row && s[1] == col)) continue;
+            final near = [
+              for (final spot in spots)
+                if (_canSee(row, col, spot[0], spot[1])) spot
+            ];
+            if (near.length != 1) continue;
+            final far = spots.firstWhere(
+              (s) => s[0] != near[0][0] || s[1] != near[0][1],
+            );
+            final assumed = _assumptionPath(
+              board,
+              far[0],
+              far[1],
+              digit,
+              row,
+              col,
+              digit,
+            );
+            if (!assumed.removes) continue;
+            final chain = [
+              [far[0], far[1], digit],
+              ...assumed.path,
+              if (assumed.path.isEmpty ||
+                  assumed.path.last[0] != row ||
+                  assumed.path.last[1] != col)
+                [row, col, digit],
+            ];
+            return SudokuHint.elimination(
+              technique: 'Kraken Fish',
+              explanation: '数字 $digit 在 ${house.label} 只剩 '
+                  '${cellRef(spots[0][0], spots[0][1])} 与 '
+                  '${cellRef(spots[1][0], spots[1][1])}。'
+                  '${cellRef(near[0][0], near[0][1])} 直接看到 '
+                  '${cellRef(row, col)}；假设 ${candRef(far[0], far[1], digit)}'
+                  '${assumed.path.isEmpty ? '' : ' → ${_pathText(assumed.path)}'}，'
+                  '同样逼掉 ${candRef(row, col, digit)}。',
+              eliminations: [CandidateElim(row, col, digit)],
+              patternCells: [
+                HintCell(near[0][0], near[0][1], HintRole.pattern),
+                HintCell(far[0], far[1], HintRole.extra),
+                ...hintCells(HintRole.link, [
+                  for (final step in assumed.path) [step[0], step[1]]
+                ]),
+                HintCell(row, col, HintRole.target),
+              ],
+              patternCandidates: [
+                HintCandidate(
+                  CandidateRef(near[0][0], near[0][1], digit),
+                  HintRole.pattern,
+                ),
+                HintCandidate(
+                  CandidateRef(far[0], far[1], digit),
+                  HintRole.extra,
+                ),
+                ..._pathCands(assumed.path),
+                ..._targetCands([CandidateElim(row, col, digit)]),
+              ],
+              links: [
+                _strong(spots[0][0], spots[0][1], spots[1][0], spots[1][1], digit),
+                ..._implicationArrows(chain),
+              ],
+            );
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  static ({bool removes, List<List<int>> path}) _assumptionPath(
+    SudokuBoard board,
+    int assumeRow,
+    int assumeCol,
+    int assumeDigit,
+    int targetRow,
+    int targetCol,
+    int targetDigit,
+  ) {
+    final work = board.copy();
+    work.set(assumeRow, assumeCol, assumeDigit);
+    final result = _propagateSingles(work);
+    final removes = work.get(targetRow, targetCol) != 0
+        ? work.get(targetRow, targetCol) != targetDigit
+        : !work.getCandidates(targetRow, targetCol).contains(targetDigit);
+    return (removes: removes, path: result.path);
+  }
+
+  static SudokuHint? findForcingChain(SudokuBoard board) =>
+      _findForcing(board, minCands: 2, maxCands: 2, name: 'Forcing Chain');
+
+  static SudokuHint? findForcingNet(SudokuBoard board) =>
+      _findForcing(board, minCands: 3, maxCands: 4, name: 'Forcing Net');
+
+  static SudokuHint? _findForcing(
+    SudokuBoard board, {
+    required int minCands,
+    required int maxCands,
+    required String name,
+  }) {
+    for (var row = 0; row < 9; row++) {
+      for (var col = 0; col < 9; col++) {
+        if (board.get(row, col) != 0) continue;
+        final cands = board.getCandidates(row, col);
+        if (cands.length < minCands || cands.length > maxCands) continue;
+        Map<String, int>? common;
+        var contradiction = false;
+        final branches = <int, List<List<int>>>{};
+        for (final digit in cands) {
+          final work = board.copy();
+          work.set(row, col, digit);
+          final result = _propagateSingles(work);
+          if (result.contradiction != null) {
+            contradiction = true;
+            break;
+          }
+          branches[digit] = result.path;
+          final filled = <String, int>{};
+          for (var r = 0; r < 9; r++) {
+            for (var c = 0; c < 9; c++) {
+              if (r == row && c == col) continue;
+              final value = work.get(r, c);
+              if (value != 0 && board.get(r, c) == 0) {
+                filled['$r,$c'] = value;
+              }
+            }
+          }
+          if (common == null) {
+            common = filled;
+          } else {
+            common.removeWhere(
+              (key, value) => filled[key] != value,
+            );
+          }
+          if (common.isEmpty) break;
+        }
+        if (contradiction || common == null || common.isEmpty) continue;
+        final entry = common.entries.first;
+        final parts = entry.key.split(',');
+        final fillRow = int.parse(parts[0]);
+        final fillCol = int.parse(parts[1]);
+        final pathCells = <List<int>>[
+          for (final path in branches.values)
+            for (final step in path) [step[0], step[1]]
+        ];
+        final pathCands = [
+          for (final path in branches.values) ..._pathCands(path)
+        ];
+        final arrows = <MarkupArrow>[
+          for (final branch in branches.entries)
+            ..._implicationArrows([
+              [row, col, branch.key],
+              ...branch.value,
+              if (branch.value.isEmpty ||
+                  branch.value.last[0] != fillRow ||
+                  branch.value.last[1] != fillCol)
+                [fillRow, fillCol, entry.value],
+            ]),
+        ];
+        final lines = [
+          for (final digit in cands)
+            '假设 ${candRef(row, col, digit)}'
+            '${(branches[digit] ?? const []).isEmpty ? '' : ' → ${_pathText(branches[digit]!)}'}'
+            ' → ${candRef(fillRow, fillCol, entry.value)}',
+        ];
+        return SudokuHint(
+          row: fillRow,
+          col: fillCol,
+          value: entry.value,
+          technique: name,
+          explanation: '${lines.join('；')}。'
+              '${cellRef(row, col)} 的每条出路都得到同一结论，'
+              '因此 ${cellRef(fillRow, fillCol)} 必须是 ${entry.value}。',
+          patternCells: [
+            HintCell(row, col, HintRole.extra),
+            ...hintCells(HintRole.link, pathCells),
+            HintCell(fillRow, fillCol, HintRole.pattern),
+          ],
+          patternCandidates: [
+            ...hintDigits(HintRole.extra, [row, col], cands),
+            ...pathCands,
+            HintCandidate(
+              CandidateRef(fillRow, fillCol, entry.value),
+              HintRole.pattern,
+            ),
+          ],
+          links: arrows,
+        );
+      }
+    }
+    return null;
+  }
+
+  static MarkupArrow _strong(int r1, int c1, int r2, int c2, int digit) =>
+      MarkupArrow(
+        from: CandidateRef(r1, c1, digit),
+        to: CandidateRef(r2, c2, digit),
+        kind: ArrowKind.strong,
+      );
+
+  static String _pathText(List<List<int>> path) => path
+      .map((step) => candRef(step[0], step[1], step[2]))
+      .join(' → ');
+
+  static List<HintCandidate> _pathCands(List<List<int>> path) => [
+        for (final step in path)
+          HintCandidate(
+            CandidateRef(step[0], step[1], step[2]),
+            HintRole.link,
+          )
+      ];
+
+  static List<MarkupArrow> _implicationArrows(List<List<int>> nodes) => [
+        for (var i = 0; i < nodes.length - 1; i++)
+          MarkupArrow(
+            from: CandidateRef(nodes[i][0], nodes[i][1], nodes[i][2]),
+            to: CandidateRef(nodes[i + 1][0], nodes[i + 1][1], nodes[i + 1][2]),
+            kind: ArrowKind.weak,
+          )
+      ];
+
+  static String _aicNotation(List<List<int>> nodes, {bool cycle = false}) {
+    final buf = StringBuffer();
+    for (var i = 0; i < nodes.length; i++) {
+      if (i > 0) buf.write(i.isOdd ? ' = ' : ' - ');
+      buf.write(candRef(nodes[i][0], nodes[i][1], nodes[i][2]));
+    }
+    if (cycle && nodes.isNotEmpty) {
+      buf.write(' - ');
+      buf.write(candRef(nodes.first[0], nodes.first[1], nodes.first[2]));
+    }
+    return buf.toString();
+  }
+
+  static List<MarkupArrow> _aicArrows(
+    List<List<int>> nodes, {
+    bool cycle = false,
+  }) {
+    final arrows = [
+      for (var i = 0; i < nodes.length - 1; i++)
+        MarkupArrow(
+          from: CandidateRef(nodes[i][0], nodes[i][1], nodes[i][2]),
+          to: CandidateRef(nodes[i + 1][0], nodes[i + 1][1], nodes[i + 1][2]),
+          kind: i.isEven ? ArrowKind.strong : ArrowKind.weak,
+        )
+    ];
+    if (cycle && nodes.length >= 2) {
+      arrows.add(
+        MarkupArrow(
+          from: CandidateRef(nodes.last[0], nodes.last[1], nodes.last[2]),
+          to: CandidateRef(nodes.first[0], nodes.first[1], nodes.first[2]),
+          kind: ArrowKind.weak,
+        ),
+      );
+    }
+    return arrows;
+  }
+
+  static ({List<List<int>> path, List<int>? contradiction}) _propagateSingles(
+    SudokuBoard board,
+  ) {
+    final path = <List<int>>[];
+    while (true) {
+      List<int>? fill;
+      var fillDigit = 0;
+      for (var row = 0; row < 9; row++) {
+        for (var col = 0; col < 9; col++) {
+          if (board.get(row, col) != 0) continue;
+          final cands = board.getCandidates(row, col);
+          if (cands.isEmpty) {
+            return (path: path, contradiction: [row, col]);
+          }
+          if (cands.length == 1 && fill == null) {
+            fill = [row, col];
+            fillDigit = cands.single;
+          }
+        }
+      }
+      if (fill == null) {
+        final hidden = _firstHiddenSingle(board);
+        if (hidden != null) {
+          fill = [hidden[0], hidden[1]];
+          fillDigit = hidden[2];
+        }
+      }
+      if (fill == null) {
+        return (path: path, contradiction: null);
+      }
+      board.set(fill[0], fill[1], fillDigit);
+      path.add([fill[0], fill[1], fillDigit]);
+    }
+  }
+
+  static List<int>? _firstHiddenSingle(SudokuBoard board) {
+    for (var digit = 1; digit <= 9; digit++) {
+      for (var row = 0; row < 9; row++) {
+        final cols = [
+          for (var col = 0; col < 9; col++)
+            if (board.get(row, col) == 0 &&
+                board.getCandidates(row, col).contains(digit))
+              col
+        ];
+        if (cols.length == 1) return [row, cols.single, digit];
+      }
+      for (var col = 0; col < 9; col++) {
+        final rows = [
+          for (var row = 0; row < 9; row++)
+            if (board.get(row, col) == 0 &&
+                board.getCandidates(row, col).contains(digit))
+              row
+        ];
+        if (rows.length == 1) return [rows.single, col, digit];
+      }
+      for (var boxRow = 0; boxRow < 3; boxRow++) {
+        for (var boxCol = 0; boxCol < 3; boxCol++) {
+          final spots = <List<int>>[];
+          for (var i = 0; i < 3; i++) {
+            for (var j = 0; j < 3; j++) {
+              final row = boxRow * 3 + i;
+              final col = boxCol * 3 + j;
+              if (board.get(row, col) == 0 &&
+                  board.getCandidates(row, col).contains(digit)) {
+                spots.add([row, col]);
+              }
+            }
+          }
+          if (spots.length == 1) {
+            return [spots[0][0], spots[0][1], digit];
+          }
+        }
+      }
+    }
+    return null;
+  }
+}
+
+class _AicNode {
+  final List<List<int>> cells;
+  final int digit;
+  final Set<String> keys;
+  final String id;
+
+  _AicNode(this.cells, this.digit)
+      : keys = {for (final cell in cells) '${cell[0]},${cell[1]}'},
+        id =
+            '$digit:${(cells.map((c) => '${c[0]},${c[1]}').toList()..sort()).join('|')}';
+
+  bool overlaps(_AicNode other) => keys.any(other.keys.contains);
+}
+
+class _Als {
+  final List<List<int>> cells;
+  final Set<int> digits;
+  final Set<String> keys;
+
+  _Als(this.cells, this.digits, this.keys);
+
+  String get id => (keys.toList()..sort()).join('|');
+
+  bool overlaps(_Als other) => keys.any(other.keys.contains);
+
+  List<List<int>> cellsWith(SudokuBoard board, int digit) => [
+        for (final cell in cells)
+          if (board.getCandidates(cell[0], cell[1]).contains(digit)) cell
+      ];
 }
 
 class _VirtualCell {

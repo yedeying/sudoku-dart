@@ -21,6 +21,10 @@ void main() {
   test('调色板给够 10 个可区分的颜色', () {
     expect(MarkupPalette.colors.length, 10);
     expect(MarkupPalette.colors.toSet().length, 10);
+    for (final color in MarkupPalette.colors) {
+      expect(MarkupPalette.wash(color).computeLuminance(), greaterThan(0.5),
+          reason: '格底淡洗要够浅，格子里才能用深色数字');
+    }
     // 相邻两色不能太接近，否则 10 个色等于摆设。
     for (int i = 0; i < MarkupPalette.colors.length; i++) {
       for (int j = i + 1; j < MarkupPalette.colors.length; j++) {
@@ -187,7 +191,7 @@ void main() {
     );
 
     final digit = tester.widget<Text>(find.text('4').first);
-    final bg = MarkupPalette.colors[2];
+    final bg = MarkupPalette.wash(MarkupPalette.colors[2]);
     final fg = digit.style!.color!;
     final contrast = (fg.computeLuminance() + 0.05) /
         (bg.computeLuminance() + 0.05);
