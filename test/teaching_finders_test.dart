@@ -213,6 +213,7 @@ void main() {
       'Grouped AIC',
       '死环',
       'ALS-XZ',
+      'DDS',
       'Death Blossom',
       'Kraken Fish',
       // 毛刺数组「毛刺为真」那一支推到推不动为止，力度同强制链，所以和

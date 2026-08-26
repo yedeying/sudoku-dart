@@ -41,7 +41,8 @@ const _burrLegend = [
   TechniqueLegendItem(color: TeachingColors.end, label: '毛刺与被删候选'),
 ];
 
-/// 数组/锁定集一侧还没有独立报法的六条：自噬、WALS、毛刺数组、DDS、MSLS、飞鱼导弹。
+/// 数组/锁定集一侧：自噬、WALS、毛刺数组、DDS、MSLS、飞鱼导弹。
+/// 毛刺数组和 DDS 已经接进 `getHint`；其余仍是教学专属。
 ///
 /// 盘面都是随机完整解挖出来的唯一解题目，再用脚本筛出对应的结构。
 /// 要靠假设往下推的那两条（WALS、毛刺数组）另加一道筛子：盘面先被唯余摒除推到停，
@@ -418,7 +419,7 @@ List<TechniqueInfo> advancedSetTechniqueExamples() => [
           ],
         ),
         legend: _rankZeroLegend,
-        teachingOnly: true,
+        teachingOnly: false,
         structure: const TeachingStructure(
           family: TeachingFamily.distributedDisjointSubset,
           claim: TeachingClaim.elimination,

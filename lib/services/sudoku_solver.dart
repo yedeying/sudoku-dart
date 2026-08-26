@@ -196,6 +196,7 @@ class SudokuSolver {
     ('Grouped AIC', AdvancedTechniques.findGroupedAic),
     ('死环', AdvancedTechniques.findDeadLoop),
     ('ALS-XZ', AdvancedTechniques.findAlsXz),
+    ('DDS', AdvancedTechniques.findDds),
     ('Death Blossom', AdvancedTechniques.findDeathBlossom),
     ('Kraken Fish', AdvancedTechniques.findKrakenFish),
     // 毛刺数组「毛刺为真」那一支是把唯余摒除推到推不动为止，力度和强制链

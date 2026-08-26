@@ -5672,6 +5672,234 @@ class AdvancedTechniques {
     return null;
   }
 
+  // ---------------------------------------------------------------------------
+  // DDS（Distributed Disjoint Subsets / 分布式互斥数组）
+  // ---------------------------------------------------------------------------
+
+  /// DDS：N 格锁 N 个数字，每个数字的结构落点都能被一条房屋整片装下，
+  /// 而且这些片至少摊到三个区域。每片里、结构之外的同名候选都可以删。
+  ///
+  /// 一个宫加上穿过它的两条线，再在这三片并集里找六格六数。
+  /// 这是 Sue de Coq「宫 × 线」再加一条线的推广；不穿过该宫的第三片
+  /// 不搜——任意三片的组合量会把提示拖过两秒，也和讲义对不上。
+  static SudokuHint? findDds(SudokuBoard board) {
+    SudokuHint? best;
+    for (var box = 0; box < 9; box++) {
+      final band = box ~/ 3;
+      final stack = box % 3;
+      final lines = <int>[
+        band * 3,
+        band * 3 + 1,
+        band * 3 + 2,
+        9 + stack * 3,
+        9 + stack * 3 + 1,
+        9 + stack * 3 + 2,
+      ];
+      for (var i = 0; i < lines.length; i++) {
+        for (var j = i + 1; j < lines.length; j++) {
+          final hint = _ddsInHouses(board, [18 + box, lines[i], lines[j]]);
+          if (hint == null) continue;
+          final current = best;
+          if (current == null ||
+              hint.eliminations.length > current.eliminations.length) {
+            best = hint;
+          }
+          if (best!.eliminations.length >= 6) return best;
+        }
+      }
+    }
+    return best;
+  }
+
+  static SudokuHint? _ddsInHouses(SudokuBoard board, List<int> houses) {
+    final seen = <String>{};
+    final spots = <List<int>>[];
+    for (final house in houses) {
+      for (final cell in _houseCells(house)) {
+        if (board.get(cell[0], cell[1]) != 0) continue;
+        final n = board.getCandidates(cell[0], cell[1]).length;
+        if (n < 2 || n > 4) continue;
+        if (!seen.add('${cell[0]},${cell[1]}')) continue;
+        spots.add(cell);
+      }
+    }
+    if (spots.length < 6 || spots.length > 10) return null;
+    return _ddsOfSize(board, spots, 6, allowedHouses: houses.toSet());
+  }
+
+  static SudokuHint? _ddsOfSize(
+    SudokuBoard board,
+    List<List<int>> spots,
+    int n, {
+    Set<int>? allowedHouses,
+  }) {
+    SudokuHint? best;
+    final pick = <List<int>>[];
+    final union = <int>{};
+
+    void rec(int start) {
+      if (best != null) return;
+      if (pick.length == n) {
+        if (union.length != n) return;
+        best ??= _ddsOn(board, List.of(pick), allowedHouses: allowedHouses);
+        return;
+      }
+      if (pick.length + (spots.length - start) < n) return;
+      if (union.length > n) return;
+      if (pick.length >= 2 && !_ddsDigitsFit(board, pick)) return;
+      for (var i = start; i < spots.length; i++) {
+        final cell = spots[i];
+        final added = <int>[];
+        for (final d in board.getCandidates(cell[0], cell[1])) {
+          if (union.add(d)) added.add(d);
+        }
+        if (union.length <= n) {
+          pick.add(cell);
+          rec(i + 1);
+          pick.removeLast();
+        }
+        union.removeAll(added);
+      }
+    }
+
+    rec(0);
+    return best;
+  }
+
+  /// 当前已挑的格子上，每个数字的落点还能不能被一条房屋装下。
+  static bool _ddsDigitsFit(SudokuBoard board, List<List<int>> cells) {
+    final byDigit = <int, List<List<int>>>{};
+    for (final cell in cells) {
+      for (final d in board.getCandidates(cell[0], cell[1])) {
+        byDigit.putIfAbsent(d, () => <List<int>>[]).add(cell);
+      }
+    }
+    for (final owners in byDigit.values) {
+      if (owners.length < 2) continue;
+      if (_commonHouses(owners).isEmpty) return false;
+    }
+    return true;
+  }
+
+  static List<int> _commonHouses(List<List<int>> cells) {
+    if (cells.isEmpty) return const [];
+    var houses = _housesOf(cells[0][0], cells[0][1]).toSet();
+    for (var i = 1; i < cells.length; i++) {
+      houses = houses.intersection(
+        _housesOf(cells[i][0], cells[i][1]).toSet(),
+      );
+      if (houses.isEmpty) return const [];
+    }
+    return houses.toList()..sort();
+  }
+
+  static SudokuHint? _ddsOn(
+    SudokuBoard board,
+    List<List<int>> cells, {
+    Set<int>? allowedHouses,
+  }) {
+    final union = <int>{
+      for (final cell in cells) ...board.getCandidates(cell[0], cell[1])
+    };
+    if (union.length != cells.length) return null;
+    if (_commonHouses(cells).isNotEmpty) return null;
+
+    final byDigit = <int, List<List<int>>>{};
+    for (final cell in cells) {
+      for (final d in board.getCandidates(cell[0], cell[1])) {
+        byDigit.putIfAbsent(d, () => <List<int>>[]).add(cell);
+      }
+    }
+    if (byDigit.values.any((owners) => owners.length < 2)) return null;
+
+    final slice = <int, int>{};
+    for (final entry in byDigit.entries) {
+      final houses = [
+        for (final h in _commonHouses(entry.value))
+          if (allowedHouses == null || allowedHouses.contains(h)) h
+      ];
+      if (houses.isEmpty) return null;
+      slice[entry.key] = houses.first;
+    }
+    if (slice.values.toSet().length < 3) return null;
+    if (_ddsFitsTwoHouses(byDigit)) return null;
+
+    final keys = {for (final cell in cells) '${cell[0]},${cell[1]}'};
+    final elims = <CandidateElim>[];
+    final seen = <String>{};
+    for (final entry in slice.entries) {
+      final digit = entry.key;
+      final house = entry.value;
+      for (final cell in _houseCells(house)) {
+        if (board.get(cell[0], cell[1]) != 0) continue;
+        if (keys.contains('${cell[0]},${cell[1]}')) continue;
+        if (!board.getCandidates(cell[0], cell[1]).contains(digit)) continue;
+        final key = '${cell[0]},${cell[1]},$digit';
+        if (!seen.add(key)) continue;
+        elims.add(CandidateElim(cell[0], cell[1], digit));
+      }
+    }
+    if (elims.isEmpty) return null;
+
+    final rows = <int>{}, cols = <int>{}, boxes = <int>{};
+    for (final house in slice.values.toSet()) {
+      final hl = _houseHighlight(house);
+      rows.addAll(hl.rows);
+      cols.addAll(hl.cols);
+      boxes.addAll(hl.boxes);
+    }
+    final byHouse = <int, List<int>>{};
+    for (final entry in slice.entries) {
+      byHouse.putIfAbsent(entry.value, () => <int>[]).add(entry.key);
+    }
+    final houseText = [
+      for (final h in (byHouse.keys.toList()..sort()))
+        '${_houseLabel(h)} 装 ${(byHouse[h]!..sort()).join("、")}'
+    ].join('；');
+
+    return SudokuHint.elimination(
+      technique: 'DDS',
+      explanation: '${cellsList(cells)} 一共 ${cells.length} 格，'
+          '候选并集是 ${(union.toList()..sort()).join("、")}，'
+          '正好 ${union.length} 个数字。'
+          '每个数字的结构落点都能被一条房屋装下：$houseText。'
+          '这三条以上的片换不成两条，所以不是 Sue de Coq；'
+          '格子也没有落在同一个房屋里，所以不是显性数组。'
+          '${cells.length} 格配 ${cells.length} 片，rank 0，'
+          '每片里结构之外的同名候选都删：${_elimsText(elims)}。',
+      eliminations: elims,
+      patternCells: [
+        ...hintCells(HintRole.pattern, cells),
+        ..._targetCells(elims),
+      ],
+      patternCandidates: [
+        for (final cell in cells)
+          for (final d
+              in board.getCandidates(cell[0], cell[1]).toList()..sort())
+            HintCandidate(CandidateRef(cell[0], cell[1], d), HintRole.pattern),
+        ..._targetCands(elims),
+      ],
+      highlightRows: rows.toList()..sort(),
+      highlightCols: cols.toList()..sort(),
+      highlightBoxes: boxes.toList()..sort(),
+    );
+  }
+
+  /// 两条房屋就能装下每个数字的结构落点 → Sue de Coq 那一档，不是 DDS。
+  static bool _ddsFitsTwoHouses(Map<int, List<List<int>>> byDigit) {
+    final groups = byDigit.values.toList();
+    for (var a = 0; a < 27; a++) {
+      for (var b = a + 1; b < 27; b++) {
+        final fits = groups.every((owners) {
+          final houses = _commonHouses(owners);
+          return houses.contains(a) || houses.contains(b);
+        });
+        if (fits) return true;
+      }
+    }
+    return false;
+  }
+
   static SudokuHint? findSueDeCoq(SudokuBoard board) {
     for (var boxRow = 0; boxRow < 3; boxRow++) {
       for (var boxCol = 0; boxCol < 3; boxCol++) {

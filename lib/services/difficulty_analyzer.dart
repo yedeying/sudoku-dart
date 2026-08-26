@@ -61,6 +61,7 @@ class DifficultyAnalyzer {
     'Grouped AIC': 94,
     '死环': 94,
     'ALS-XZ': 95,
+    'DDS': 95,
     'ALS-XY-Wing': 98,
     'Death Blossom': 96,
     'Kraken Fish': 97,
