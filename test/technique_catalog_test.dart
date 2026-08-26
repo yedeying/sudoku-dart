@@ -19,8 +19,8 @@ bool _completionExists(SudokuBoard base, int row, int col, int digit) {
   return SudokuSolver.countSolutions(probe, limit: 1) >= 1;
 }
 
-/// docs/superpowers/inbox/2026-08-25-technique-review.md「总表」里的全部技巧，
-/// 按总表出现顺序抄下来。教学目录必须和这张表一一对应：
+/// docs/techniques.md「总表」里的全部技巧，按总表出现顺序抄下来。
+/// 教学目录必须和这张表一一对应：
 /// 多一条说明表里没收录，少一条说明教学缺口。
 const _reviewTableNames = <String>[
   '唯余法',

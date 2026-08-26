@@ -1,115 +1,63 @@
-# 数独 Sudoku App
+# 我的数独
 
-一个功能完整的数独游戏应用，支持 Android、iOS 和 Web 平台。
+Flutter 数独教学应用：对局里按从易到难给一步提示，技巧说明是独立静态页。禁止把无说明的回溯填数当成提示。
 
-## 功能特性
+在线演示：<https://yedeying.github.io/sudoku-dart/>
 
-- ✅ 自动生成不同难度的数独题目（简单、中等、困难、专家）
-- ✅ 手动输入自定义题目
-- ✅ 智能提示（填数 + 候选删除）
-- ✅ 解题过程演示
-- ✅ 高阶技巧提示（X-Wing、XY-Wing、W-Wing、着色等）
-- ✅ 计时和计分系统
-- ✅ 撤销/重做功能（含笔记模式）
-- ✅ 冲突高亮与相对唯一解验证
+## 能做什么
 
-## 安装 Flutter 环境
+- **对局：** 简单 / 中等 / 困难 / 专家题库，或手动输入；计时计分；撤销重做。
+- **候选：** 自动候选与手写笔记并存（并集显示）；笔记划掉不影响引擎。
+- **提示：** 先说明再应用；棋盘标出参与格和链；浅层找不到时询问是否深搜。
+- **标记：** 格色、候选色、强弱链、自动共轭；与提示共用同一套标记。
+- **技巧说明：** 目录与引擎报法对齐，每项固定例盘和 Hodoku 记号文案。
+- **主题：** 亮暗跟随系统，强调色可改。
 
-### macOS
+技巧名、难度和实现缺口见 [docs/techniques.md](docs/techniques.md)。产品约定见 [docs/](docs/README.md)。
+
+## 运行
+
+需要 [Flutter](https://docs.flutter.dev/get-started/install) 稳定版。
+
 ```bash
-# 使用 Homebrew 安装
-brew install --cask flutter
-
-# 运行诊断
-flutter doctor
-
-# 安装依赖
 flutter pub get
+flutter run                 # 本机已连接的设备 / 模拟器
+flutter run -d chrome       # Web
 ```
 
-### 验证安装
-```bash
-flutter doctor -v
-```
-
-## 运行项目
+Release 包（装上即可离线用，不挂调试会话）：
 
 ```bash
-# 获取依赖
-flutter pub get
-
-# 运行在模拟器/设备上
-flutter run
-
-# 运行在 Web 浏览器
-flutter run -d chrome
-
-# 构建 APK（Android）
-flutter build apk
-
-# 构建 iOS
-flutter build ios
+flutter build apk --release
+flutter build ios --release   # 需 Xcode 与签名
+flutter install --release
 ```
 
-## 项目结构
+iOS 真机要在 Xcode 里设好 Team 和 Bundle ID。Web 发布路径是 `/sudoku-dart/`，与 GitHub Pages 一致。
+
+## 检查
+
+```bash
+flutter analyze    # 有 issue（含 info）即失败
+flutter test
+```
+
+推送 `main` 会跑上述检查，再构建 Web 并部署到 GitHub Pages。
+
+## 代码结构
 
 ```
 lib/
-├── main.dart                 # 应用入口
-├── models/
-│   ├── sudoku_board.dart    # 数独棋盘数据模型
-│   └── game_state.dart      # 游戏状态管理
-├── services/
-│   ├── sudoku_generator.dart      # 题目生成器入口
-│   ├── sudoku_generator_v2.dart   # 基于技巧的生成
-│   ├── sudoku_solver.dart         # 求解器和技巧分析
-│   ├── advanced_techniques.dart   # 高级技巧
-│   └── difficulty_analyzer.dart   # 难度评估
-├── screens/
-│   ├── home_screen.dart      # 主界面
-│   ├── game_screen.dart      # 游戏界面
-│   └── input_screen.dart     # 手动输入界面
-└── widgets/
-    └── sudoku_grid.dart      # 数独网格组件
+  models/      棋盘、对局状态、技巧目录与例题、标记、记号
+  services/    求解与 finder、难度、生成器、题库
+  screens/     底栏、选题、对局、输入、技巧列表 / 详情
+  widgets/     棋盘、箭头、提示抽屉
+  theme/       主题与强调色
+assets/puzzles/    分级题库（Sudoku Exchange，公有领域）
+docs/              技巧总表与架构说明
 ```
 
-## 开发指南
-
-作为 Android/iOS 开发新手，建议按以下步骤学习：
-
-1. **先运行项目看效果** - `flutter run`
-2. **修改 UI 样式** - 从 `widgets/` 目录开始
-3. **理解游戏逻辑** - 查看 `models/` 和 `services/`
-4. **添加新功能** - 参考现有代码结构
-
-## 常用命令
-
-```bash
-# 热重载（开发时修改代码即时生效）
-# 在运行时按 'r' 键
-
-# 格式化代码
-flutter format .
-
-# 分析代码
-flutter analyze
-
-# 清理构建缓存
-flutter clean
-```
-
-## 学习资源
-
-- [Flutter 中文文档](https://flutter.cn/docs)
-- [Dart 语言教程](https://dart.cn/guides)
-- [Flutter 实战](https://book.flutterchina.club/)
-
-## 故障排除
-
-如果遇到问题：
-1. 运行 `flutter doctor` 检查环境
-2. 运行 `flutter clean` 清理缓存
-3. 删除 `pubspec.lock` 后重新 `flutter pub get`
+提示顺序由 `SudokuSolver.hintSearchOrder` 决定，必须与 `DifficultyAnalyzer.techniqueScores` 同向。
 
 ## License
 

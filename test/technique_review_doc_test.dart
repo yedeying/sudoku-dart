@@ -5,7 +5,7 @@ import 'package:sudoku_app/models/technique_catalog.dart';
 
 /// 评审总表的路径。表里那一列「状态」讲的就是引擎有没有独立报法，
 /// 也就是 [TechniqueInfo.teachingOnly] 的反面；两边对不上就是文档过期了。
-const _reviewDoc = 'docs/superpowers/inbox/2026-08-25-technique-review.md';
+const _reviewDoc = 'docs/techniques.md';
 
 /// 解析总表：`| 档 | 名称 | 状态 | 难度 | 实现 | 可行 | 说明 |`。
 Map<String, String> _statusByName(String markdown) {

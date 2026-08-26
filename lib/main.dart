@@ -24,7 +24,7 @@ class SudokuApp extends StatelessWidget {
       ],
       child: Consumer<ThemeController>(
         builder: (_, theme, __) => MaterialApp(
-          title: '数独游戏',
+          title: '我的数独',
           theme: theme.light,
           darkTheme: theme.dark,
           themeMode: ThemeMode.system,
