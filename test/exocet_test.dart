@@ -63,7 +63,7 @@ void main() {
       // 教学盘 r4c3=7 是伴随格。改成基格数字 2 之后，
       // 这对对象格就能装两个基格数字，JE 不再成立。
       final raw = _tech('exocet').examplePuzzle;
-      final broken = raw.substring(0, 29) + '2' + raw.substring(30);
+      final broken = '${raw.substring(0, 29)}2${raw.substring(30)}';
       expect(AdvancedTechniques.findExocet(SudokuBoard.fromString(broken)),
           isNull);
     });
