@@ -41,7 +41,11 @@ void main() {
     await tester.pump();
     final after = tester.getSize(find.byType(SudokuGrid));
     expect(after, before);
-    expect(find.text('应用删除').evaluate().isNotEmpty || find.text('应用本步').evaluate().isNotEmpty || find.text('应用').evaluate().isNotEmpty, isTrue);
+    expect(
+        find.text('应用删除').evaluate().isNotEmpty ||
+            find.text('应用本步').evaluate().isNotEmpty ||
+            find.text('应用').evaluate().isNotEmpty,
+        isTrue);
   });
 
   testWidgets('矮宽视口（横屏手机）下棋盘不溢出', (tester) async {

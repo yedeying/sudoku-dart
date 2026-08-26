@@ -32,6 +32,36 @@ Set<String> _elimKeys(SudokuHint hint) =>
     hint.eliminations.map((e) => '${e.row},${e.col},${e.num}').toSet();
 
 void main() {
+  test('摩天楼与 Swordfish 重叠时先报较浅的摩天楼', () {
+    final board = _emptyBoard();
+    _removeDigitExcept(
+      board,
+      5,
+      [
+        for (final row in [0, 1, 3])
+          for (var col = 0; col < 9; col++) [row, col],
+      ],
+      [
+        [0, 0],
+        [0, 3],
+        [1, 0],
+        [1, 4],
+        [3, 0],
+        [3, 3],
+        [3, 4],
+      ],
+    );
+    for (var col = 6; col < 9; col++) {
+      board.eliminateCandidate(2, col, 5);
+    }
+
+    expect(AdvancedTechniques.findSkyscraper(board), isNotNull);
+    final hint = SudokuSolver.getHint(board);
+
+    expect(hint, isNotNull);
+    expect(hint!.technique, '摩天楼', reason: hint.explanation);
+  });
+
   test('双线风筝删除同时看见两个远端的候选', () {
     final board = _emptyBoard();
     _removeDigitExcept(
@@ -99,7 +129,7 @@ void main() {
     expect(_elimKeys(hint), {'5,2,5'});
   });
 
-  test('唯一矩形 Type 2 删除额外数字的共同可见处', () {
+  test('唯一矩形 2 删除额外数字的共同可见处', () {
     final board = _emptyBoard();
     _stripDigits(board, 0, 0, [3, 4, 5, 6, 7, 8, 9]);
     _stripDigits(board, 0, 3, [3, 4, 5, 6, 7, 8, 9]);
@@ -113,7 +143,7 @@ void main() {
     final hint = SudokuSolver.getHint(board);
 
     expect(hint, isNotNull);
-    expect(hint!.technique, '唯一矩形 Type 2');
+    expect(hint!.technique, '唯一矩形 2');
     expect(hint.explanation, contains('题目保证唯一解'));
     expect(hint.isElimination, isTrue);
     expect(
@@ -130,7 +160,7 @@ void main() {
     );
   });
 
-  test('唯一矩形 Type 3 把额外候选当数组删除', () {
+  test('唯一矩形 3 把额外候选当数组删除', () {
     final board = _emptyBoard();
     _stripDigits(board, 0, 0, [3, 4, 5, 6, 7, 8, 9]);
     _stripDigits(board, 0, 3, [3, 4, 5, 6, 7, 8, 9]);
@@ -145,7 +175,7 @@ void main() {
     final hint = SudokuSolver.getHint(board);
 
     expect(hint, isNotNull);
-    expect(hint!.technique, '唯一矩形 Type 3');
+    expect(hint!.technique, '唯一矩形 3');
     expect(hint.explanation, contains('题目保证唯一解'));
     expect(hint.isElimination, isTrue);
     expect(
@@ -167,7 +197,7 @@ void main() {
     );
   });
 
-  test('唯一矩形 Type 4 利用强链删除矩形内另一数字', () {
+  test('唯一矩形 4 利用强链删除矩形内另一数字', () {
     final board = _emptyBoard();
     _stripDigits(board, 0, 0, [3, 4, 5, 6, 7, 8, 9]);
     _stripDigits(board, 0, 3, [3, 4, 5, 6, 7, 8, 9]);
@@ -188,7 +218,7 @@ void main() {
 
     final type4 = AdvancedTechniques.findUniqueRectangleType4(board);
     expect(type4, isNotNull);
-    expect(type4!.technique, '唯一矩形 Type 4');
+    expect(type4!.technique, '唯一矩形 4');
     expect(type4.explanation, contains('题目保证唯一解'));
     expect(type4.isElimination, isTrue);
     expect(_elimKeys(type4), {'1,0,2', '1,3,2'});

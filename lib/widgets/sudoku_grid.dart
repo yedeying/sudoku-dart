@@ -114,8 +114,7 @@ class SudokuGrid extends StatelessWidget {
     bool hasConflict = conflictCells.contains(row * 9 + col);
     final cellKey = BoardMarkup.cellKey(row, col);
     final markColor = markup?.cellColors[cellKey];
-    final markWash =
-        markColor == null ? null : MarkupPalette.wash(markColor);
+    final markWash = markColor == null ? null : MarkupPalette.wash(markColor);
     final sameDigit = sameDigitCells.contains(cellKey);
 
     Color bgColor;
@@ -264,8 +263,7 @@ class SudokuGrid extends StatelessWidget {
           Expanded(
             child: Row(
               children: [
-                for (int c = 0; c < 3; c++)
-                  Expanded(child: cells[r * 3 + c]),
+                for (int c = 0; c < 3; c++) Expanded(child: cells[r * 3 + c]),
               ],
             ),
           ),

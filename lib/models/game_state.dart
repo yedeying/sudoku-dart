@@ -334,6 +334,15 @@ class GameState extends ChangeNotifier {
         m.cellColors[BoardMarkup.cellKey(r, c)] = MarkupPalette.house;
       }
     }
+    for (final b in hint.highlightBoxes) {
+      final top = (b ~/ 3) * 3;
+      final left = (b % 3) * 3;
+      for (var r = top; r < top + 3; r++) {
+        for (var c = left; c < left + 3; c++) {
+          m.cellColors[BoardMarkup.cellKey(r, c)] = MarkupPalette.house;
+        }
+      }
+    }
 
     void putCell(int row, int col, HintRole role) {
       final key = BoardMarkup.cellKey(row, col);

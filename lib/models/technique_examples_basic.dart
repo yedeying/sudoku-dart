@@ -61,7 +61,7 @@ List<TechniqueInfo> basicTechniqueExamples() => [
             '因此r1c3只能填 4。',
         caveats: '唯余法要按当前候选来判断，如果前面的候选没有更新'
             '（比如刚填完别的格子却没有重新计算候选），很容易看错唯余的格子。',
-        rank: 10,
+        rank: 50,
         examplePuzzle:
             '530678912672195348198342567859761423426853791713924856961537284287419635345286179',
         exampleMarkup: _fillMarkup(0, 2, 4),
@@ -69,7 +69,7 @@ List<TechniqueInfo> basicTechniqueExamples() => [
       ),
       TechniqueInfo(
         id: 'hidden_single',
-        name: '摒除法（行/列/宫）',
+        name: '摒除法',
         summary: '某行/列/宫里某个数字只剩一个位置，填那里。',
         definition: '摒除法（Hidden Single）是指某个数字在一行、一列或一宫里，'
             '本来有好几个空格可以填，但逐一检查后发现只有一个格子的候选里还留着这个数字，'
@@ -81,7 +81,7 @@ List<TechniqueInfo> basicTechniqueExamples() => [
             '而不能再填 6，只有 r1c7 的候选里还留着 6，'
             '因此 r1c7 必须填 6（填 r1c7=6）。',
         caveats: '摒除法必须把整行/列/宫的空格都检查一遍，漏看一个格子就可能误判成摒除成立。',
-        rank: 20,
+        rank: 100,
         examplePuzzle:
             '040082003006400701300600000000025060002907835008006029004060372030070000200034910',
         exampleMarkup: _fillMarkup(0, 6, 6),
@@ -102,7 +102,7 @@ List<TechniqueInfo> basicTechniqueExamples() => [
             '若原本候选里有 1 或 4，都要删掉。',
         caveats: '显性数对要求两格候选完全相同且只有两个数字，'
             '如果有格子候选是 1、4、5 这样的三个数字，就不能算进数对。',
-        rank: 30,
+        rank: 150,
         examplePuzzle:
             '006005009328009700700208010000000002030500090200090000070000001000000008000000000',
         exampleMarkup: _elimMarkup(
@@ -135,7 +135,7 @@ List<TechniqueInfo> basicTechniqueExamples() => [
             '如果候选里有 3、6 或 9，都要删掉。',
         caveats: '三数组不要求每格都恰好三个候选，只要三格候选的并集是三个数字即可；'
             '漏算并集会把普通格子误判成数组成员。',
-        rank: 35,
+        rank: 200,
         examplePuzzle:
             '006035000000100000705008000001000802600000107087091405000006041000000000009000320',
         exampleMarkup: _elimMarkup(
@@ -171,7 +171,7 @@ List<TechniqueInfo> basicTechniqueExamples() => [
             '如果候选里有 1 或 6，都要删掉。',
         caveats: '四数组格子多、组合多，手工找容易漏；建议先锁定候选数不超过 4 的格子再逐一试组合，'
             '别漫无目的地扫全区域。',
-        rank: 40,
+        rank: 251,
         examplePuzzle:
             '000002000820000701009000000400805060000000000750010400504060372030000500007000000',
         exampleMarkup: _elimMarkup(
@@ -204,7 +204,7 @@ List<TechniqueInfo> basicTechniqueExamples() => [
             'r7c3可以删掉候选 8、9。',
         caveats: '隐性数对删的是这两格里的其它候选，不影响同区域别的格子，'
             '别和显性数对的删除范围搞混。',
-        rank: 45,
+        rank: 201,
         examplePuzzle:
             '906000800400000000053800000000094000200000500001060000000000701005000204000402300',
         exampleMarkup: _elimMarkup(
@@ -236,7 +236,7 @@ List<TechniqueInfo> basicTechniqueExamples() => [
             'c8删掉候选 1、2、4、8，c9删掉候选 1、2、8。',
         caveats: '判断隐性三数组时要把三个数字的位置集合取并集，并集正好三格才算数，'
             '多于三格就不成立。',
-        rank: 50,
+        rank: 250,
         examplePuzzle:
             '350079000060000000709830005000050000000900000000021006000300074000000000090004200',
         exampleMarkup: _elimMarkup(
@@ -275,7 +275,7 @@ List<TechniqueInfo> basicTechniqueExamples() => [
             'r2c3删掉候选 4、5、8、9，r3c2与r3c3各删掉候选 5、8、9。',
         caveats: '隐性四数组的四个数字不必平均分布在四格，只要位置集合的并集正好是这四格，'
             '就可以判定成立，别被候选数量吓退。',
-        rank: 55,
+        rank: 300,
         examplePuzzle:
             '000070162000020000000004307100000000000060000000400000700000000603000020200580000',
         exampleMarkup: _elimMarkup(
@@ -319,7 +319,7 @@ List<TechniqueInfo> basicTechniqueExamples() => [
             '如果候选里有 9，都要删掉（删 9r3c5, 9r3c6）。',
         caveats: '宫区块要求候选格子数在 2 到 3 之间且严格落在同一行或列，'
             '四个及以上或跨行跨列都不成立。',
-        rank: 60,
+        rank: 151,
         examplePuzzle:
             '100000090026400000300600080003000007602000800000310020000000300930070540000000010',
         exampleMarkup: _elimMarkup(
@@ -346,7 +346,7 @@ List<TechniqueInfo> basicTechniqueExamples() => [
             '说明这个宫的 4 一定在c9，因此同宫c7,c8的r1,r2,r3'
             '如果候选里有 4，都要删掉。',
         caveats: '行/列区块的候选范围必须严格落在同一个宫，如果候选跨了两个宫就不能用这个技巧。',
-        rank: 65,
+        rank: 152,
         examplePuzzle:
             '000700000020003700379000000400800000012040800008010009500009002000000006060004900',
         exampleMarkup: _elimMarkup(

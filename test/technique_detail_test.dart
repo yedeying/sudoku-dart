@@ -11,7 +11,8 @@ void main() {
     addTearDown(tester.view.reset);
 
     final info = TechniqueCatalog.all.first;
-    await tester.pumpWidget(MaterialApp(home: TechniqueDetailScreen(info: info)));
+    await tester
+        .pumpWidget(MaterialApp(home: TechniqueDetailScreen(info: info)));
     expect(find.byType(SudokuGrid), findsOneWidget);
     expect(find.text('本例怎么推'), findsOneWidget);
     expect(find.text('技巧定义'), findsOneWidget);
@@ -23,8 +24,7 @@ void main() {
   });
 
   test('Nice Loop 复制的是练习原题而不是示意图', () {
-    final info =
-        TechniqueCatalog.all.firstWhere((t) => t.id == 'nice_loop');
+    final info = TechniqueCatalog.all.firstWhere((t) => t.id == 'nice_loop');
     expect(info.copiesPracticeBoard, isTrue);
     expect(info.copyPuzzle, TechniqueCatalog.practicePuzzles['nice_loop']);
     expect(info.copyPuzzle, isNot(info.examplePuzzle));

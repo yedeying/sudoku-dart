@@ -54,8 +54,8 @@ class HintPanel extends StatelessWidget {
                         const SizedBox(height: 8),
                         Text(
                           definition!,
-                          style: theme.textTheme.bodyMedium
-                              ?.copyWith(height: 1.5),
+                          style:
+                              theme.textTheme.bodyMedium?.copyWith(height: 1.5),
                         ),
                       ],
                     ],

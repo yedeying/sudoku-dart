@@ -131,7 +131,7 @@ BoardMarkup _urMarkup({
 /// 翼类、唯一矩形与 Simple Coloring 的十三个教学盘面。
 ///
 /// 摩天楼、双线风筝、空矩形、XY-Wing、XYZ-Wing、W-Wing、Simple Coloring、
-/// 唯一矩形 Type 2/3、Simple Coloring 与唯一矩形 Type 4 都是从随机生成的
+/// 唯一矩形 2/3、Simple Coloring 与唯一矩形 4 都是从随机生成的
 /// 完整解里挖出题目后，用 [AdvancedTechniques] 对应的 finder 在一块全新的
 /// 快照上重新求解，确认能推出同样的技巧名字、同样的删除/填入结果，
 /// 才把这一刻的 81 位盘面和候选写成常量。WXYZ-Wing 与 BUG+1 在本引擎里
@@ -159,7 +159,7 @@ List<TechniqueInfo> wingTechniqueExamples() => [
             '3r2c4 = 3r6c4 - 3r6c7 = 3r1c7',
         caveats: '两条强链必须是真正的强链（该数字在那条线上恰好只剩两格），'
             '屋脊只是端点共线，本身不必是强链，别把普通候选重合误判成摩天楼。',
-        rank: 100,
+        rank: 202,
         examplePuzzle:
             '024610007006070402003824560000200800301060024002001000069002100240130600130006240',
         exampleMarkup: _chainMarkup(
@@ -198,7 +198,7 @@ List<TechniqueInfo> wingTechniqueExamples() => [
             '9r4c6 = 9r8c6 - 9r7c5 = 9r7c7',
         caveats: '两条强链的“拐弯”端必须真正同宫，只是数值相近或位置相邻不算，'
             '删除目标要同时被两条链的另一端用行、列分别看到才成立。',
-        rank: 105,
+        rank: 220,
         examplePuzzle:
             '100300004375924681040010030200000007087163420000207003020801076816000302709602108',
         exampleMarkup: _chainMarkup(
@@ -235,7 +235,7 @@ List<TechniqueInfo> wingTechniqueExamples() => [
             '两者交汇处——r8c9——不可能是 4，可以删除。',
         caveats: '空矩形要求宫内候选严格挤在一行一列上，多出一个候选就不成立；'
             '外部强链必须真的与空矩形共享那一行或那一列，不能只是邻近。',
-        rank: 110,
+        rank: 280,
         examplePuzzle:
             '498061300361009008007384090980010700136078520702000810013847900870690030009100087',
         exampleMarkup: _chainMarkup(
@@ -275,7 +275,7 @@ List<TechniqueInfo> wingTechniqueExamples() => [
             '5r9c3 - 5r7c2 = 4r7c2；7r9c3 - 7r9c6 = 4r9c6',
         caveats: '三格必须都恰好是双值格，支点到每个翼格的可见关系（同行/列/宫）'
             '缺一个都不成立，别把三个候选凑巧重合的格子误判成 XY-Wing。',
-        rank: 120,
+        rank: 253,
         examplePuzzle:
             '596002341420600785780405269964001508300948126218560904802300617109006053630100092',
         exampleMarkup: _chainMarkup(
@@ -311,7 +311,7 @@ List<TechniqueInfo> wingTechniqueExamples() => [
             '因此同时看到三格的r8c6不可能是 4，删除该处候选 4。',
         caveats: '三格必须都真的共享同一个数字 z，且支点要同时看到两个翼格；'
             '漏检其中一个可见关系会把普通的三候选重合误判成 XYZ-Wing。',
-        rank: 125,
+        rank: 303,
         examplePuzzle:
             '964821735005697000871000269493286157587000326010375090040000570708060900109700603',
         exampleMarkup: _chainMarkup(
@@ -347,7 +347,7 @@ List<TechniqueInfo> wingTechniqueExamples() => [
             '都不可能是 4，删除这三处候选 4。',
         caveats: '两个双值格的候选必须完全一致，强链必须是真正的强链（该数字恰好只剩'
             '两格），删除的是双值格里“另一个”数字，别删成强链本身的数字。',
-        rank: 130,
+        rank: 357,
         examplePuzzle:
             '639000275821975643547362981052000096018690532960520810170856029285039160096200058',
         exampleMarkup: _chainMarkup(
@@ -388,7 +388,7 @@ List<TechniqueInfo> wingTechniqueExamples() => [
             '这四格中的一格，因此同时看到四格的r3c2不可能是 4，删除该处候选 4。',
         caveats: '四格必须真的共享同一个锁定数字，且支点要能看到每一个翼格；'
             '三个翼格覆盖的数字合起来要正好补满支点的四个候选，缺一个都不成立。',
-        rank: 135,
+        rank: 454,
         examplePuzzle:
             '006280105018059726200136098005318264081692357632574981160823579873945612529761843',
         exampleMarkup: _chainMarkup(
@@ -427,7 +427,7 @@ List<TechniqueInfo> wingTechniqueExamples() => [
             '不可能成立，删除。',
         caveats: '染色只能沿真正的强链交替，弱链不能用来染色；'
             '删除的前提是同一个格子真的同时看到两种颜色，只看到一种颜色不能删。',
-        rank: 140,
+        rank: 402,
         examplePuzzle:
             '459020000070500200123806000285001370900375020307280000090030502504902080702058010',
         exampleMarkup: _coloringMarkup(
@@ -462,7 +462,7 @@ List<TechniqueInfo> wingTechniqueExamples() => [
       ),
       TechniqueInfo(
         id: 'ur1',
-        name: '唯一矩形 Type 1',
+        name: '唯一矩形 1',
         summary: '题目保证唯一解：2×2 矩形三格都是 {a,b}，第四格多一个数字，必须填那个。',
         definition: '唯一矩形（Unique Rectangle）利用「数独题目保证只有一个解」这个前提：'
             '如果一个 2×2 矩形横跨两行两列，四格恰好落在同两个宫里，其中三格的候选都'
@@ -478,7 +478,7 @@ List<TechniqueInfo> wingTechniqueExamples() => [
             '因此r2c4只能填 5。',
         caveats: '矩形必须横跨两个不同的宫，如果四格全部落在同一个宫里就不成立；'
             '判断前要确认题目本身确实只有一个解，这是整个推理的前提。',
-        rank: 150,
+        rank: 254,
         examplePuzzle:
             '049086253028043609653902874385471962274659138916238547462395781897064325531827496',
         exampleMarkup: _urMarkup(
@@ -496,9 +496,9 @@ List<TechniqueInfo> wingTechniqueExamples() => [
       ),
       TechniqueInfo(
         id: 'ur2',
-        name: '唯一矩形 Type 2',
+        name: '唯一矩形 2',
         summary: '题目保证唯一解：矩形里同一个额外数字出现两次，删它们共同可见处的这个数字。',
-        definition: '唯一矩形 Type 2 指矩形四格里，两格候选恰好是同样的两个数字 {a, b}，'
+        definition: '唯一矩形 2 指矩形四格里，两格候选恰好是同样的两个数字 {a, b}，'
             '另外两格除了 {a, b} 还各多出同一个数字 c。为了避免四格里的 a、b '
             '能互相对调形成多解的死亡矩形，这两个额外候选里必须至少有一个是 c，'
             '所以只要某个格子能同时看到这两个多出 c 的格子，它的候选 c 就可以删除。',
@@ -509,8 +509,8 @@ List<TechniqueInfo> wingTechniqueExamples() => [
             '为了不让矩形出现死亡对调，这两格里必须有一个填 3，'
             '因此同时看到它们的r1c4、r8c5的候选 3 都可以删除。',
         caveats: '两个额外候选必须是同一个数字，且要能被同一个格子同时看到才能删；'
-            '如果额外数字不一样，就要按 Type 3 或其它类型分析。',
-        rank: 155,
+            '如果额外数字不一样，就要按唯一矩形 3 或其它类型分析。',
+        rank: 302,
         examplePuzzle:
             '687040001031008700049701008123596800956874123874123500005082410012400080408010002',
         exampleMarkup: _urMarkup(
@@ -533,9 +533,9 @@ List<TechniqueInfo> wingTechniqueExamples() => [
       ),
       TechniqueInfo(
         id: 'ur3',
-        name: '唯一矩形 Type 3',
+        name: '唯一矩形 3',
         summary: '题目保证唯一解：额外候选和同一区域里的其它格子组成数组，当数组一起删。',
-        definition: '唯一矩形 Type 3 指矩形四格里两格是纯 {a, b}，另外两格除了 {a, b} '
+        definition: '唯一矩形 3 指矩形四格里两格是纯 {a, b}，另外两格除了 {a, b} '
             '还各多出一些额外候选。为了避免死亡矩形，这两个额外格里必须有一个填 a 或 b，'
             '于是可以把这两格的额外候选当成一个整体，和同一行、列或宫里其它候选相同的'
             '格子拼成一个数组（数对、三数组……），再按普通数组的规则删除同区域里'
@@ -547,7 +547,7 @@ List<TechniqueInfo> wingTechniqueExamples() => [
             '构成显性数对，因此 r6c1, r6c2, r6c8 上和它们重复的候选 6、7 都要删除。',
         caveats: '额外候选去掉矩形本身的 {a, b} 之后才是真正要拼数组的部分，'
             '别把 {a, b} 也算进数组里，否则会多删或少删。',
-        rank: 160,
+        rank: 501,
         examplePuzzle:
             '300090002020104000090300700643519287875003914219007635002001000000905020900030006',
         exampleMarkup: _urMarkup(
@@ -573,9 +573,9 @@ List<TechniqueInfo> wingTechniqueExamples() => [
       ),
       TechniqueInfo(
         id: 'ur4',
-        name: '唯一矩形 Type 4',
+        name: '唯一矩形 4',
         summary: '题目保证唯一解：矩形所在线上一个数字形成强链，删矩形内另一个数字。',
-        definition: '唯一矩形 Type 4 指矩形四格都恰好是同样的两个数字 {a, b}，'
+        definition: '唯一矩形 4 指矩形四格都恰好是同样的两个数字 {a, b}，'
             '其中一组对角所在的行或列上，数字 a（或 b）刚好只剩这两格能填，形成强链。'
             '因为强链保证 a 必然落在这两格之一，为了不让另一个数字 b 在这两格里同时'
             '出现两次形成死亡对调，这两格就都不能再是 b 了，可以把 b 从这两格删除。',
@@ -586,8 +586,8 @@ List<TechniqueInfo> wingTechniqueExamples() => [
             '形成强链。5 必然落在这两格之一，为了避免死亡对调，这两格都不能再是 4，'
             '因此删除r4c9、r5c9的候选 4。',
         caveats: '强链必须落在矩形本身所在的行或列上，且矩形四格要先确认真的都是'
-            '同样的 {a, b}，否则不能套用 Type 4 的强链结论。',
-        rank: 165,
+            '同样的 {a, b}，否则不能套用唯一矩形 4 的强链结论。',
+        rank: 354,
         examplePuzzle:
             '360000050459760020780530040920000000830000000176045200643800579290650130510000002',
         exampleMarkup: _urMarkup(
@@ -630,7 +630,7 @@ List<TechniqueInfo> wingTechniqueExamples() => [
             '候选 2 和 6 都要删除。',
         caveats: '一定要先确认「只有一个格子例外、其余全是双值格」这个前提成立，'
             '再去数候选出现次数；只要还有第二个非双值格，BUG+1 的结论就不成立。',
-        rank: 170,
+        rank: 255,
         examplePuzzle:
             '483716295125938647796542381004800109018200704600104803861359472030487516547621938',
         exampleMarkup: _urMarkup(

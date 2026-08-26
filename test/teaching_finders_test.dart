@@ -77,7 +77,7 @@ void main() {
 
   test('Franken 鱼教学盘面', () {
     _expectFinder(
-        'franken_fish', 'Franken/Mutant Fish', AdvancedTechniques.findFrankenFish);
+        'franken_fish', 'Franken 鱼', AdvancedTechniques.findFrankenFish);
   });
 
   test('鱼类教学盘面标出定义行或列', () {
@@ -93,7 +93,7 @@ void main() {
         '带鳍 Jellyfish',
         AdvancedTechniques.findFinnedJellyfish
       ),
-      ('franken_fish', 'Franken/Mutant Fish', AdvancedTechniques.findFrankenFish),
+      ('franken_fish', 'Franken 鱼', AdvancedTechniques.findFrankenFish),
       ('jellyfish', 'Jellyfish', AdvancedTechniques.findJellyfish),
     ];
     for (final item in cases) {
@@ -116,8 +116,8 @@ void main() {
 
   test('X-Wing / Swordfish 提示带上定义线', () {
     SudokuHint? walkTo(String id, String name) {
-      final puzzle = TechniqueCatalog.practicePuzzles[id] ??
-          _tech(id).examplePuzzle;
+      final puzzle =
+          TechniqueCatalog.practicePuzzles[id] ?? _tech(id).examplePuzzle;
       final board = SudokuBoard.fromString(puzzle);
       for (var i = 0; i < 80; i++) {
         final hint = SudokuSolver.getHint(board);
@@ -155,6 +155,78 @@ void main() {
     expect(hint.value, 5);
   });
 
+  test('getHint 搜索顺序遵循评审难度和语义约束', () {
+    final order = SudokuSolver.hintSearchOrder;
+    const expected = [
+      '唯余法',
+      '摒除法（行/列/宫）',
+      '显性数对',
+      '显性三数组',
+      '隐性数对',
+      '宫区块',
+      '行/列区块',
+      '隐性三数组',
+      '显性四数组',
+      'X-Wing',
+      '隐性四数组',
+      '摩天楼',
+      '双线风筝',
+      'Swordfish',
+      '多宝鱼',
+      '带鳍 X-Wing',
+      '刺身鱼',
+      '空矩形',
+      'Jellyfish',
+      'XY-Wing',
+      '唯一矩形 1',
+      '不完整唯一矩形',
+      '唯一矩形 2',
+      'BUG+1',
+      '可规避矩形',
+      '带鳍 Swordfish',
+      '唯一矩形 4',
+      '隐性唯一矩形',
+      'BUG 类型 2',
+      '扩展矩形 1',
+      'XYZ-Wing',
+      '带鳍 Jellyfish',
+      '扩展矩形 2',
+      '唯一矩形 3',
+      'BUG 类型 4',
+      '扩展矩形 4',
+      '扩展矩形 3',
+      '唯一环 1',
+      'BUG 类型 3',
+      '唯一环 2',
+      'Franken 鱼',
+      '唯一环 4',
+      'Simple Coloring',
+      '唯一环 3',
+      '探长',
+      'W-Wing',
+      'XY-Chain',
+      'WXYZ-Wing',
+      'AIC 开链',
+      'Sue de Coq',
+      'Nice Loop / AIC 环',
+      'Grouped AIC',
+      '死环',
+      '毛刺数组',
+      'ALS-XZ',
+      'Death Blossom',
+      'Kraken Fish',
+      'Forcing Chain',
+      'ALS-XY-Wing',
+      'Nishio',
+      'Forcing Net',
+    ];
+
+    for (final name in expected) {
+      expect(order, contains(name), reason: '$name 必须存在，不能用 -1 参与顺序比较');
+    }
+    expect(order, expected);
+  });
+
   test('XY-Chain 教学盘面', () {
     _expectFinder('xy_chain', 'XY-Chain', AdvancedTechniques.findXyChain);
   });
@@ -164,7 +236,8 @@ void main() {
   });
 
   test('Nice Loop 教学盘面', () {
-    _expectFinder('nice_loop', 'Nice Loop / AIC 环', AdvancedTechniques.findNiceLoop);
+    _expectFinder(
+        'nice_loop', 'Nice Loop / AIC 环', AdvancedTechniques.findNiceLoop);
   });
 
   test('XY-Chain / AIC 开链 / Nice Loop 标出整条强弱链', () {
@@ -335,7 +408,8 @@ void main() {
       reason: '已有更浅的链/基础技巧时不该先甩重器，实际是 ${fromHint.technique}',
     );
     if (fromHint.technique == 'XY-Chain') {
-      expect(_elimKeys(fromHint).containsAll(_teachingElims('xy_chain')), isTrue);
+      expect(
+          _elimKeys(fromHint).containsAll(_teachingElims('xy_chain')), isTrue);
     }
   });
 }

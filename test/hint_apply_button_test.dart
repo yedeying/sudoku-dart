@@ -100,7 +100,8 @@ void main() {
     );
 
     const palette = BoardPalette.lightPalette;
-    final chip = tester.widgetList<Container>(find.byType(Container)).where((c) {
+    final chip =
+        tester.widgetList<Container>(find.byType(Container)).where((c) {
       final decoration = c.decoration;
       return decoration is BoxDecoration &&
           decoration.shape == BoxShape.circle &&

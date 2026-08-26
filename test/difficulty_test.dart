@@ -77,9 +77,7 @@ void main() {
 
       // 中等题目应该需要一些中级技巧
       bool hasIntermediateTechnique = result.usedTechniques.keys.any((key) =>
-          key.contains('数对') ||
-          key.contains('数字三元组') ||
-          key.contains('区块'));
+          key.contains('数对') || key.contains('数字三元组') || key.contains('区块'));
 
       if (hasIntermediateTechnique) {
         print('✓ 使用了中级技巧');

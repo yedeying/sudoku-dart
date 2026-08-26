@@ -165,9 +165,12 @@ class AppTheme {
     final light = brightness == Brightness.light;
     final onSurface = light ? seed : const Color(0xFFF5F5F5);
     final surface = light ? const Color(0xFFFAFAFA) : const Color(0xFF141414);
-    final surfaceLow = light ? const Color(0xFFF1F1F1) : const Color(0xFF242424);
-    final surfaceMid = light ? const Color(0xFFE7E7E7) : const Color(0xFF2E2E2E);
-    final surfaceHigh = light ? const Color(0xFFDCDCDC) : const Color(0xFF383838);
+    final surfaceLow =
+        light ? const Color(0xFFF1F1F1) : const Color(0xFF242424);
+    final surfaceMid =
+        light ? const Color(0xFFE7E7E7) : const Color(0xFF2E2E2E);
+    final surfaceHigh =
+        light ? const Color(0xFFDCDCDC) : const Color(0xFF383838);
     final surfaceHighest =
         light ? const Color(0xFFCFCFCF) : const Color(0xFF454545);
     final outline = light ? const Color(0xFF8A8A8A) : const Color(0xFF8A8A8A);
@@ -198,10 +201,12 @@ class AppTheme {
       error: light ? const Color(0xFFB3261E) : const Color(0xFFF2B8B5),
       onError: light ? Colors.white : const Color(0xFF601410),
       errorContainer: light ? const Color(0xFFF9DEDC) : const Color(0xFF8C1D18),
-      onErrorContainer: light ? const Color(0xFF410E0B) : const Color(0xFFF9DEDC),
+      onErrorContainer:
+          light ? const Color(0xFF410E0B) : const Color(0xFFF9DEDC),
       surface: surface,
       onSurface: onSurface,
-      onSurfaceVariant: light ? const Color(0xFF5C5C5C) : const Color(0xFFB0B0B0),
+      onSurfaceVariant:
+          light ? const Color(0xFF5C5C5C) : const Color(0xFFB0B0B0),
       surfaceContainerLowest: light ? Colors.white : const Color(0xFF0A0A0A),
       surfaceContainerLow: surfaceLow,
       surfaceContainer: surfaceMid,

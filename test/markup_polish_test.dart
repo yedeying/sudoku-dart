@@ -77,9 +77,7 @@ void main() {
     const to = CandidateRef(0, 8, 1);
     final painter = BoardArrowsPainter(
       markup: BoardMarkup(
-        arrows: const [
-          MarkupArrow(from: from, to: to, kind: ArrowKind.strong)
-        ],
+        arrows: const [MarkupArrow(from: from, to: to, kind: ArrowKind.strong)],
       ),
       strongColor: Colors.blue,
       weakColor: Colors.grey,
@@ -193,8 +191,8 @@ void main() {
     final digit = tester.widget<Text>(find.text('4').first);
     final bg = MarkupPalette.wash(MarkupPalette.colors[2]);
     final fg = digit.style!.color!;
-    final contrast = (fg.computeLuminance() + 0.05) /
-        (bg.computeLuminance() + 0.05);
+    final contrast =
+        (fg.computeLuminance() + 0.05) / (bg.computeLuminance() + 0.05);
     final ratio = contrast > 1 ? contrast : 1 / contrast;
     expect(ratio, greaterThan(3.5));
   });

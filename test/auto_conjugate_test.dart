@@ -107,7 +107,8 @@ void main() {
     g.setMarkupMode(MarkupMode.autoStrong);
     g.onNumberPad(7);
     expect(g.userMarkup.arrows, isNotEmpty);
-    expect(g.userMarkup.arrows.every((a) => a.kind == ArrowKind.strong), isTrue);
+    expect(
+        g.userMarkup.arrows.every((a) => a.kind == ArrowKind.strong), isTrue);
     expect(g.userMarkup.arrows.every((a) => a.directed == false), isTrue);
   });
 

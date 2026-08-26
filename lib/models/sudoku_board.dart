@@ -19,8 +19,7 @@ class SudokuBoard {
   })  : candidates = List.generate(9, (_) => List.generate(9, (_) => <int>{})),
         userCandidates =
             List.generate(9, (_) => List.generate(9, (_) => <int>{})),
-        userHidden =
-            List.generate(9, (_) => List.generate(9, (_) => <int>{})),
+        userHidden = List.generate(9, (_) => List.generate(9, (_) => <int>{})),
         eliminated = List.generate(9, (_) => List.generate(9, (_) => <int>{})) {
     _updateCandidates();
   }

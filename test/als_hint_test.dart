@@ -82,6 +82,7 @@ void main() {
   });
 
   test('现有浅层技巧卡住后，残局都能在短时间给出 ALS 提示', () {
+    var deepHits = 0;
     for (final puzzle in userPuzzles) {
       expect(
         SudokuSolver.countSolutions(SudokuBoard.fromString(puzzle), limit: 2),
@@ -115,7 +116,10 @@ void main() {
         _apply(stalled, hint);
         if (stalled.isComplete()) break;
       }
-      expect(stalled.isComplete(), isFalse);
+      // 引擎补上新的浅层技巧之后，这批题里有的已经不用走到深链就做得完；
+      // 上面那一圈已经逐条核过每一步的删除，这里就只对真正卡住的残局继续追。
+      if (stalled.isComplete()) continue;
+      deepHits++;
 
       final sw = Stopwatch()..start();
       final hint = SudokuSolver.getHint(stalled);
@@ -151,6 +155,7 @@ void main() {
       }
       expect(sw.elapsedMilliseconds, lessThan(2000));
     }
+    expect(deepHits, greaterThan(0), reason: '这批题里总得还有卡到深链的');
   });
 
   test('00406 残局连续提示不会在未完成时卡住', () {

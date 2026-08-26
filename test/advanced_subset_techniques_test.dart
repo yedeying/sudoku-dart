@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sudoku_app/models/sudoku_board.dart';
+import 'package:sudoku_app/services/advanced_techniques.dart';
 import 'package:sudoku_app/services/sudoku_solver.dart';
 
 SudokuBoard _emptyBoard() =>
@@ -22,7 +23,10 @@ Set<String> _eliminationKeys(SudokuHint hint) =>
     hint.eliminations.map((e) => '${e.row},${e.col},${e.num}').toSet();
 
 void main() {
-  test('显性四数组先于更深技巧删除单元内其它候选', () {
+  // 提示搜索顺序按评审的「难度」列排，隐性数对、行/列区块都排在四数组前面，
+  // 所以这两条不能用 getHint 去测——那只会测出「谁排得更前」。
+  // 四数组该测的是它自己认不认得出这个图形，所以直接叫对应的 finder。
+  test('显性四数组认得出四格锁四数，并删掉单元内其它候选', () {
     final board = _emptyBoard();
     _setCandidates(board, 0, 0, {1, 2});
     _setCandidates(board, 0, 1, {2, 3});
@@ -35,7 +39,7 @@ void main() {
       _setCandidates(board, 1, col, {1, 2, 3, 4, 7, 8, 9});
     }
 
-    final hint = SudokuSolver.getHint(board);
+    final hint = AdvancedTechniques.findNakedQuad(board);
 
     expect(hint, isNotNull);
     expect(hint!.technique, '显性四数组');
@@ -67,7 +71,7 @@ void main() {
     );
   });
 
-  test('隐性四数组删除四个落点中的其它候选', () {
+  test('隐性四数组认得出四数只落四格，并删掉这四格里的其它候选', () {
     final board = _emptyBoard();
     _setCandidates(board, 0, 0, {1, 2, 5, 6});
     _setCandidates(board, 0, 1, {2, 3, 5, 7});
@@ -77,7 +81,7 @@ void main() {
       _setCandidates(board, 0, col, {5, 6, 7, 8, 9});
     }
 
-    final hint = SudokuSolver.getHint(board);
+    final hint = AdvancedTechniques.findHiddenQuad(board);
 
     expect(hint, isNotNull);
     expect(hint!.technique, '隐性四数组');
