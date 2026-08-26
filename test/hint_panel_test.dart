@@ -68,6 +68,25 @@ void main() {
     expect(find.text('应用删除'), findsOneWidget);
   });
 
+  testWidgets('短提示按内容收高，不把上限高度撑满', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Align(
+          alignment: Alignment.bottomCenter,
+          child: HintPanel(
+            title: '唯余法',
+            body: 'r1c3 只能填 4',
+            actionLabel: '应用本步',
+            onCancel: () {},
+            onApply: () {},
+            maxHeight: 400,
+          ),
+        ),
+      ),
+    ));
+    expect(tester.getSize(find.byType(Card)).height, lessThan(280));
+  });
+
   test('getHint 写入 hintSession 而不依赖对话框', () {
     final g = GameState()
       ..loadCustomGame(

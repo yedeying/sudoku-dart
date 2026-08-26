@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 /// 棋盘下方的提示卡片：技巧说明 + 取消 / 应用。
@@ -26,6 +28,9 @@ class HintPanel extends StatelessWidget {
     this.maxHeight,
   });
 
+  /// 标题、按钮、内外边距大约占掉的高度；正文最多用掉上限减去这一截。
+  static const _chrome = 140.0;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -43,24 +48,26 @@ class HintPanel extends StatelessWidget {
             children: [
               Text(title, style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
-              Flexible(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(body, style: theme.textTheme.bodyMedium),
-                      if (definition != null && definition!.isNotEmpty) ...[
-                        const SizedBox(height: 16),
-                        Text('技巧定义', style: theme.textTheme.titleSmall),
-                        const SizedBox(height: 8),
-                        Text(
-                          definition!,
-                          style:
-                              theme.textTheme.bodyMedium?.copyWith(height: 1.5),
-                        ),
-                      ],
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: math.max(0, cap - _chrome),
+                ),
+                child: ListView(
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  children: [
+                    Text(body, style: theme.textTheme.bodyMedium),
+                    if (definition != null && definition!.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Text('技巧定义', style: theme.textTheme.titleSmall),
+                      const SizedBox(height: 8),
+                      Text(
+                        definition!,
+                        style:
+                            theme.textTheme.bodyMedium?.copyWith(height: 1.5),
+                      ),
                     ],
-                  ),
+                  ],
                 ),
               ),
               const SizedBox(height: 12),

@@ -77,7 +77,15 @@ void main() {
 
     final boardBottom = tester.getBottomLeft(find.byType(SudokuGrid)).dy;
     final panelTop = tester.getTopLeft(find.byType(HintPanel)).dy;
+    final panelBottom = tester.getBottomLeft(find.byType(HintPanel)).dy;
+    final bodyBottom = tester.getBottomLeft(find.byType(SafeArea).first).dy;
     expect(panelTop + 0.5, greaterThanOrEqualTo(boardBottom));
+    expect(panelBottom, closeTo(bodyBottom, 1));
+    // 短提示按内容收紧，不要把棋盘下方整段空白撑进卡片里。
+    expect(
+      tester.getSize(find.byType(HintPanel)).height,
+      lessThan(bodyBottom - boardBottom - 8),
+    );
   });
 
   testWidgets('工具栏先功能后撤销，标记中收起撤销行', (tester) async {
@@ -92,6 +100,11 @@ void main() {
       lessThan(tester.getTopLeft(find.text('撤销')).dy),
     );
     expect(find.text('关闭'), findsNothing);
+    expect(
+      tester.getTopLeft(find.byIcon(Icons.visibility_off)).dy -
+          tester.getBottomLeft(find.byType(SudokuGrid)).dy,
+      greaterThanOrEqualTo(12),
+    );
 
     await tester.tap(find.text('标记'));
     await tester.pump();
@@ -101,5 +114,9 @@ void main() {
     expect(find.text('关闭'), findsNothing);
     expect(find.text('格色'), findsOneWidget);
     expect(find.text('清除标记'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.byKey(const ValueKey('markup-color-row'))).dy,
+      greaterThan(tester.getBottomLeft(find.text('格色')).dy),
+    );
   });
 }

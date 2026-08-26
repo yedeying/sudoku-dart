@@ -149,15 +149,32 @@ class _GameScreenState extends State<GameScreen> {
                                 ),
                               ),
                               Flexible(
-                                child: SingleChildScrollView(
-                                  child: Column(
-                                    children: [
-                                      _buildControlButtons(gameState),
-                                      const SizedBox(height: 8),
-                                      _buildNumberPad(gameState),
-                                      const SizedBox(height: 16),
-                                    ],
-                                  ),
+                                child: LayoutBuilder(
+                                  builder: (context, controlsArea) {
+                                    return SingleChildScrollView(
+                                      child: ConstrainedBox(
+                                        constraints: BoxConstraints(
+                                          minHeight: controlsArea.maxHeight,
+                                        ),
+                                        child: IntrinsicHeight(
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(
+                                              top: 16,
+                                              bottom: 16,
+                                            ),
+                                            child: Column(
+                                              children: [
+                                                _buildControlButtons(gameState),
+                                                const Spacer(),
+                                                _buildNumberPad(gameState),
+                                                const Spacer(),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
                               ),
                             ],
@@ -362,45 +379,55 @@ class _GameScreenState extends State<GameScreen> {
       );
     }
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          modeChip('格色', MarkupMode.cellColor),
-          modeChip('候选色', MarkupMode.candidateColor),
-          modeChip('强链', MarkupMode.strong),
-          modeChip('弱链', MarkupMode.weak),
-          modeChip('自动强链', MarkupMode.autoStrong),
-          for (final color in MarkupPalette.colors)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 3),
-              child: GestureDetector(
-                onTap: () => gameState.setMarkupColor(color),
-                child: Container(
-                  width: 22,
-                  height: 22,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: color,
-                    border: Border.all(
-                      color: gameState.markupColor == color
-                          ? scheme.onSurface
-                          : Colors.transparent,
-                      width: 2,
+    return Column(
+      children: [
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              modeChip('格色', MarkupMode.cellColor),
+              modeChip('候选色', MarkupMode.candidateColor),
+              modeChip('强链', MarkupMode.strong),
+              modeChip('弱链', MarkupMode.weak),
+              modeChip('自动强链', MarkupMode.autoStrong),
+              ActionChip(
+                label: const Text('清除标记', style: TextStyle(fontSize: 12)),
+                visualDensity: VisualDensity.compact,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                onPressed: () => gameState.clearUserMarkup(),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          key: const ValueKey('markup-color-row'),
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (final color in MarkupPalette.colors)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: GestureDetector(
+                  onTap: () => gameState.setMarkupColor(color),
+                  child: Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: color,
+                      border: Border.all(
+                        color: gameState.markupColor == color
+                            ? scheme.onSurface
+                            : Colors.transparent,
+                        width: 2,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ActionChip(
-            label: const Text('清除标记', style: TextStyle(fontSize: 12)),
-            visualDensity: VisualDensity.compact,
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            onPressed: () => gameState.clearUserMarkup(),
-          ),
-        ],
-      ),
+          ],
+        ),
+      ],
     );
   }
 
