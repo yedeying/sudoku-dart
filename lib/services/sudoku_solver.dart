@@ -3,7 +3,7 @@ import '../models/notation.dart';
 import '../models/sudoku_board.dart';
 import 'advanced_techniques.dart';
 
-enum HintRole { pattern, extra, link, target }
+enum HintRole { pattern, cover, extra, link, target }
 
 class HintCell {
   final int row;
@@ -186,6 +186,7 @@ class SudokuSolver {
     // 所以排在它后面；顺序必须跟难度分同向，见 hint_order_monotonic_test。
     ('唯一环 3', AdvancedTechniques.findUniqueLoopType3),
     ('探长', AdvancedTechniques.findBorescoper),
+    ('淑芬', AdvancedTechniques.findQiu),
     ('W-Wing', AdvancedTechniques.findWWing),
     ('XY-Chain', AdvancedTechniques.findXyChain),
     ('WXYZ-Wing', AdvancedTechniques.findWxyzWing),

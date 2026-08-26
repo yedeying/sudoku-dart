@@ -203,6 +203,7 @@ void main() {
       'Simple Coloring',
       '唯一环 3',
       '探长',
+      '淑芬',
       'W-Wing',
       'XY-Chain',
       'WXYZ-Wing',

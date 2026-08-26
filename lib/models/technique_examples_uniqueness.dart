@@ -5,7 +5,7 @@ import 'technique_examples_teaching_support.dart';
 import 'technique_structure.dart';
 
 /// 唯一矩形家族里另外五条：不完整唯一矩形、可规避矩形、隐性唯一矩形、探长、淑芬。
-/// 前三条已经接进 `getHint`，探长和淑芬还只有教学页。
+/// 五条都已经接进 `getHint`；淑芬这一轮只报类型 1。
 ///
 /// 五个盘面都是按几何反过来造的：先挑一个完整解，再按「这一格的候选必须恰好是这些」
 /// 把多余的给定数挖掉，最后用求解器确认唯一解。每条都带 [TechniqueInfo.structure]，
@@ -423,7 +423,7 @@ List<TechniqueInfo> uniquenessTechniqueExamples() => [
           const TechniqueLegendItem(color: TeachingColors.cover, label: '交点格'),
           targetLegendItem,
         ],
-        teachingOnly: true,
+        teachingOnly: false,
         structure: const TeachingStructure(
           family: TeachingFamily.qiu,
           claim: TeachingClaim.qiuType1,

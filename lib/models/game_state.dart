@@ -289,6 +289,7 @@ class GameState extends ChangeNotifier {
 
   static const _hintWashes = {
     HintRole.pattern: Color(0xFFBBDEFB),
+    HintRole.cover: Color(0xFFD1C4E9),
     HintRole.extra: Color(0xFFF3E5AB),
     HintRole.link: Color(0xFFC8E6C9),
     HintRole.target: Color(0xFFFFCDD2),
@@ -298,6 +299,8 @@ class GameState extends ChangeNotifier {
     switch (role) {
       case HintRole.pattern:
         return MarkupPalette.blue;
+      case HintRole.cover:
+        return MarkupPalette.purple;
       case HintRole.extra:
         return MarkupPalette.gold;
       case HintRole.link:
@@ -314,6 +317,8 @@ class GameState extends ChangeNotifier {
       case HintRole.extra:
         return 3;
       case HintRole.link:
+        return 2;
+      case HintRole.cover:
         return 2;
       case HintRole.pattern:
         return 1;

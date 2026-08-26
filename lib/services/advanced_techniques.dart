@@ -1571,8 +1571,8 @@ class AdvancedTechniques {
               cell
         ];
         if (spots.length != 2) continue;
-        if (!roofs.every((cell) =>
-            spots.any((s) => s[0] == cell[0] && s[1] == cell[1]))) {
+        if (!roofs.every(
+            (cell) => spots.any((s) => s[0] == cell[0] && s[1] == cell[1]))) {
           continue;
         }
         final elims = <CandidateElim>[];
@@ -1585,7 +1585,8 @@ class AdvancedTechniques {
           }
         }
         if (elims.isEmpty) continue;
-        final others = (read.baseDigits.where((d) => d != lock).toList()..sort())
+        final others = (read.baseDigits.where((d) => d != lock).toList()
+              ..sort())
             .join('、');
         final hl = _houseHighlight(house);
         return SudokuHint.elimination(
@@ -1991,9 +1992,8 @@ class AdvancedTechniques {
       if (path.any((cell) => cell[0] == next[0] && cell[1] == next[1])) {
         continue;
       }
-      final grown = board.getCandidates(next[0], next[1]).length > 2
-          ? roofs + 1
-          : roofs;
+      final grown =
+          board.getCandidates(next[0], next[1]).length > 2 ? roofs + 1 : roofs;
       if (grown > 2) continue;
       path.add(next);
       yield* _loopStep(
@@ -2313,6 +2313,230 @@ class AdvancedTechniques {
   }
 
   // ---------------------------------------------------------------------------
+  // 淑芬（Qiu's Deadly Pattern / QDP，类型 1）
+  // ---------------------------------------------------------------------------
+
+  /// 淑芬类型 1：两条同带整线，加上线外同宫同交叉线的两格。
+  ///
+  /// 搜索边界固定：横竖两向 × 3 个带 × 每带 3 对线 × 6 条带外交叉线
+  /// × 3 个交点宫 × 宫内 3 对交叉线。每副几何只从线外两格的候选并集里
+  /// 取 2–4 个底数；空盘上线外格都有 9 个候选，会在组合前直接剪掉。
+  ///
+  /// 这里只报类型 1：线外两格恰好一格带非底数候选，删除那格上的全部底数。
+  /// 不调用求解器，也不读取答案。
+  static SudokuHint? findQiu(SudokuBoard board) {
+    // 同一盘面上常能读出好几副几何（教学盘上 r6 那对线外格会先撞上
+    // {1,3} 这个真子集）。按删除最多的那一副报——同一个形状、同一层
+    // 难度，先给收获大的那一手，也避免子集抢掉完整底数。
+    SudokuHint? best;
+    for (var byRow = 0; byRow < 2; byRow++) {
+      final horizontal = byRow == 1;
+      for (var band = 0; band < 3; band++) {
+        final bandLines = [band * 3, band * 3 + 1, band * 3 + 2];
+        for (final lines in _combinations(bandLines, 2)) {
+          for (var cross = 0; cross < 9; cross++) {
+            if (cross ~/ 3 == band) continue;
+            for (var boxOffset = 0; boxOffset < 3; boxOffset++) {
+              final crossLines = [
+                boxOffset * 3,
+                boxOffset * 3 + 1,
+                boxOffset * 3 + 2,
+              ];
+              for (final pair in _combinations(crossLines, 2)) {
+                final c1 = horizontal ? [cross, pair[0]] : [pair[0], cross];
+                final c2 = horizontal ? [cross, pair[1]] : [pair[1], cross];
+                final hint = _qiuType1On(
+                  board,
+                  horizontal,
+                  lines,
+                  c1,
+                  c2,
+                );
+                if (hint == null) continue;
+                if (best == null ||
+                    hint.eliminations.length > best.eliminations.length) {
+                  best = hint;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    return best;
+  }
+
+  static SudokuHint? _qiuType1On(
+    SudokuBoard board,
+    bool horizontal,
+    List<int> lines,
+    List<int> c1,
+    List<int> c2,
+  ) {
+    if (board.get(c1[0], c1[1]) != 0 || board.get(c2[0], c2[1]) != 0) {
+      return null;
+    }
+    final cands1 = board.getCandidates(c1[0], c1[1]);
+    final cands2 = board.getCandidates(c2[0], c2[1]);
+    if (cands1.isEmpty || cands2.isEmpty) return null;
+    // 类型 1 至少有一格完全落在 2–4 个底数里；两格都超过四候选时不可能。
+    if (cands1.length > 4 && cands2.length > 4) return null;
+
+    final intersections = <List<int>>[
+      for (final line in lines)
+        for (final c in [c1, c2]) horizontal ? [line, c[1]] : [c[0], line],
+    ];
+    if (intersections.any((c) => board.get(c[0], c[1]) != 0)) return null;
+    final boxes = {for (final c in intersections) (c[0] ~/ 3) * 3 + c[1] ~/ 3};
+    if (boxes.length != 1) return null;
+    final intersectionBox = boxes.single;
+    final intersectionKeys = {for (final c in intersections) '${c[0]},${c[1]}'};
+    final lineCells = <List<int>>[
+      for (final line in lines)
+        for (var k = 0; k < 9; k++)
+          if (board.get(
+                horizontal ? line : k,
+                horizontal ? k : line,
+              ) ==
+              0)
+            [horizontal ? line : k, horizontal ? k : line],
+    ];
+    final patternLineCells = [
+      for (final cell in lineCells)
+        if (!intersectionKeys.contains('${cell[0]},${cell[1]}')) cell
+    ];
+
+    final pool = ({...cands1, ...cands2}.toList()..sort());
+    // 从大到小取底数：{1,2,3,8} 成立时，它的真子集 {1,3} 也会过关，
+    // 从小到大搜会先报子集、把完整的四数淑芬抢走。
+    for (var size = pool.length < 4 ? pool.length : 4; size >= 2; size--) {
+      for (final digits in _combinations(pool, size)) {
+        final base = digits.toSet();
+        final extras1 = cands1.difference(base);
+        final extras2 = cands2.difference(base);
+        if ((extras1.isEmpty ? 0 : 1) + (extras2.isEmpty ? 0 : 1) != 1) {
+          continue;
+        }
+        final target = extras1.isNotEmpty ? c1 : c2;
+        final extras = extras1.isNotEmpty ? extras1 : extras2;
+        final cleanCands = extras1.isNotEmpty ? cands2 : cands1;
+        // 干净那一格必须正好是底数全集，少一个底数就撑不起整组对调。
+        if (cleanCands.length != base.length || !cleanCands.containsAll(base)) {
+          continue;
+        }
+        final targetBase =
+            board.getCandidates(target[0], target[1]).intersection(base);
+        if (targetBase.isEmpty) continue;
+        // 交点 2×2 是底数矩形：格子上不能再挂底数以外的候选，
+        // 否则「底数在交点宫只能落在这四格」说的就不是这副矩形。
+        if (intersections.any((cell) => board
+            .getCandidates(cell[0], cell[1])
+            .any((d) => !base.contains(d)))) {
+          continue;
+        }
+
+        var confined = true;
+        for (final digit in base) {
+          var spots = 0;
+          for (final cell in _houseCells(18 + intersectionBox)) {
+            final r = cell[0], c = cell[1];
+            final value = board.get(r, c);
+            if (value == digit && !intersectionKeys.contains('$r,$c')) {
+              confined = false;
+              break;
+            }
+            if (value != 0 || !board.getCandidates(r, c).contains(digit)) {
+              continue;
+            }
+            if (!intersectionKeys.contains('$r,$c')) {
+              confined = false;
+              break;
+            }
+            spots++;
+          }
+          if (!confined || spots == 0) {
+            confined = false;
+            break;
+          }
+        }
+        if (!confined) continue;
+
+        // 教学声明还要求这副几何真能「换一种排法」：线外两格只准取底数，
+        // 两条整线上的空格则保留全部当前候选。逐房屋枚举这些格子的合法填法，
+        // 每一种都必须存在房屋数字多重集完全相同的另一种填法。
+        final structureCells = [c1, c2, ...lineCells];
+        final allowed = <Set<int>>[
+          cands1.intersection(base),
+          cands2.intersection(base),
+          for (final cell in lineCells)
+            Set<int>.from(board.getCandidates(cell[0], cell[1])),
+        ];
+        if (allowed.any((set) => set.isEmpty)) continue;
+        final cellHouses = [
+          for (final cell in structureCells) _housesOf(cell[0], cell[1])
+        ];
+        if (!_deadlyByExchange(allowed, cellHouses)) continue;
+
+        final elims = [
+          for (final digit in targetBase.toList()..sort())
+            CandidateElim(target[0], target[1], digit)
+        ];
+
+        final rows = <int>{}, cols = <int>{}, highlightBoxes = <int>{};
+        final houses = <int>{
+          if (horizontal) ...lines else ...lines.map((c) => 9 + c),
+          if (horizontal) c1[0] else 9 + c1[1],
+          if (horizontal) ...[9 + c1[1], 9 + c2[1]] else ...[c1[0], c2[0]],
+          18 + intersectionBox,
+          18 + (c1[0] ~/ 3) * 3 + c1[1] ~/ 3,
+        };
+        for (final house in houses) {
+          final hl = _houseHighlight(house);
+          rows.addAll(hl.rows);
+          cols.addAll(hl.cols);
+          highlightBoxes.addAll(hl.boxes);
+        }
+
+        return SudokuHint.elimination(
+          technique: '淑芬',
+          explanation: '题目保证唯一解。'
+              '${horizontal ? rowsList(lines) : colsList(lines)} 是同一个大'
+              '${horizontal ? "行" : "列"}里的两条整线，取线上全部空格；'
+              '${cellsList([c1, c2])} 在线外同宫、同'
+              '${horizontal ? "行" : "列"}，且不在这两条线的带里。'
+              '它们与整线交出的 ${cellsList(intersections)} 全在 '
+              '${_houseLabel(18 + intersectionBox)}，'
+              '底数 ${(base.toList()..sort()).join("、")} 在该宫也只能落在这四格。'
+              '${cellRef(target[0], target[1])} 是线外两格里唯一带非底数候选的格，'
+              '多出来的是 ${(extras.toList()..sort()).join("、")}；'
+              '若它仍填底数，两条整线连同线外两格就能换一种排法而盘外不变，题目会多解。'
+              '所以它必须跳出底数，删除 ${_elimsText(elims)}。',
+          eliminations: elims,
+          patternCells: [
+            ...hintCells(HintRole.pattern, patternLineCells),
+            ...hintCells(HintRole.pattern, [c1, c2]),
+            ...hintCells(HintRole.cover, intersections),
+            ..._targetCells(elims),
+          ],
+          patternCandidates: [
+            ..._deadlyBaseMarks(board, [c1, c2, ...intersections], base),
+            for (final digit in extras.toList()..sort())
+              HintCandidate(
+                CandidateRef(target[0], target[1], digit),
+                HintRole.extra,
+              ),
+            ..._targetCands(elims),
+          ],
+          highlightRows: rows.toList()..sort(),
+          highlightCols: cols.toList()..sort(),
+          highlightBoxes: highlightBoxes.toList()..sort(),
+        );
+      }
+    }
+    return null;
+  }
+
+  // ---------------------------------------------------------------------------
   // 死环（带守卫的同数字奇数圈 / Guarded Odd Cycle）
   // ---------------------------------------------------------------------------
 
@@ -2421,7 +2645,8 @@ class AdvancedTechniques {
         if (back == null) return null;
         for (final h in back) {
           if (usedHouse.contains(h)) continue;
-          if (houseSpots[h].any((i) => onPath[i] && i != start && i != path.last)) {
+          if (houseSpots[h]
+              .any((i) => onPath[i] && i != start && i != path.last)) {
             continue;
           }
           final last = path.last;
@@ -2521,7 +2746,8 @@ class AdvancedTechniques {
     }
     return SudokuHint.elimination(
       technique: '死环',
-      explanation: '盯数字 $digit。${cellsList(cycle)} 首尾连成一个 ${cycle.length} 格的奇数圈，'
+      explanation:
+          '盯数字 $digit。${cellsList(cycle)} 首尾连成一个 ${cycle.length} 格的奇数圈，'
           '相邻两格分别同处 ${houses.map(_houseLabel).join('、')}，'
           '这几条房屋互不相同，而且每条只占了圈上两格。'
           '这些房屋里圈外还剩的 $digit 是 ${cellsList(guards)}，叫守卫。'
@@ -2592,7 +2818,8 @@ class AdvancedTechniques {
         for (final combo in _combinations(spots, size)) {
           final hint = _burredSubsetOn(board, house, combo);
           if (hint == null) continue;
-          if (best == null || hint.eliminations.length > best.eliminations.length) {
+          if (best == null ||
+              hint.eliminations.length > best.eliminations.length) {
             best = hint;
           }
         }
@@ -2669,13 +2896,15 @@ class AdvancedTechniques {
       final baseText = (base.toList()..sort()).join('、');
       final onlyA = [
         for (final e in lock)
-          if (!both.any((b) => b.row == e.row && b.col == e.col && b.num == e.num))
+          if (!both
+              .any((b) => b.row == e.row && b.col == e.col && b.num == e.num))
             e
       ];
       final hl = _houseHighlight(house);
       return SudokuHint.elimination(
         technique: '毛刺数组',
-        explanation: '${_houseLabel(house)} 上的 ${cellsList(cells)} 一共 ${cells.length} 格，'
+        explanation:
+            '${_houseLabel(house)} 上的 ${cellsList(cells)} 一共 ${cells.length} 格，'
             '候选并集是 ${(union.toList()..sort()).join('、')} 共 ${union.length} 个数字，'
             '多出来的 $burr 只落在 ${cellRef(owner[0], owner[1])} 上，这一枚就是毛刺。'
             '把它当成推理节点分两支看：'
@@ -3364,7 +3593,8 @@ class AdvancedTechniques {
   /// 空矩形自己只报第一条，但一般多宝鱼要拿它来判重：
   /// 只有当某条读法用的是同两格强链、删的又是同一批候选时，
   /// 那条链才真的等于空矩形那一手，该让位。所以这里把读法都摊开。
-  static List<_ErReading> _emptyRectangleReadings(SudokuBoard board, int digit) {
+  static List<_ErReading> _emptyRectangleReadings(
+      SudokuBoard board, int digit) {
     final readings = <_ErReading>[];
     for (var boxRow = 0; boxRow < 3; boxRow++) {
       for (var boxCol = 0; boxCol < 3; boxCol++) {
@@ -3455,12 +3685,12 @@ class AdvancedTechniques {
 
   static SudokuHint _emptyRectangleHint(int digit, _ErReading reading) {
     final elim = reading.elim;
-    final lineLabel = reading.linkIsCol
-        ? colRef(reading.linkLine)
-        : rowRef(reading.linkLine);
+    final lineLabel =
+        reading.linkIsCol ? colRef(reading.linkLine) : rowRef(reading.linkLine);
     return SudokuHint.elimination(
       technique: '空矩形',
-      explanation: '数字 $digit 在 ${boxRef(reading.boxRow, reading.boxCol)} 形成空矩形，'
+      explanation:
+          '数字 $digit 在 ${boxRef(reading.boxRow, reading.boxCol)} 形成空矩形，'
           '并与 $lineLabel 的强链配合，可删 '
           '${candRef(elim.row, elim.col, digit)}。',
       eliminations: [elim],
@@ -3727,7 +3957,8 @@ class AdvancedTechniques {
     ];
     return SudokuHint.elimination(
       technique: '多宝鱼',
-      explanation: '数字 $digit 在 ${_houseLabel(strongA)} 与 ${_houseLabel(strongB)} '
+      explanation:
+          '数字 $digit 在 ${_houseLabel(strongA)} 与 ${_houseLabel(strongB)} '
           '各成强链，中间在 ${_houseLabel(weak)} 上接一条弱链：${chainExpr(arrows)}。'
           '两端不可能同时为假，同时看见两端处的 $digit 可删。',
       eliminations: elims,
@@ -4551,7 +4782,8 @@ class AdvancedTechniques {
         final coverWord = byRow ? '列' : '行';
         return SudokuHint.elimination(
           technique: '刺身鱼',
-          explanation: '数字 $digit 以 ${base.map((l) => byRow ? rowRef(l) : colRef(l)).join(',')} '
+          explanation:
+              '数字 $digit 以 ${base.map((l) => byRow ? rowRef(l) : colRef(l)).join(',')} '
               '为基线、${cover.map((c) => byRow ? colRef(c) : rowRef(c)).join(',')} 为覆盖。'
               '有基线在覆盖上只剩一个顶点（${cellsList(deficits)} 空着），'
               '去掉鳍这条$lineWord就撑不起整条鱼，所以是刺身而不是普通带鳍。'
@@ -5144,10 +5376,11 @@ class AdvancedTechniques {
         ],
         patternCandidates: [
           for (var i = 0; i < 2; i++)
-            for (final digit in board
-                .getCandidates(owners[i][0], owners[i][1])
-                .difference({grave.extras[i]}).toList()
-              ..sort())
+            for (final digit
+                in board
+                    .getCandidates(owners[i][0], owners[i][1])
+                    .difference({grave.extras[i]}).toList()
+                  ..sort())
               // 要删的那些底数走 target，不要在同一个候选上再盖一层依据色。
               if (!struck.contains('${owners[i][0]},${owners[i][1]},$digit'))
                 HintCandidate(
@@ -5219,8 +5452,8 @@ class AdvancedTechniques {
       for (final lock in shared.toList()..sort()) {
         final spots = _houseSpots(board, lock)[house];
         if (spots.length != 2) continue;
-        if (!owners.every((o) =>
-            spots.any((cell) => cell[0] == o[0] && cell[1] == o[1]))) {
+        if (!owners.every(
+            (o) => spots.any((cell) => cell[0] == o[0] && cell[1] == o[1]))) {
           continue;
         }
         final elims = <CandidateElim>[];

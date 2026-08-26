@@ -26,6 +26,7 @@ final _finders = <String, SudokuHint? Function(SudokuBoard)>{
   '唯一环 3': AdvancedTechniques.findUniqueLoopType3,
   '唯一环 4': AdvancedTechniques.findUniqueLoopType4,
   '探长': AdvancedTechniques.findBorescoper,
+  '淑芬': AdvancedTechniques.findQiu,
   '死环': AdvancedTechniques.findDeadLoop,
   '毛刺数组': AdvancedTechniques.findBurredSubset,
 };
