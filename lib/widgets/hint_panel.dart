@@ -32,6 +32,7 @@ class HintPanel extends StatelessWidget {
     final cap = maxHeight ?? MediaQuery.of(context).size.height * 0.5;
     return Card(
       margin: EdgeInsets.zero,
+      clipBehavior: Clip.hardEdge,
       child: ConstrainedBox(
         constraints: BoxConstraints(maxHeight: cap),
         child: Padding(

@@ -54,17 +54,16 @@ class SudokuGrid extends StatelessWidget {
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            // 4px 内边距 + 8 条 1px 间隔，剩下的宽度平分给 9 个格子。
-            final cellSize = (constraints.maxWidth - 8 - 8) / 9;
+            // 4px 内边距，格子紧挨着排。格线单独整板画，交叉处才连得上。
+            const pad = 4.0;
+            final cellSize = (constraints.maxWidth - pad * 2) / 9;
             return Stack(
               children: [
                 GridView.builder(
                   physics: const NeverScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(4),
+                  padding: const EdgeInsets.all(pad),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 9,
-                    mainAxisSpacing: 1,
-                    crossAxisSpacing: 1,
                   ),
                   itemCount: 81,
                   itemBuilder: (context, index) {
@@ -79,12 +78,24 @@ class SudokuGrid extends StatelessWidget {
                     );
                   },
                 ),
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: CustomPaint(
+                      painter: _GridLinesPainter(
+                        thin: palette.gridThin,
+                        strong: palette.gridStrong,
+                        padding: pad,
+                      ),
+                    ),
+                  ),
+                ),
                 if (markup != null && markup!.arrows.isNotEmpty)
                   Positioned.fill(
                     child: IgnorePointer(
                       child: CustomPaint(
                         painter: BoardArrowsPainter(
                           markup: markup!,
+                          padding: pad,
                           strongColor: palette.strongArrow,
                           weakColor: palette.weakArrow,
                         ),
@@ -138,10 +149,7 @@ class SudokuGrid extends StatelessWidget {
       onTap: readOnly ? null : () => onCellTap(row, col),
       child: Container(
         key: ValueKey('cell-$row-$col'),
-        decoration: BoxDecoration(
-          color: bgColor,
-          border: _getBorder(row, col, palette),
-        ),
+        color: bgColor,
         child: Center(
           child: value == 0
               ? _buildCandidates(context, row, col, showCands, cellSize)
@@ -290,25 +298,48 @@ class SudokuGrid extends StatelessWidget {
     int selectedBoxCol = selectedCol! ~/ 3;
     return boxRow == selectedBoxRow && boxCol == selectedBoxCol;
   }
+}
 
-  Border _getBorder(int row, int col, BoardPalette palette) {
-    return Border(
-      top: BorderSide(
-        color: row % 3 == 0 ? palette.gridStrong : palette.gridThin,
-        width: row % 3 == 0 ? 2 : 1,
-      ),
-      left: BorderSide(
-        color: col % 3 == 0 ? palette.gridStrong : palette.gridThin,
-        width: col % 3 == 0 ? 2 : 1,
-      ),
-      right: BorderSide(
-        color: col == 8 ? palette.gridStrong : Colors.transparent,
-        width: col == 8 ? 2 : 0,
-      ),
-      bottom: BorderSide(
-        color: row == 8 ? palette.gridStrong : Colors.transparent,
-        width: row == 8 ? 2 : 0,
-      ),
+/// 宫线和格线一次画完，交叉处不断开。
+class _GridLinesPainter extends CustomPainter {
+  final Color thin;
+  final Color strong;
+  final double padding;
+
+  const _GridLinesPainter({
+    required this.thin,
+    required this.strong,
+    required this.padding,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final inner = Rect.fromLTWH(
+      padding,
+      padding,
+      size.width - padding * 2,
+      size.height - padding * 2,
     );
+    final cell = inner.width / 9;
+    final thinPaint = Paint()
+      ..color = thin
+      ..strokeWidth = 1
+      ..strokeCap = StrokeCap.square;
+    final strongPaint = Paint()
+      ..color = strong
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.square;
+
+    for (var i = 0; i <= 9; i++) {
+      final paint = i % 3 == 0 ? strongPaint : thinPaint;
+      final x = inner.left + i * cell;
+      final y = inner.top + i * cell;
+      canvas.drawLine(Offset(x, inner.top), Offset(x, inner.bottom), paint);
+      canvas.drawLine(Offset(inner.left, y), Offset(inner.right, y), paint);
+    }
   }
+
+  @override
+  bool shouldRepaint(covariant _GridLinesPainter old) =>
+      thin != old.thin || strong != old.strong || padding != old.padding;
 }

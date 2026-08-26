@@ -97,25 +97,29 @@ class _GameScreenState extends State<GameScreen> {
               });
             }
 
-            return Stack(
+            return Column(
               children: [
-                Column(
-                  children: [
-                    _buildInfoBar(gameState),
-                    // 用 Expanded 把「信息条已经占掉的高度」让 LayoutBuilder
-                    // 直接量出来，棋盘按剩余宽高算尺寸，不再只看宽度——
-                    // 矮宽的横屏视口下才不会把控制区挤到溢出。
-                    Expanded(
-                      child: LayoutBuilder(
-                        builder: (context, boardArea) {
-                          const topPadding = 8.0;
-                          final side = math
-                              .min(
-                                math.min(boardArea.maxWidth - 32, 560.0),
-                                boardArea.maxHeight - topPadding,
-                              )
+                _buildInfoBar(gameState),
+                // 用 Expanded 把「信息条已经占掉的高度」让 LayoutBuilder
+                // 直接量出来，棋盘按剩余宽高算尺寸，不再只看宽度——
+                // 矮宽的横屏视口下才不会把控制区挤到溢出。
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, boardArea) {
+                      const topPadding = 8.0;
+                      final side = math
+                          .min(
+                            math.min(boardArea.maxWidth - 32, 560.0),
+                            boardArea.maxHeight - topPadding,
+                          )
+                          .clamp(0.0, double.infinity);
+                      // 提示抽屉最高只能到棋盘下沿，避免盖住盘面。
+                      final belowBoard =
+                          (boardArea.maxHeight - topPadding - side)
                               .clamp(0.0, double.infinity);
-                          return Column(
+                      return Stack(
+                        children: [
+                          Column(
                             children: [
                               Padding(
                                 padding: const EdgeInsets.fromLTRB(
@@ -157,25 +161,25 @@ class _GameScreenState extends State<GameScreen> {
                                 ),
                               ),
                             ],
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                if (_hintPanelVisible(gameState))
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: Material(
-                      elevation: 8,
-                      child: _buildHintPanel(
-                        gameState,
-                        maxHeight: MediaQuery.of(context).size.height * 0.5,
-                      ),
-                    ),
+                          ),
+                          if (_hintPanelVisible(gameState))
+                            Positioned(
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              child: Material(
+                                elevation: 8,
+                                child: _buildHintPanel(
+                                  gameState,
+                                  maxHeight: belowBoard,
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
+                    },
                   ),
+                ),
               ],
             );
           },
@@ -253,46 +257,6 @@ class _GameScreenState extends State<GameScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
         children: [
-          // 第一行：基础控制按钮
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildControlButton(
-                icon: Icons.undo,
-                label: '撤销',
-                onPressed: gameState.canUndo ? () => gameState.undo() : null,
-              ),
-              _buildControlButton(
-                icon: Icons.redo,
-                label: '重做',
-                onPressed: gameState.canRedo ? () => gameState.redo() : null,
-              ),
-              _buildControlButton(
-                icon: _readyHint(gameState) != null
-                    ? Icons.check
-                    : Icons.lightbulb,
-                label: _readyHint(gameState) != null ? '应用' : '提示',
-                active: _readyHint(gameState) != null,
-                onPressed: () {
-                  final ready = _readyHint(gameState);
-                  if (ready != null) {
-                    gameState.applyHintAndAdvance(ready);
-                  } else {
-                    _showHint(context, gameState);
-                  }
-                },
-              ),
-              _buildControlButton(
-                icon: Icons.clear,
-                label: '清除',
-                onPressed: gameState.selectedRow != null
-                    ? () => gameState.clearSelected()
-                    : null,
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // 第二行：候选数功能按钮
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -328,6 +292,45 @@ class _GameScreenState extends State<GameScreen> {
           if (gameState.markupEnabled) ...[
             const SizedBox(height: 8),
             _buildMarkupBar(gameState),
+          ] else ...[
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildControlButton(
+                  icon: Icons.undo,
+                  label: '撤销',
+                  onPressed: gameState.canUndo ? () => gameState.undo() : null,
+                ),
+                _buildControlButton(
+                  icon: Icons.redo,
+                  label: '重做',
+                  onPressed: gameState.canRedo ? () => gameState.redo() : null,
+                ),
+                _buildControlButton(
+                  icon: _readyHint(gameState) != null
+                      ? Icons.check
+                      : Icons.lightbulb,
+                  label: _readyHint(gameState) != null ? '应用' : '提示',
+                  active: _readyHint(gameState) != null,
+                  onPressed: () {
+                    final ready = _readyHint(gameState);
+                    if (ready != null) {
+                      gameState.applyHintAndAdvance(ready);
+                    } else {
+                      _showHint(context, gameState);
+                    }
+                  },
+                ),
+                _buildControlButton(
+                  icon: Icons.clear,
+                  label: '清除',
+                  onPressed: gameState.selectedRow != null
+                      ? () => gameState.clearSelected()
+                      : null,
+                ),
+              ],
+            ),
           ],
         ],
       ),
@@ -339,84 +342,65 @@ class _GameScreenState extends State<GameScreen> {
 
     Widget modeChip(String label, MarkupMode mode) {
       final selected = gameState.markupMode == mode;
-      return FilterChip(
-        label: Text(
-          label,
-          style: TextStyle(
-            color: selected ? scheme.onPrimary : scheme.onSurfaceVariant,
+      return Padding(
+        padding: const EdgeInsets.only(right: 6),
+        child: FilterChip(
+          label: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: selected ? scheme.onPrimary : scheme.onSurfaceVariant,
+            ),
           ),
+          visualDensity: VisualDensity.compact,
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          selected: selected,
+          showCheckmark: false,
+          selectedColor: scheme.primary,
+          onSelected: (_) => gameState.setMarkupMode(mode),
         ),
-        selected: selected,
-        showCheckmark: false,
-        selectedColor: scheme.primary,
-        onSelected: (_) => gameState.setMarkupMode(mode),
       );
     }
 
-    return Column(
-      children: [
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          alignment: WrapAlignment.center,
-          children: [
-            modeChip('格色', MarkupMode.cellColor),
-            modeChip('候选色', MarkupMode.candidateColor),
-            modeChip('强链', MarkupMode.strong),
-            modeChip('弱链', MarkupMode.weak),
-            modeChip('自动强链', MarkupMode.autoStrong),
-            modeChip('关闭', MarkupMode.off),
-            ActionChip(
-              label: const Text('清除标记'),
-              onPressed: () => gameState.clearUserMarkup(),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          alignment: WrapAlignment.center,
-          children: [
-            for (final color in MarkupPalette.colors)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                child: GestureDetector(
-                  onTap: () => gameState.setMarkupColor(color),
-                  child: Container(
-                    width: 22,
-                    height: 22,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: color,
-                      border: Border.all(
-                        color: gameState.markupColor == color
-                            ? scheme.onSurface
-                            : Colors.transparent,
-                        width: 2,
-                      ),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          modeChip('格色', MarkupMode.cellColor),
+          modeChip('候选色', MarkupMode.candidateColor),
+          modeChip('强链', MarkupMode.strong),
+          modeChip('弱链', MarkupMode.weak),
+          modeChip('自动强链', MarkupMode.autoStrong),
+          for (final color in MarkupPalette.colors)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: GestureDetector(
+                onTap: () => gameState.setMarkupColor(color),
+                child: Container(
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: color,
+                    border: Border.all(
+                      color: gameState.markupColor == color
+                          ? scheme.onSurface
+                          : Colors.transparent,
+                      width: 2,
                     ),
                   ),
                 ),
               ),
-          ],
-        ),
-        if (gameState.arrowAnchor != null) ...[
-          const SizedBox(height: 6),
-          Text(
-            '已选起点，再点终点',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
-          ),
-        ] else if (gameState.markupMode == MarkupMode.candidateColor) ...[
-          const SizedBox(height: 6),
-          Text(
-            '直接点棋盘上的候选数字上色',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+            ),
+          ActionChip(
+            label: const Text('清除标记', style: TextStyle(fontSize: 12)),
+            visualDensity: VisualDensity.compact,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            onPressed: () => gameState.clearUserMarkup(),
           ),
         ],
-      ],
+      ),
     );
   }
 
@@ -439,28 +423,35 @@ class _GameScreenState extends State<GameScreen> {
       iconColor = scheme.onSurfaceVariant;
     }
 
-    return Column(
-      children: [
-        IconButton(
-          icon: Icon(icon),
-          onPressed: onPressed,
-          color: iconColor,
-          style: active
-              ? IconButton.styleFrom(
-                  backgroundColor: scheme.primary,
-                  foregroundColor: scheme.onPrimary,
-                )
-              : null,
-          iconSize: 28,
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        child: Column(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              alignment: Alignment.center,
+              decoration: active
+                  ? BoxDecoration(
+                      color: scheme.primary,
+                      shape: BoxShape.circle,
+                    )
+                  : null,
+              child: Icon(icon, size: 28, color: iconColor),
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: enabled ? scheme.onSurface : disabled,
+              ),
+            ),
+          ],
         ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: enabled ? scheme.onSurface : disabled,
-          ),
-        ),
-      ],
+      ),
     );
   }
 
