@@ -211,10 +211,13 @@ void main() {
       'Nice Loop / AIC 环',
       'Grouped AIC',
       '死环',
-      '毛刺数组',
       'ALS-XZ',
       'Death Blossom',
       'Kraken Fish',
+      // 毛刺数组「毛刺为真」那一支推到推不动为止，力度同强制链，所以和
+      // Kraken 同档而排在它后面。按原先估的 9.4 排到 ALS-XZ 之前时，
+      // 它会把这三种深技巧该出面的局面全抢走。
+      '毛刺数组',
       'Forcing Chain',
       'ALS-XY-Wing',
       'Nishio',

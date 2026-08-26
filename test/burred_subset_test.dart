@@ -123,8 +123,7 @@ void main() {
     });
 
     test('数组里同一个数字只落两格时，那条弱链才画得出来', () {
-      final board =
-          SudokuBoard.fromString(_tech('burr_array').examplePuzzle);
+      final board = SudokuBoard.fromString(_tech('burr_array').examplePuzzle);
       final hint = AdvancedTechniques.findBurredSubset(board)!;
       final cellKeys = {
         for (final c in _cells(hint, HintRole.pattern)) '${c[0]},${c[1]}'
@@ -135,8 +134,8 @@ void main() {
         expect(cellKeys, contains('${link.from.row},${link.from.col}'));
         expect(cellKeys, contains('${link.to.row},${link.to.col}'));
         final count = _cells(hint, HintRole.pattern)
-            .where((c) =>
-                board.getCandidates(c[0], c[1]).contains(link.from.num))
+            .where(
+                (c) => board.getCandidates(c[0], c[1]).contains(link.from.num))
             .length;
         expect(count, 2, reason: '一个数字落到三格上就不是一条弱链，画出来是撒谎');
       }
@@ -154,7 +153,8 @@ void main() {
         board.eliminateCandidate(0, 2, d);
       }
       final hint = AdvancedTechniques.findBurredSubset(board);
-      final cells = hint == null ? <List<int>>[] : _cells(hint, HintRole.pattern);
+      final cells =
+          hint == null ? <List<int>>[] : _cells(hint, HintRole.pattern);
       expect(
         {for (final c in cells) '${c[0]},${c[1]}'},
         isNot({'0,0', '0,1', '0,2'}),
@@ -171,8 +171,7 @@ void main() {
     });
 
     test('教学盘上搜索在两秒内收工', () {
-      final board =
-          SudokuBoard.fromString(_tech('burr_array').examplePuzzle);
+      final board = SudokuBoard.fromString(_tech('burr_array').examplePuzzle);
       final sw = Stopwatch()..start();
       AdvancedTechniques.findBurredSubset(board);
       sw.stop();
@@ -183,8 +182,10 @@ void main() {
       final order = SudokuSolver.hintSearchOrder;
       expect(order, contains('毛刺数组'));
       expect(order.indexOf('死环'), lessThan(order.indexOf('毛刺数组')));
-      expect(order.indexOf('毛刺数组'), lessThan(order.indexOf('ALS-XZ')));
-      expect(DifficultyAnalyzer.techniqueScores, containsPair('毛刺数组', 94));
+      // 乙支推到推不动为止，力度同强制链，所以和 Kraken 同档、排在它之后。
+      // 按 9.4 排到 ALS-XZ 前面时它会把后面三种深技巧该出面的局面全抢走。
+      expect(order.indexOf('Kraken Fish'), lessThan(order.indexOf('毛刺数组')));
+      expect(DifficultyAnalyzer.techniqueScores, containsPair('毛刺数组', 97));
       expect(_tech('burr_array').teachingOnly, isFalse);
     });
   });

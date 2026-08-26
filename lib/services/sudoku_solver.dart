@@ -194,10 +194,14 @@ class SudokuSolver {
     ('Nice Loop / AIC 环', AdvancedTechniques.findNiceLoop),
     ('Grouped AIC', AdvancedTechniques.findGroupedAic),
     ('死环', AdvancedTechniques.findDeadLoop),
-    ('毛刺数组', AdvancedTechniques.findBurredSubset),
     ('ALS-XZ', AdvancedTechniques.findAlsXz),
     ('Death Blossom', AdvancedTechniques.findDeathBlossom),
     ('Kraken Fish', AdvancedTechniques.findKrakenFish),
+    // 毛刺数组「毛刺为真」那一支是把唯余摒除推到推不动为止，力度和强制链
+    // 同级，不是 9.4 那一档的认形。排在 ALS-XZ 之前时它会把 ALS-XZ、
+    // Death Blossom、Kraken 该出面的局面全抢走——题库 160 题里 Sue de Coq
+    // 与 Death Blossom 一次都露不了面。所以按实际力度排在 Kraken 之后。
+    ('毛刺数组', AdvancedTechniques.findBurredSubset),
     ('Forcing Chain', AdvancedTechniques.findForcingChain),
     ('ALS-XY-Wing', AdvancedTechniques.findAlsXyWing),
     ('Nishio', AdvancedTechniques.findNishio),
