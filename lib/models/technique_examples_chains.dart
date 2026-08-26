@@ -196,7 +196,7 @@ List<TechniqueInfo> chainTechniqueExamples() => [
         caveats: '链上每一格都必须真的是双值格，缺一个都不能叫 XY-Chain；'
             '链首链尾必须共享同一个数字，且都要靠强链连入链条，否则「至少一真」'
             '的结论不成立。',
-        rank: 180,
+        rank: 552,
         examplePuzzle:
             '590000007040010083008034900001402000069000820000109300004670200980040030700000016',
         exampleMarkup: _chainMarkup(
@@ -239,7 +239,7 @@ List<TechniqueInfo> chainTechniqueExamples() => [
             '1r4c9 = 1r5c9 - 1r5c3 = 1r6c3',
         caveats: '交替顺序不能乱，链首链尾必须都由强链连入链条；弱链只能保证'
             '「不同时为真」，不能单独用来判断链首链尾至少一真。',
-        rank: 190,
+        rank: 602,
         examplePuzzle:
             '200050006010000090600801003007090600000703000900080002100000005060902010003060200',
         exampleMarkup: _chainMarkup(
@@ -262,7 +262,7 @@ List<TechniqueInfo> chainTechniqueExamples() => [
       ),
       TechniqueInfo(
         id: 'nice_loop',
-        name: 'Nice Loop / AIC 环',
+        name: 'Nice Loop',
         summary: '链绕一圈又连回起点附近，环上任意一段强-弱-强子链都能像 AIC 一样删。',
         definition: 'Nice Loop 是首尾相连成环的 AIC：链从某个候选点出发，强弱交替走完'
             '一圈后又通过一条连接回到出发点，整条环上的连接严格交替、连续不断。'
@@ -282,7 +282,7 @@ List<TechniqueInfo> chainTechniqueExamples() => [
             '2r7c6 = 2r2c6 - 2r2c4 = 2r9c4 - 2r7c6',
         caveats: '环上每一条连接都要单独核实是强链还是弱链，不能想当然认为绕回去'
             '就一定成立；用来删除的子链两端仍必须都由强链连入，弱链收尾不能直接删。',
-        rank: 200,
+        rank: 604,
         examplePuzzle:
             '020900000048000031000063020009407003003080200400105600030570000250000180000006050',
         exampleMarkup: _chainMarkup(
@@ -326,7 +326,7 @@ List<TechniqueInfo> chainTechniqueExamples() => [
             '{2r8c2, 2r9c2} = 2r7c2',
         caveats: '组内的格子必须真的同在一个宫里，不能跨宫硬凑；删除目标要能同时'
             '看到组的整体（同宫即可，不必看到组内每一格分别所在的行列）和单独节点。',
-        rank: 210,
+        rank: 701,
         examplePuzzle:
             '302090000080000000407056000030007069040601050670400030000360501000000090000010706',
         exampleMarkup: _groupedMarkup(
@@ -369,7 +369,7 @@ List<TechniqueInfo> chainTechniqueExamples() => [
             'B 里所有候选 1 的r6c3不可能是 1，删除该处候选 1。',
         caveats: '两个 ALS 的格子不能重叠；限制公共候选 X 要求两边所有含 X 的格子'
             '互相可见，只是共享数字不满足这一条时不能当作 X，只能退回普通候选重合。',
-        rank: 220,
+        rank: 652,
         examplePuzzle:
             '703008000020570003090003070300806504005040000200000789040000067002050008907000300',
         exampleMarkup: _alsMarkup(
@@ -414,7 +414,7 @@ List<TechniqueInfo> chainTechniqueExamples() => [
             'r8c4不可能是 5，删除该处候选 5。',
         caveats: '支点连两翼要用两个不同的数字，且各自都要满足限制公共候选的可见'
             '条件；两个翼 ALS 必须真的共享第三个数字，缺了这一条不能算 XY-Wing 结构。',
-        rank: 225,
+        rank: 706,
         examplePuzzle:
             '604000053000400620000020091250900800009203506030068900000000000482090000300040009',
         exampleMarkup: _alsMarkup(
@@ -466,7 +466,7 @@ List<TechniqueInfo> chainTechniqueExamples() => [
         caveats: '两堆候选必须不重叠、合起来正好等于交叉格的全部候选；宫内、线上'
             '找到的几乎锁定集也不能占用交叉格本身，覆盖的候选要恰好和分到的那一堆'
             '完全一致。',
-        rank: 230,
+        rank: 603,
         examplePuzzle:
             '970306042805000109000050000207000304010020080400738001000905000000000000100847003',
         exampleMarkup: _alsMarkup(
@@ -512,7 +512,7 @@ List<TechniqueInfo> chainTechniqueExamples() => [
         caveats: '花心必须能看到每个花瓣里所有含对应候选的格子，缺一个可见关系'
             '整条推理就不成立；共同挤出的数字必须真的出现在每一个花瓣里，'
             '漏掉一个花瓣就不能保证「无论如何都会落在某个花瓣」。',
-        rank: 235,
+        rank: 705,
         examplePuzzle:
             '000809000043000870020000010300020009000308000010000020607000402084205690200704001',
         exampleMarkup: _forcingMarkup(
@@ -555,7 +555,7 @@ List<TechniqueInfo> chainTechniqueExamples() => [
             '都逼出r4c4不能是 2，因此删除该处候选 2。',
         caveats: '强链必须是真正的强链（该数字恰好只剩两格）；靠链推导的一端每一步'
             '都要写清楚依据哪条唯一余数或哪个单元，不能跳步，否则结论不可靠。',
-        rank: 240,
+        rank: 751,
         examplePuzzle:
             '083020090000800100029300008000098700070000060006740000300006980002005000010030540',
         exampleMarkup: _forcingMarkup(
@@ -598,7 +598,7 @@ List<TechniqueInfo> chainTechniqueExamples() => [
         caveats: '每一步推导都要依据真实的基础规则（唯一余数、区块排除等），'
             '不能凭空跳步；矛盾必须是「某格候选被排空」，只是推出一个不喜欢的结果'
             '不算矛盾。',
-        rank: 250,
+        rank: 553,
         examplePuzzle:
             '000600309306700010001004720900500000010000070000006001053900100070005804809007000',
         exampleMarkup: _forcingMarkup(
@@ -640,7 +640,7 @@ List<TechniqueInfo> chainTechniqueExamples() => [
         caveats: '两条（或更多）路径必须各自独立地严格依据基础规则推导，'
             '不能相互借用对方的中间结论；共同结论必须是所有路径都推出的，'
             '只有部分路径推出不能算数。',
-        rank: 260,
+        rank: 654,
         examplePuzzle:
             '030050980000791000005800700304189500851204390209305008002508600000900000503010809',
         exampleMarkup: _chainMarkup(
@@ -692,7 +692,7 @@ List<TechniqueInfo> chainTechniqueExamples() => [
         caveats: '每一张网都要各自独立推导，中间步骤多也没关系，但不能跳过依据；'
             '必须所有候选对应的网络都汇出同一个结论，只要有一条网络推出不同结果，'
             '整条 Forcing Net 就不成立。',
-        rank: 270,
+        rank: 801,
         examplePuzzle:
             '024610007006070402003824560000200800300060024002001000069002100240130600130006240',
         exampleMarkup: _chainMarkup(

@@ -6,6 +6,12 @@ import 'package:sudoku_app/services/sudoku_solver.dart';
 const puzzle =
     '000100504005840203420500087004071859090608401008000306000000708000700902007080045';
 
+/// 浅层技巧走完仍然卡住的残局。
+/// 引擎补上刺身鱼等浅层技巧之后，上面那张 000100504 已经不用深链就做得完了，
+/// 深链那一档改用这张题守。
+const stalledPuzzle =
+    '024610007006070402003824560000200800301060024002001000069002100240130600130006240';
+
 void _apply(SudokuBoard board, SudokuHint hint) {
   if (hint.isElimination) {
     for (final e in hint.eliminations) {
@@ -21,10 +27,10 @@ bool _elimIsFalse(SudokuBoard solution, CandidateElim e) =>
 
 void main() {
   test('ALS 走完后卡住的残局会提示 Nishio', () {
-    final solved = SudokuBoard.fromString(puzzle);
+    final solved = SudokuBoard.fromString(stalledPuzzle);
     expect(SudokuSolver.solve(solved), isTrue);
 
-    final board = SudokuBoard.fromString(puzzle);
+    final board = SudokuBoard.fromString(stalledPuzzle);
     for (var i = 0; i < 80; i++) {
       final hint = SudokuSolver.getHint(board);
       if (hint == null) break;

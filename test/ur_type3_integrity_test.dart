@@ -28,7 +28,8 @@ void main() {
           expect(
             solved.get(e.row, e.col),
             isNot(e.num),
-            reason: '${hint.technique} 删掉了正解 ${e.num}r${e.row + 1}c${e.col + 1}',
+            reason:
+                '${hint.technique} 删掉了正解 ${e.num}r${e.row + 1}c${e.col + 1}',
           );
         }
       } else {

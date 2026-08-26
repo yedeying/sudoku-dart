@@ -60,8 +60,7 @@ class PuzzleBank {
     }
     final loaded = <String, List<String>>{};
     for (final difficulty in difficulties) {
-      final raw =
-          await rootBundle.loadString('assets/puzzles/$difficulty.txt');
+      final raw = await rootBundle.loadString('assets/puzzles/$difficulty.txt');
       loaded[difficulty] = parse(raw);
     }
     _cache = loaded;

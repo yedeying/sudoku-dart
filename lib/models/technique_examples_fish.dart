@@ -88,7 +88,7 @@ List<TechniqueInfo> fishTechniqueExamples() => [
             'r9c8的候选 6。',
         caveats: '两行的候选列必须完全一致，只差一列或多一列都不成立，'
             '别把普通数对误认成 X-Wing。',
-        rank: 70,
+        rank: 252,
         examplePuzzle:
             '400000007006030200005702900850473026000806000004020300003209800068000590000000000',
         exampleMarkup: _fishMarkup(
@@ -129,7 +129,7 @@ List<TechniqueInfo> fishTechniqueExamples() => [
             'r8c8的候选 2。',
         caveats: '每行的候选不必都占满三列，只要合并后恰好是三列即可；'
             '漏算某一行的候选会把普通数组误判成 Swordfish。',
-        rank: 75,
+        rank: 350,
         examplePuzzle:
             '137450980000791000005800700304189500851204390209305008002508600000900000543610809',
         exampleMarkup: _fishMarkup(
@@ -171,7 +171,7 @@ List<TechniqueInfo> fishTechniqueExamples() => [
             '本例删掉的是 r6c2, r6c3, r6c4, r6c5 的候选 2。',
         caveats: 'Jellyfish 涉及四条线，组合数很多，通常要先靠锁定数组的思路缩小范围，'
             '否则很难靠肉眼找全。',
-        rank: 80,
+        rank: 400,
         examplePuzzle:
             '496871523103094786780306914347008169801049357900007048278413695534962871619785432',
         exampleMarkup: _fishMarkup(
@@ -218,7 +218,7 @@ List<TechniqueInfo> fishTechniqueExamples() => [
             '都可以删除：本例删掉的是r1c1和r2c1的候选 1。',
         caveats: '带鳍鱼的删除范围只限于和鳍同宫的那条覆盖线，'
             '另一条覆盖列不能因为有鳍就随便删，方向用反就会删错。',
-        rank: 85,
+        rank: 351,
         examplePuzzle:
             '089250467076948032000367589020694375934715826765823941258136794493572618607489253',
         exampleMarkup: _fishMarkup(
@@ -259,7 +259,7 @@ List<TechniqueInfo> fishTechniqueExamples() => [
             '本例删掉的是r1c1和r2c1的候选 1。',
         caveats: '判断前要先确认三行合并后正好是三列，鳍只是这三列之外多出来的'
             '第四个候选，别把它也算进覆盖列里。',
-        rank: 88,
+        rank: 450,
         examplePuzzle:
             '089250467076948032002067580820694375934705826065023940058036790493572608607489253',
         exampleMarkup: _fishMarkup(
@@ -306,7 +306,7 @@ List<TechniqueInfo> fishTechniqueExamples() => [
             '本例删掉的是r4c1和r6c1的候选 1。',
         caveats: '带鳍 Jellyfish 组合多、容易漏看，建议先用普通 Jellyfish 的思路'
             '锁定四行四列，再单独检查每行是否多出候选。',
-        rank: 90,
+        rank: 500,
         examplePuzzle:
             '389250467076008032042007089020694375004005026065823940058006094493572608607489253',
         exampleMarkup: _fishMarkup(
@@ -346,7 +346,7 @@ List<TechniqueInfo> fishTechniqueExamples() => [
       ),
       TechniqueInfo(
         id: 'franken_fish',
-        name: 'Franken/Mutant Fish',
+        name: 'Franken 鱼',
         summary: '鱼的覆盖单位不限于纯行对纯列，宫也可以当一条线。',
         definition: 'Franken 鱼把普通鱼的基本单位从纯粹的行/列换成了宫：只要某个数字'
             '在一行和一个不相交的宫里的候选合起来恰好只落在两条列上，这一行和这个宫'
@@ -361,7 +361,7 @@ List<TechniqueInfo> fishTechniqueExamples() => [
             'r3c4, r3c5、r7c5 的候选 2。',
         caveats: 'Franken 鱼要求行（或列）与宫之间不能有重叠的候选格，'
             '否则同一个候选会被同时算进两个基本单位，逻辑就不成立了。',
-        rank: 95,
+        rank: 650,
         examplePuzzle:
             '500000001020600700780005000904001008000908000200500904000300017009006050600000002',
         exampleMarkup: _fishMarkup(

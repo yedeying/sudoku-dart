@@ -83,8 +83,7 @@ void main() {
     final cell = tester.widget<Container>(
       find.byKey(const ValueKey('cell-1-1')),
     );
-    final cellDeco = cell.decoration as BoxDecoration;
-    expect(cellDeco.color, palette.sameDigit);
+    expect(cell.color, palette.sameDigit);
 
     final filledDigit = tester.widget<Text>(
       find.descendant(

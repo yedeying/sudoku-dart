@@ -18,7 +18,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('唯余法'), findsOneWidget);
-    expect(find.text('摒除法（行/列/宫）'), findsOneWidget);
+    expect(find.text('摒除法'), findsOneWidget);
   });
 
   test('默认强调色是蓝色种子', () {

@@ -45,13 +45,23 @@ class BoardArrowsPainter extends CustomPainter {
       final lane = a.dy + gutter * _laneSign((arrow.from.num - 1) ~/ 3);
       final run = _riserRun(cell, (b.dx - a.dx).abs());
       final dir = b.dx >= a.dx ? 1.0 : -1.0;
-      return [a, Offset(a.dx + dir * run, lane), Offset(b.dx - dir * run, lane), b];
+      return [
+        a,
+        Offset(a.dx + dir * run, lane),
+        Offset(b.dx - dir * run, lane),
+        b
+      ];
     }
 
     final lane = a.dx + gutter * _laneSign((arrow.from.num - 1) % 3);
     final run = _riserRun(cell, (b.dy - a.dy).abs());
     final dir = b.dy >= a.dy ? 1.0 : -1.0;
-    return [a, Offset(lane, a.dy + dir * run), Offset(lane, b.dy - dir * run), b];
+    return [
+      a,
+      Offset(lane, a.dy + dir * run),
+      Offset(lane, b.dy - dir * run),
+      b
+    ];
   }
 
   /// 往格子内部的空档折：上排/左列往里，其余往回。

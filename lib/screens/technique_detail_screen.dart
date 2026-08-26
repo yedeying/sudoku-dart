@@ -101,7 +101,7 @@ class TechniqueDetailScreen extends StatelessWidget {
                       Expanded(
                         child: Text(
                           info.copiesPracticeBoard
-                              ? '上图是结构示意。复制的是练习原题，贴入对局后连点提示可走到本技巧。'
+                              ? '上图是结构示意。复制的是一张练习原题，比示意图更适合直接上手。'
                               : '此页为固定示例，不对局、不自动推演。可复制盘面贴入对局。',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: scheme.onSurfaceVariant,

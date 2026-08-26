@@ -49,9 +49,9 @@ void main() {
     );
   });
 
-  test('000100504 卡点下一步是 Grouped AIC 而不是 Nishio', () {
+  test('024610007 卡点下一步是 Grouped AIC 而不是 Nishio', () {
     const puzzle =
-        '000100504005840203420500087004071859090608401008000306000000708000700902007080045';
+        '024610007006070402003824560000200800301060024002001000069002100240130600130006240';
     final solved = SudokuBoard.fromString(puzzle);
     expect(SudokuSolver.solve(solved), isTrue);
     final board = SudokuBoard.fromString(puzzle);

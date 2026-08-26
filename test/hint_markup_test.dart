@@ -110,4 +110,34 @@ void main() {
     expect(m.cellColors[BoardMarkup.cellKey(1, 2)], const Color(0xFFBBDEFB));
     expect(m.cellColors.containsKey(BoardMarkup.cellKey(0, 0)), isFalse);
   });
+
+  test('锁在宫里的一手把整个宫淡亮，宫外不受影响', () {
+    final hint = SudokuHint.elimination(
+      technique: '扩展矩形 3',
+      explanation: 'test',
+      eliminations: [CandidateElim(4, 5, 7)],
+      patternCells: const [
+        HintCell(3, 3, HintRole.pattern),
+        HintCell(3, 4, HintRole.extra),
+      ],
+      highlightBoxes: const [4],
+    );
+
+    final m = GameState.markupFromHint(hint);
+    for (var r = 3; r < 6; r++) {
+      for (var c = 3; c < 6; c++) {
+        if (r == 3 && (c == 3 || c == 4)) continue;
+        if (r == 4 && c == 5) continue;
+        expect(
+          m.cellColors[BoardMarkup.cellKey(r, c)],
+          MarkupPalette.house,
+          reason: 'r${r + 1}c${c + 1} 在 b5 里，应当被淡亮',
+        );
+      }
+    }
+    expect(m.cellColors[BoardMarkup.cellKey(3, 3)], const Color(0xFFBBDEFB));
+    expect(m.cellColors.containsKey(BoardMarkup.cellKey(0, 0)), isFalse);
+    expect(m.cellColors.containsKey(BoardMarkup.cellKey(3, 6)), isFalse);
+    expect(m.cellColors.containsKey(BoardMarkup.cellKey(6, 3)), isFalse);
+  });
 }

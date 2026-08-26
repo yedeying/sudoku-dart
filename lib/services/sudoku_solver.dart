@@ -3,7 +3,7 @@ import '../models/notation.dart';
 import '../models/sudoku_board.dart';
 import 'advanced_techniques.dart';
 
-enum HintRole { pattern, extra, link, target }
+enum HintRole { pattern, cover, extra, link, target }
 
 class HintCell {
   final int row;
@@ -137,141 +137,88 @@ class SudokuSolver {
   /// 优先返回可以直接填入数字的技巧（Naked/Hidden Single），
   /// 然后是能够删除候选数字的逻辑技巧（返回 isElimination=true）。
   /// 找不到已实现的逻辑技巧时返回 null，绝不以回溯结果冒充提示。
+  static final List<(String, SudokuHint? Function(SudokuBoard))> _hintFinders =
+      [
+    ('唯余法', _findNakedSingle),
+    ('摒除法（行/列/宫）', _findHiddenSingle),
+    ('显性数对', _findNakedPair),
+    ('显性三数组', _findNakedTriple),
+    ('隐性数对', AdvancedTechniques.findHiddenPair),
+    ('宫区块', _findPointingPair),
+    ('行/列区块', _findBoxLineReduction),
+    ('隐性三数组', AdvancedTechniques.findHiddenTriple),
+    ('显性四数组', AdvancedTechniques.findNakedQuad),
+    ('X-Wing', _findXWing),
+    ('隐性四数组', AdvancedTechniques.findHiddenQuad),
+    ('摩天楼', AdvancedTechniques.findSkyscraper),
+    ('双线风筝', AdvancedTechniques.findTwoStringKite),
+    ('Swordfish', _findSwordfish),
+    ('多宝鱼', AdvancedTechniques.findTurbotFish),
+    ('带鳍 X-Wing', AdvancedTechniques.findFinnedXWing),
+    ('刺身鱼', AdvancedTechniques.findSashimiFish),
+    ('空矩形', AdvancedTechniques.findEmptyRectangle),
+    ('Jellyfish', AdvancedTechniques.findJellyfish),
+    ('XY-Wing', _findXYWing),
+    ('唯一矩形 1', AdvancedTechniques.findUniqueRectangleType1),
+    ('不完整唯一矩形', AdvancedTechniques.findIncompleteUniqueRectangle),
+    ('唯一矩形 2', AdvancedTechniques.findUniqueRectangleType2),
+    ('BUG+1', AdvancedTechniques.findBugPlusOne),
+    ('可规避矩形', AdvancedTechniques.findAvoidableRectangle),
+    ('带鳍 Swordfish', AdvancedTechniques.findFinnedSwordfish),
+    ('唯一矩形 4', AdvancedTechniques.findUniqueRectangleType4),
+    ('隐性唯一矩形', AdvancedTechniques.findHiddenUniqueRectangle),
+    ('BUG 类型 2', AdvancedTechniques.findBugType2),
+    ('扩展矩形 1', AdvancedTechniques.findExtendedRectType1),
+    ('XYZ-Wing', _findXYZWing),
+    ('带鳍 Jellyfish', AdvancedTechniques.findFinnedJellyfish),
+    ('扩展矩形 2', AdvancedTechniques.findExtendedRectType2),
+    ('唯一矩形 3', AdvancedTechniques.findUniqueRectangleType3),
+    ('BUG 类型 4', AdvancedTechniques.findBugType4),
+    ('扩展矩形 4', AdvancedTechniques.findExtendedRectType4),
+    ('扩展矩形 3', AdvancedTechniques.findExtendedRectType3),
+    ('唯一环 1', AdvancedTechniques.findUniqueLoopType1),
+    ('BUG 类型 3', AdvancedTechniques.findBugType3),
+    ('唯一环 2', AdvancedTechniques.findUniqueLoopType2),
+    ('Franken 鱼', AdvancedTechniques.findFrankenFish),
+    ('唯一环 4', AdvancedTechniques.findUniqueLoopType4),
+    ('Simple Coloring', AdvancedTechniques.findSimpleColoring),
+    // 唯一环 3 是这一族里最重的一手（7.2），比 Simple Coloring（7.0）还深，
+    // 所以排在它后面；顺序必须跟难度分同向，见 hint_order_monotonic_test。
+    ('唯一环 3', AdvancedTechniques.findUniqueLoopType3),
+    ('探长', AdvancedTechniques.findBorescoper),
+    ('淑芬', AdvancedTechniques.findQiu),
+    ('W-Wing', AdvancedTechniques.findWWing),
+    ('XY-Chain', AdvancedTechniques.findXyChain),
+    ('WXYZ-Wing', AdvancedTechniques.findWxyzWing),
+    ('AIC 开链', AdvancedTechniques.findAic),
+    ('Sue de Coq', AdvancedTechniques.findSueDeCoq),
+    ('Nice Loop / AIC 环', AdvancedTechniques.findNiceLoop),
+    ('Grouped AIC', AdvancedTechniques.findGroupedAic),
+    ('死环', AdvancedTechniques.findDeadLoop),
+    ('ALS-XZ', AdvancedTechniques.findAlsXz),
+    ('DDS', AdvancedTechniques.findDds),
+    ('Death Blossom', AdvancedTechniques.findDeathBlossom),
+    ('Kraken Fish', AdvancedTechniques.findKrakenFish),
+    // 毛刺数组「毛刺为真」那一支是把唯余摒除推到推不动为止，力度和强制链
+    // 同级，不是 9.4 那一档的认形。排在 ALS-XZ 之前时它会把 ALS-XZ、
+    // Death Blossom、Kraken 该出面的局面全抢走——题库 160 题里 Sue de Coq
+    // 与 Death Blossom 一次都露不了面。所以按实际力度排在 Kraken 之后。
+    ('毛刺数组', AdvancedTechniques.findBurredSubset),
+    ('Forcing Chain', AdvancedTechniques.findForcingChain),
+    ('ALS-XY-Wing', AdvancedTechniques.findAlsXyWing),
+    ('Nishio', AdvancedTechniques.findNishio),
+    ('Forcing Net', AdvancedTechniques.findForcingNet),
+  ];
+
+  /// 提示搜索的实际顺序，供顺序约束测试与诊断使用。
+  static List<String> get hintSearchOrder =>
+      List.unmodifiable(_hintFinders.map((entry) => entry.$1));
+
   static SudokuHint? getHint(SudokuBoard board) {
-    // 1. 直接填数技巧
-    var nakedSingle = _findNakedSingle(board);
-    if (nakedSingle != null) return nakedSingle;
-
-    var hiddenSingle = _findHiddenSingle(board);
-    if (hiddenSingle != null) return hiddenSingle;
-
-    // 2. 删除候选数技巧（Naked Subsets）
-    var nakedPair = _findNakedPair(board);
-    if (nakedPair != null) return nakedPair;
-
-    var nakedTriple = _findNakedTriple(board);
-    if (nakedTriple != null) return nakedTriple;
-
-    var nakedQuad = AdvancedTechniques.findNakedQuad(board);
-    if (nakedQuad != null) return nakedQuad;
-
-    // 3. 隐藏数字对/三元组/四元组
-    var hiddenPair = AdvancedTechniques.findHiddenPair(board);
-    if (hiddenPair != null) return hiddenPair;
-
-    var hiddenTriple = AdvancedTechniques.findHiddenTriple(board);
-    if (hiddenTriple != null) return hiddenTriple;
-
-    var hiddenQuad = AdvancedTechniques.findHiddenQuad(board);
-    if (hiddenQuad != null) return hiddenQuad;
-
-    // 4. 区块删减
-    var pointingPair = _findPointingPair(board);
-    if (pointingPair != null) return pointingPair;
-
-    var boxLineReduction = _findBoxLineReduction(board);
-    if (boxLineReduction != null) return boxLineReduction;
-
-    // 5. 鱼类技巧
-    var xWing = _findXWing(board);
-    if (xWing != null) return xWing;
-
-    var swordfish = _findSwordfish(board);
-    if (swordfish != null) return swordfish;
-
-    var jellyfish = AdvancedTechniques.findJellyfish(board);
-    if (jellyfish != null) return jellyfish;
-
-    var finnedX = AdvancedTechniques.findFinnedXWing(board);
-    if (finnedX != null) return finnedX;
-
-    var finnedSf = AdvancedTechniques.findFinnedSwordfish(board);
-    if (finnedSf != null) return finnedSf;
-
-    var finnedJf = AdvancedTechniques.findFinnedJellyfish(board);
-    if (finnedJf != null) return finnedJf;
-
-    var franken = AdvancedTechniques.findFrankenFish(board);
-    if (franken != null) return franken;
-
-    // 6. Wing 技巧
-    var xyWing = _findXYWing(board);
-    if (xyWing != null) return xyWing;
-
-    var xyzWing = _findXYZWing(board);
-    if (xyzWing != null) return xyzWing;
-
-    var wWing = AdvancedTechniques.findWWing(board);
-    if (wWing != null) return wWing;
-
-    var wxyz = AdvancedTechniques.findWxyzWing(board);
-    if (wxyz != null) return wxyz;
-
-    var skyscraper = AdvancedTechniques.findSkyscraper(board);
-    if (skyscraper != null) return skyscraper;
-
-    var kite = AdvancedTechniques.findTwoStringKite(board);
-    if (kite != null) return kite;
-
-    var emptyRect = AdvancedTechniques.findEmptyRectangle(board);
-    if (emptyRect != null) return emptyRect;
-
-    // 7. 着色
-    var coloring = AdvancedTechniques.findSimpleColoring(board);
-    if (coloring != null) return coloring;
-
-    // 8. 唯一矩形
-    var uniqueRect = AdvancedTechniques.findUniqueRectangleType1(board);
-    if (uniqueRect != null) return uniqueRect;
-
-    var uniqueRect2 = AdvancedTechniques.findUniqueRectangleType2(board);
-    if (uniqueRect2 != null) return uniqueRect2;
-
-    var uniqueRect3 = AdvancedTechniques.findUniqueRectangleType3(board);
-    if (uniqueRect3 != null) return uniqueRect3;
-
-    var uniqueRect4 = AdvancedTechniques.findUniqueRectangleType4(board);
-    if (uniqueRect4 != null) return uniqueRect4;
-
-    var bug1 = AdvancedTechniques.findBugPlusOne(board);
-    if (bug1 != null) return bug1;
-
-    var xyChain = AdvancedTechniques.findXyChain(board);
-    if (xyChain != null) return xyChain;
-
-    var aic = AdvancedTechniques.findAic(board);
-    if (aic != null) return aic;
-
-    var niceLoop = AdvancedTechniques.findNiceLoop(board);
-    if (niceLoop != null) return niceLoop;
-
-    var sueDeCoq = AdvancedTechniques.findSueDeCoq(board);
-    if (sueDeCoq != null) return sueDeCoq;
-
-    var groupedAic = AdvancedTechniques.findGroupedAic(board);
-    if (groupedAic != null) return groupedAic;
-
-    var alsXz = AdvancedTechniques.findAlsXz(board);
-    if (alsXz != null) return alsXz;
-
-    var alsXy = AdvancedTechniques.findAlsXyWing(board);
-    if (alsXy != null) return alsXy;
-
-    var deathBlossom = AdvancedTechniques.findDeathBlossom(board);
-    if (deathBlossom != null) return deathBlossom;
-
-    var kraken = AdvancedTechniques.findKrakenFish(board);
-    if (kraken != null) return kraken;
-
-    var nishio = AdvancedTechniques.findNishio(board);
-    if (nishio != null) return nishio;
-
-    var forcingChain = AdvancedTechniques.findForcingChain(board);
-    if (forcingChain != null) return forcingChain;
-
-    var forcingNet = AdvancedTechniques.findForcingNet(board);
-    if (forcingNet != null) return forcingNet;
-
+    for (final entry in _hintFinders) {
+      final hint = entry.$2(board);
+      if (hint != null) return hint;
+    }
     return null;
   }
 
@@ -1404,6 +1351,12 @@ class SudokuHint {
   final List<int> highlightRows;
   final List<int> highlightCols;
 
+  /// 要淡亮的宫，编号 0–8，按行优先。
+  ///
+  /// 有些技巧的关键房屋就是一个宫——虚拟格数组配在宫里、底数被锁在宫里，
+  /// 只标行列就把这一手最要紧的那块地方漏掉了。
+  final List<int> highlightBoxes;
+
   SudokuHint({
     required this.row,
     required this.col,
@@ -1417,6 +1370,7 @@ class SudokuHint {
     this.links = const [],
     this.highlightRows = const [],
     this.highlightCols = const [],
+    this.highlightBoxes = const [],
   });
 
   /// 构造一个删除候选数字的提示
@@ -1429,6 +1383,7 @@ class SudokuHint {
     List<MarkupArrow> links = const [],
     List<int> highlightRows = const [],
     List<int> highlightCols = const [],
+    List<int> highlightBoxes = const [],
   }) {
     final first = eliminations.first;
     return SudokuHint(
@@ -1444,6 +1399,7 @@ class SudokuHint {
       links: links,
       highlightRows: highlightRows,
       highlightCols: highlightCols,
+      highlightBoxes: highlightBoxes,
     );
   }
 }

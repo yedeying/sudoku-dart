@@ -83,7 +83,9 @@ void main() {
       final c = ThemeController.colorFor(id);
       for (final b in Brightness.values) {
         final p = BoardPalette.fromAccent(b, c);
-        final fg = p.sameDigit.computeLuminance() > 0.5 ? Colors.black87 : Colors.white;
+        final fg = p.sameDigit.computeLuminance() > 0.5
+            ? Colors.black87
+            : Colors.white;
         expect(_contrast(p.sameDigit, fg), greaterThan(4.5));
       }
     }
