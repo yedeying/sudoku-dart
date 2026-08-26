@@ -226,9 +226,44 @@ class SudokuSolver {
   static SudokuHint? getHint(SudokuBoard board) {
     for (final entry in _hintFinders) {
       final hint = entry.$2(board);
-      if (hint != null) return hint;
+      if (hint == null) continue;
+      final usable = _visibleEffect(board, hint);
+      if (usable != null) return usable;
     }
     return null;
+  }
+
+  /// 提示按可见盘面推理。结论仍须还能改可见盘面：填数必须是引擎自动候选，
+  /// 删除至少还看得见一个目标。已经划掉的删除从名单里拿掉。
+  /// 手写多出来的数字可以删，但不能当成填数。
+  static SudokuHint? _visibleEffect(SudokuBoard board, SudokuHint hint) {
+    if (!hint.isElimination) {
+      if (board.get(hint.row, hint.col) == 0 &&
+          hint.value != 0 &&
+          board.autoCandidates(hint.row, hint.col).contains(hint.value)) {
+        return hint;
+      }
+      return null;
+    }
+    final live = [
+      for (final e in hint.eliminations)
+        if (board.get(e.row, e.col) == 0 &&
+            board.visibleCandidates(e.row, e.col).contains(e.num))
+          e
+    ];
+    if (live.isEmpty) return null;
+    if (live.length == hint.eliminations.length) return hint;
+    return SudokuHint.elimination(
+      technique: hint.technique,
+      explanation: hint.explanation,
+      eliminations: live,
+      patternCells: hint.patternCells,
+      patternCandidates: hint.patternCandidates,
+      links: hint.links,
+      highlightRows: hint.highlightRows,
+      highlightCols: hint.highlightCols,
+      highlightBoxes: hint.highlightBoxes,
+    );
   }
 
   // ---------------------------------------------------------------------------

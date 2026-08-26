@@ -8,7 +8,7 @@ class SudokuBoard {
   List<List<Set<int>>> candidates;
   // 用户手动写上的候选数字（自动候选里没有的）
   List<List<Set<int>>> userCandidates;
-  // 用户手动划掉的候选数字（只影响显示，不参与技巧推理）
+  // 用户手动划掉的候选数字（提示按可见盘面推理，划掉的不进候选）
   List<List<Set<int>>> userHidden;
   // 逻辑推理过程中被排除的候选数字（技巧删除的候选）
   List<List<Set<int>>> eliminated;
@@ -88,15 +88,16 @@ class SudokuBoard {
   }
 
   /// 逻辑排除某个格子的一个候选数字
-  /// 返回 true 表示该格的候选数字确实发生了改变
+  /// 返回 true 表示可见候选确实发生了改变（含手写多出来的）
   bool eliminateCandidate(int row, int col, int num) {
     if (board[row][col] != 0) return false;
-    bool changed = candidates[row][col].contains(num);
+    final hadAuto = candidates[row][col].contains(num);
+    final hadUser = userCandidates[row][col].contains(num);
+    final hadVisible = visibleCandidates(row, col).contains(num);
     eliminated[row][col].add(num);
-    if (changed) {
-      candidates[row][col].remove(num);
-    }
-    return changed;
+    if (hadAuto) candidates[row][col].remove(num);
+    if (hadUser) userCandidates[row][col].remove(num);
+    return hadVisible;
   }
 
   /// 批量逻辑排除候选数字
@@ -185,8 +186,11 @@ class SudokuBoard {
     return true;
   }
 
-  /// 获取指定位置的候选数字
-  Set<int> getCandidates(int row, int col) {
+  /// 技巧推理用的候选：就是可见盘面。
+  Set<int> getCandidates(int row, int col) => visibleCandidates(row, col);
+
+  /// 引擎自动候选（已填数字 + 逻辑删除），不含手写和划掉。
+  Set<int> autoCandidates(int row, int col) {
     if (board[row][col] != 0) return {};
     return candidates[row][col];
   }

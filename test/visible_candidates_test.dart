@@ -11,7 +11,7 @@ void main() {
     board.userCandidates[0][2] = {};
     board.toggleUserCandidate(0, 2, 2);
     expect(board.visibleCandidates(0, 2), {2, 8});
-    expect(board.getCandidates(0, 2), {8});
+    expect(board.getCandidates(0, 2), {2, 8});
     expect(board.getUserCandidates(0, 2), {2});
   });
 }

@@ -29,11 +29,12 @@
 
 ## 候选两套集合
 
-- `candidates`：由已填数字和 `eliminated` 自动计算，求解器只读这一套。
-- `userCandidates`：用户笔记，只增删自身。
+- `candidates`：由已填数字和 `eliminated` 自动计算。
+- `userCandidates`：用户手写多出来的候选。
+- `userHidden`：用户划掉的候选。
 - `eliminated`：逻辑删除（应用提示等）。
 
-显示为 `candidates ∪ userCandidates`。自动候选为 `{8}` 时再记 `2`，格子同时显示 `2` 和 `8`。笔记中多出的数字可用字重区分，不另开一层宫格。手动划掉只影响显示，不进 `eliminated`。
+可见盘面是 `(candidates ∪ userCandidates) − userHidden`。提示按这一套推理：`getCandidates()` 就是可见集合。自动候选为 `{8}` 时再记 `2`，格子同时显示 `2` 和 `8`，提示也能删掉这个 `2`。手写多出来的数字可以删，但不能当成填数。笔记中多出的数字可用字重区分，不另开一层宫格。手动划掉不进 `eliminated`，但提示不再把它当目标。
 
 ## 提示高亮
 
