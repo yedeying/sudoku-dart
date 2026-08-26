@@ -635,6 +635,44 @@ class AdvancedTechniques {
     return extras;
   }
 
+  static Iterable<_DeadlyRead> _uniqueRectReads(SudokuBoard board) sync* {
+    for (var r1 = 0; r1 < 9; r1++) {
+      for (var c1 = 0; c1 < 9; c1++) {
+        if (board.get(r1, c1) != 0) continue;
+        final pair = board.getCandidates(r1, c1);
+        if (pair.length != 2) continue;
+        for (var r2 = r1 + 1; r2 < 9; r2++) {
+          for (var c2 = c1 + 1; c2 < 9; c2++) {
+            if (!_isUrGeometry(r1, c1, r2, c2)) continue;
+            if (board.get(r1, c2) != 0 ||
+                board.get(r2, c1) != 0 ||
+                board.get(r2, c2) != 0) {
+              continue;
+            }
+            final extraCells = _urExtraCells(board, r1, c1, r2, c2, pair);
+            if (extraCells == null) continue;
+            yield (
+              cells: [
+                [r1, c1],
+                [r1, c2],
+                [r2, c1],
+                [r2, c2],
+              ],
+              baseDigits: pair,
+              roofs: extraCells,
+              roofExtras: [
+                for (final cell in extraCells)
+                  board
+                      .getCandidates(cell[0], cell[1])
+                      .difference(pair)
+              ],
+            );
+          }
+        }
+      }
+    }
+  }
+
   static SudokuHint? findUniqueRectangleType2(SudokuBoard board) {
     for (var r1 = 0; r1 < 9; r1++) {
       for (var c1 = 0; c1 < 9; c1++) {
@@ -6283,6 +6321,226 @@ class AdvancedTechniques {
     return false;
   }
 
+  // ---------------------------------------------------------------------------
+  // 待定致命结构：两个多余候选不能同时为假，接进短链收删除
+  // ---------------------------------------------------------------------------
+
+  static SudokuHint? findPendingUr(SudokuBoard board) => _pendingBest(
+        board,
+        _uniqueRectReads(board),
+        '待定唯一矩形',
+        '唯一矩形',
+      );
+
+  static SudokuHint? findPendingEr(SudokuBoard board) => _pendingBest(
+        board,
+        _extendedRectReads(board),
+        '待定扩展矩形',
+        '扩展矩形',
+      );
+
+  static SudokuHint? findPendingUl(SudokuBoard board) => _pendingBest(
+        board,
+        _uniqueLoopReads(board),
+        '待定唯一环',
+        '唯一环',
+      );
+
+  static SudokuHint? findPendingBug(SudokuBoard board) {
+    SudokuHint? best;
+    for (final grave in _graveReadings(board)) {
+      final extras = [
+        CandidateRef(grave.owners[0][0], grave.owners[0][1], grave.extras[0]),
+        CandidateRef(grave.owners[1][0], grave.owners[1][1], grave.extras[1]),
+      ];
+      if (!_pendingPairOk(extras)) continue;
+      final hint = _pendingHintFromExtras(
+        board,
+        extras,
+        owners: grave.owners,
+        technique: '待定 BUG',
+        shape: '双值死盘',
+      );
+      if (hint == null) continue;
+      if (best == null ||
+          hint.eliminations.length > best.eliminations.length) {
+        best = hint;
+      }
+    }
+    return best;
+  }
+
+  static SudokuHint? _pendingBest(
+    SudokuBoard board,
+    Iterable<_DeadlyRead> reads,
+    String technique,
+    String shape,
+  ) {
+    SudokuHint? best;
+    for (final read in reads) {
+      final extras = _pendingPair(read);
+      if (extras == null) continue;
+      final hint = _pendingHintFromExtras(
+        board,
+        extras,
+        owners: read.cells,
+        technique: technique,
+        shape: shape,
+      );
+      if (hint == null) continue;
+      if (best == null ||
+          hint.eliminations.length > best.eliminations.length) {
+        best = hint;
+      }
+    }
+    return best;
+  }
+
+  static List<CandidateRef>? _pendingPair(_DeadlyRead read) {
+    if (read.roofs.length != 2) return null;
+    if (read.roofExtras.any((set) => set.length != 1)) return null;
+    final extras = [
+      CandidateRef(
+        read.roofs[0][0],
+        read.roofs[0][1],
+        read.roofExtras[0].single,
+      ),
+      CandidateRef(
+        read.roofs[1][0],
+        read.roofs[1][1],
+        read.roofExtras[1].single,
+      ),
+    ];
+    if (!_pendingPairOk(extras)) return null;
+    return extras;
+  }
+
+  static bool _pendingPairOk(List<CandidateRef> extras) {
+    if (extras.length != 2) return false;
+    final a = extras[0], b = extras[1];
+    if (a.num == b.num && _canSee(a.row, a.col, b.row, b.col)) return false;
+    if (_housesOf(a.row, a.col)
+        .any((h) => _housesOf(b.row, b.col).contains(h))) {
+      return false;
+    }
+    return true;
+  }
+
+  static SudokuHint? _pendingHintFromExtras(
+    SudokuBoard board,
+    List<CandidateRef> extras, {
+    required List<List<int>> owners,
+    required String technique,
+    required String shape,
+  }) {
+    final elims = _pendingNodeElims(board, extras);
+    if (elims.isEmpty) return null;
+    final extraCells = [
+      for (final e in extras) [e.row, e.col]
+    ];
+    final extraText = extras
+        .map((e) => candRef(e.row, e.col, e.num))
+        .join(' 与 ');
+    return SudokuHint.elimination(
+      technique: technique,
+      explanation: '${cellsList(owners)} 差一步才构成$shape。'
+          '挡住致命形的是 $extraText，这两个候选不能同时为假。'
+          '把它们当成一个链节点往外接，'
+          '两支都走到矛盾的候选可以删：${_elimsText(elims)}。',
+      eliminations: elims,
+      patternCells: [
+        ...hintCells(HintRole.pattern, owners),
+        ...hintCells(HintRole.extra, extraCells),
+        ..._targetCells(elims),
+      ],
+      patternCandidates: [
+        for (final e in extras)
+          HintCandidate(e, HintRole.extra),
+        ..._targetCands(elims),
+      ],
+    );
+  }
+
+  static List<CandidateElim> _pendingNodeElims(
+    SudokuBoard board,
+    List<CandidateRef> extras,
+  ) {
+    final extraKeys = {
+      for (final e in extras) '${e.row},${e.col},${e.num}'
+    };
+    final elims = <CandidateElim>[];
+    for (var row = 0; row < 9; row++) {
+      for (var col = 0; col < 9; col++) {
+        if (board.get(row, col) != 0) continue;
+        for (final d in board.getCandidates(row, col)) {
+          if (extraKeys.contains('$row,$col,$d')) continue;
+          if (!_pendingSeesExtra(row, col, d, extras)) continue;
+          if (_pendingAssumeBreaks(board, row, col, d, extras)) {
+            elims.add(CandidateElim(row, col, d));
+          }
+        }
+      }
+    }
+    return elims;
+  }
+
+  static bool _pendingSeesExtra(
+    int row,
+    int col,
+    int digit,
+    List<CandidateRef> extras,
+  ) {
+    for (final e in extras) {
+      if (row == e.row && col == e.col) return digit != e.num;
+      if (digit == e.num && _canSee(row, col, e.row, e.col)) return true;
+    }
+    return false;
+  }
+
+  static bool _pendingAssumeBreaks(
+    SudokuBoard board,
+    int row,
+    int col,
+    int digit,
+    List<CandidateRef> extras,
+  ) {
+    final g = _SinglesReplay.fromBoard(board, budget: 4);
+    g.assign(row, col, digit);
+    return _pendingReplayBroken(g, extras);
+  }
+
+  /// 假设之后立刻跟唯余/摒除；只剩一个多余候选时把它钉死。
+  /// 矛盾必须用到「不能同时为假」：两个多余候选都还在就破了，那是普通 Nishio。
+  static bool _pendingReplayBroken(
+    _SinglesReplay g,
+    List<CandidateRef> extras,
+  ) {
+    var nodeUsed = false;
+    while (true) {
+      if (g.broken) {
+        if (!nodeUsed) {
+          final live = [
+            for (final e in extras)
+              if (g.has(e.row, e.col, e.num)) e
+          ];
+          if (live.length == 2) return false;
+        }
+        return true;
+      }
+      final live = [
+        for (final e in extras)
+          if (g.has(e.row, e.col, e.num)) e
+      ];
+      if (live.isEmpty) return true;
+      if (live.length == 1 && !nodeUsed) {
+        nodeUsed = true;
+        g.assign(live.single.row, live.single.col, live.single.num);
+        continue;
+      }
+      return false;
+    }
+  }
+
   static SudokuHint? findSueDeCoq(SudokuBoard board) {
     for (var boxRow = 0; boxRow < 3; boxRow++) {
       for (var boxCol = 0; boxCol < 3; boxCol++) {
@@ -6949,6 +7207,8 @@ class _SinglesReplay {
   }
 
   bool has(int row, int col, int d) => cand[row * 9 + col].contains(d);
+
+  void assign(int row, int col, int d) => _assign(row * 9 + col, d);
 
   void eliminate(int row, int col, int d) {
     _eliminateAt(row * 9 + col, d);

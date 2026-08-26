@@ -7,8 +7,8 @@ import 'technique_structure.dart';
 ///
 /// 待定的意思是结构还差一步才成立，多出来的那个候选不当场删或填，
 /// 而是当成交替推理链上的一个节点接进链里去用。四个盘面都是随机完整解挖出来的
-/// 唯一解题目，几何用脚本筛过；这四条引擎都还没有独立报法，
-/// 所以示意图只标结构和入链的多余候选，不标删除。
+/// 唯一解题目，几何用脚本筛过。示意图只标结构和入链的多余候选；
+/// 引擎把这两个多余候选当成短链节点，收看得见其中一端的删除。
 List<TechniqueInfo> pendingTechniqueExamples() => [
       TechniqueInfo(
         id: 'pending_ur',
@@ -66,7 +66,7 @@ List<TechniqueInfo> pendingTechniqueExamples() => [
           ],
         ),
         legend: chainNodeLegend,
-        teachingOnly: true,
+        teachingOnly: false,
         structure: const TeachingStructure(
           family: TeachingFamily.uniqueRect,
           claim: TeachingClaim.chainNode,
@@ -155,7 +155,7 @@ List<TechniqueInfo> pendingTechniqueExamples() => [
           ],
         ),
         legend: graveLegend,
-        teachingOnly: true,
+        teachingOnly: false,
         structure: const TeachingStructure(
           family: TeachingFamily.bivalueGrave,
           claim: TeachingClaim.graveChainNode,
@@ -230,7 +230,7 @@ List<TechniqueInfo> pendingTechniqueExamples() => [
           ],
         ),
         legend: chainNodeLegend,
-        teachingOnly: true,
+        teachingOnly: false,
         structure: const TeachingStructure(
           family: TeachingFamily.extendedRect,
           claim: TeachingClaim.chainNode,
@@ -308,7 +308,7 @@ List<TechniqueInfo> pendingTechniqueExamples() => [
           ],
         ),
         legend: chainNodeLegend,
-        teachingOnly: true,
+        teachingOnly: false,
         structure: const TeachingStructure(
           family: TeachingFamily.uniqueLoop,
           claim: TeachingClaim.chainNode,
