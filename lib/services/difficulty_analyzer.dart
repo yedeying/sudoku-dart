@@ -76,6 +76,9 @@ class DifficultyAnalyzer {
     '飞鱼导弹': 97,
     'Nishio': 99,
     'Forcing Chain': 98,
+    '强制唯一矩形': 98,
+    '强制扩展矩形': 98,
+    '强制唯一环': 98,
     'Forcing Net': 99,
     '高级技巧': 100,
   };

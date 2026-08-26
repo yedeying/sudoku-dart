@@ -87,7 +87,7 @@ List<TechniqueInfo> forcingPatternTechniqueExamples() => [
           ],
         ),
         legend: [...structureLegend, targetLegendItem],
-        teachingOnly: true,
+        teachingOnly: false,
         structure: const TeachingStructure(
           family: TeachingFamily.uniqueRect,
           claim: TeachingClaim.forcing,
@@ -193,7 +193,7 @@ List<TechniqueInfo> forcingPatternTechniqueExamples() => [
           ],
         ),
         legend: [...structureLegend, targetLegendItem],
-        teachingOnly: true,
+        teachingOnly: false,
         structure: const TeachingStructure(
           family: TeachingFamily.extendedRect,
           claim: TeachingClaim.forcing,
@@ -295,7 +295,7 @@ List<TechniqueInfo> forcingPatternTechniqueExamples() => [
           ],
         ),
         legend: [...structureLegend, targetLegendItem],
-        teachingOnly: true,
+        teachingOnly: false,
         structure: const TeachingStructure(
           family: TeachingFamily.uniqueLoop,
           claim: TeachingClaim.forcing,

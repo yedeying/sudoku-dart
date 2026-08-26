@@ -36,6 +36,9 @@ final _finders = <String, SudokuHint? Function(SudokuBoard)>{
   '待定扩展矩形': AdvancedTechniques.findPendingEr,
   '待定唯一环': AdvancedTechniques.findPendingUl,
   '待定 BUG': AdvancedTechniques.findPendingBug,
+  '强制唯一矩形': AdvancedTechniques.findForcingUr,
+  '强制扩展矩形': AdvancedTechniques.findForcingEr,
+  '强制唯一环': AdvancedTechniques.findForcingUl,
 };
 
 List<String> _expertBank() =>

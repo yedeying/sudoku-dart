@@ -556,6 +556,8 @@ void main() {
         'finned_swordfish',
         'finned_jellyfish',
         'als_xy',
+        // 强制致命结构 9.8 比 Nishio 9.9 浅，练习原题上先报了就把 Nishio 拆掉。
+        'nishio',
       };
       final checked = {...TechniqueCatalog.practicePuzzles.keys, 'bug1'}
         ..removeAll(knownUnreachable);

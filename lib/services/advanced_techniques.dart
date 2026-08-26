@@ -673,6 +673,66 @@ class AdvancedTechniques {
     }
   }
 
+  /// 强制唯一矩形要用的矩形：四个角都含同一对底数，多余候选至少两个。
+  ///
+  /// [_uniqueRectReads] 只收「两格干净、两格带毛」那一档，教学页那副三格带毛
+  /// 的强制矩形会被丢掉。
+  static Iterable<_DeadlyRead> _uniqueRectForcingReads(SudokuBoard board) sync* {
+    for (var r1 = 0; r1 < 9; r1++) {
+      for (var c1 = 0; c1 < 9; c1++) {
+        if (board.get(r1, c1) != 0) continue;
+        for (var r2 = r1 + 1; r2 < 9; r2++) {
+          for (var c2 = c1 + 1; c2 < 9; c2++) {
+            if (!_isUrGeometry(r1, c1, r2, c2)) continue;
+            final corners = [
+              [r1, c1],
+              [r1, c2],
+              [r2, c1],
+              [r2, c2],
+            ];
+            if (corners.any((c) => board.get(c[0], c[1]) != 0)) continue;
+            Set<int>? pair;
+            for (final cell in corners) {
+              final cands = board.getCandidates(cell[0], cell[1]);
+              if (cands.length != 2) continue;
+              if (corners.every((c) =>
+                  board.getCandidates(c[0], c[1]).containsAll(cands))) {
+                pair = cands;
+                break;
+              }
+            }
+            if (pair == null) {
+              var inter = board.getCandidates(r1, c1);
+              for (final cell in corners.skip(1)) {
+                inter = inter.intersection(board.getCandidates(cell[0], cell[1]));
+              }
+              if (inter.length != 2) continue;
+              pair = inter;
+            }
+            final roofs = <List<int>>[];
+            final roofExtras = <Set<int>>[];
+            var extraCount = 0;
+            for (final cell in corners) {
+              final extra =
+                  board.getCandidates(cell[0], cell[1]).difference(pair);
+              if (extra.isEmpty) continue;
+              roofs.add(cell);
+              roofExtras.add(extra);
+              extraCount += extra.length;
+            }
+            if (extraCount < 2) continue;
+            yield (
+              cells: corners,
+              baseDigits: pair,
+              roofs: roofs,
+              roofExtras: roofExtras,
+            );
+          }
+        }
+      }
+    }
+  }
+
   static SudokuHint? findUniqueRectangleType2(SudokuBoard board) {
     for (var r1 = 0; r1 < 9; r1++) {
       for (var c1 = 0; c1 < 9; c1++) {
@@ -1756,7 +1816,10 @@ class AdvancedTechniques {
   /// 搜索规模写死在这里：3 个宫柱（宫带）× 27 对线 × 2 种朝向 = 162 副几何，
   /// 每副几何再从六格候选的交集里取三个底数，多余候选超过两格的直接丢掉——
   /// 四型里最宽的类型 2 也只用得上两格。
-  static Iterable<_DeadlyRead> _extendedRectReads(SudokuBoard board) sync* {
+  static Iterable<_DeadlyRead> _extendedRectReads(
+    SudokuBoard board, {
+    int maxRoofs = 2,
+  }) sync* {
     for (var band = 0; band < 3; band++) {
       final trip = [band * 3, band * 3 + 1, band * 3 + 2];
       for (var l1 = 0; l1 < 9; l1++) {
@@ -1770,7 +1833,7 @@ class AdvancedTechniques {
             final lineB = <List<int>>[
               for (final t in trip) byRow == 1 ? [l2, t] : [t, l2]
             ];
-            yield* _extendedRectReadsOn(board, lineA, lineB);
+            yield* _extendedRectReadsOn(board, lineA, lineB, maxRoofs: maxRoofs);
           }
         }
       }
@@ -1790,8 +1853,9 @@ class AdvancedTechniques {
   static Iterable<_DeadlyRead> _extendedRectReadsOn(
     SudokuBoard board,
     List<List<int>> lineA,
-    List<List<int>> lineB,
-  ) sync* {
+    List<List<int>> lineB, {
+    int maxRoofs = 2,
+  }) sync* {
     final candsA = <Set<int>>[];
     final candsB = <Set<int>>[];
     var poolA = <int>{};
@@ -1817,7 +1881,7 @@ class AdvancedTechniques {
         roofs.add(cell);
         roofExtras.add(extra);
       }
-      if (roofs.length > 2) continue;
+      if (roofs.length > maxRoofs) continue;
       if (!_extendedRectSwapClosed(candsA, candsB, combo)) continue;
       yield (
         cells: cells,
@@ -1954,7 +2018,10 @@ class AdvancedTechniques {
   /// 交替走法本身还自带一层强剪枝：横着走用掉的行、竖着走用掉的列都不许重复，
   /// 所以「每行每列恰好两格」不必事后再核；宫的那一条和二分性交给
   /// [_loopStructureValid]。
-  static Iterable<_DeadlyRead> _uniqueLoopReads(SudokuBoard board) sync* {
+  static Iterable<_DeadlyRead> _uniqueLoopReads(
+    SudokuBoard board, {
+    int maxRoofs = 2,
+  }) sync* {
     for (var a = 1; a <= 8; a++) {
       for (var b = a + 1; b <= 9; b++) {
         final base = {a, b};
@@ -1979,6 +2046,7 @@ class AdvancedTechniques {
             start[0] * 9 + start[1],
             board.getCandidates(start[0], start[1]).length > 2 ? 1 : 0,
             [_loopVisitBudget],
+            maxRoofs,
           );
         }
       }
@@ -1997,6 +2065,7 @@ class AdvancedTechniques {
     int startIndex,
     int roofs,
     List<int> budget,
+    int maxRoofs,
   ) sync* {
     if (budget[0] <= 0) return;
     budget[0]--;
@@ -2013,7 +2082,7 @@ class AdvancedTechniques {
         for (final cell in path) [cell[0], cell[1]]
       ];
       if (_loopStructureValid(cells)) {
-        final read = _loopRead(board, cells, base);
+        final read = _loopRead(board, cells, base, maxRoofs);
         if (read != null) yield read;
       }
     }
@@ -2032,7 +2101,7 @@ class AdvancedTechniques {
       }
       final grown =
           board.getCandidates(next[0], next[1]).length > 2 ? roofs + 1 : roofs;
-      if (grown > 2) continue;
+      if (grown > maxRoofs) continue;
       path.add(next);
       yield* _loopStep(
         board,
@@ -2044,6 +2113,7 @@ class AdvancedTechniques {
         startIndex,
         grown,
         budget,
+        maxRoofs,
       );
       path.removeLast();
     }
@@ -2082,6 +2152,7 @@ class AdvancedTechniques {
     SudokuBoard board,
     List<List<int>> cells,
     Set<int> base,
+    int maxRoofs,
   ) {
     final roofs = <List<int>>[];
     final roofExtras = <Set<int>>[];
@@ -2091,7 +2162,7 @@ class AdvancedTechniques {
       roofs.add(cell);
       roofExtras.add(extra);
     }
-    if (roofs.length > 2) return null;
+    if (roofs.length > maxRoofs) return null;
     return (
       cells: cells,
       baseDigits: base,
@@ -6541,6 +6612,127 @@ class AdvancedTechniques {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // 强制致命结构：每个多余候选各成一支，取各支共同删除
+  // ---------------------------------------------------------------------------
+
+  static SudokuHint? findForcingUr(SudokuBoard board) => _forcingBest(
+        board,
+        _uniqueRectForcingReads(board),
+        '强制唯一矩形',
+        '唯一矩形',
+      );
+
+  static SudokuHint? findForcingEr(SudokuBoard board) => _forcingBest(
+        board,
+        _extendedRectReads(board, maxRoofs: 4),
+        '强制扩展矩形',
+        '扩展矩形',
+      );
+
+  static SudokuHint? findForcingUl(SudokuBoard board) => _forcingBest(
+        board,
+        _uniqueLoopReads(board, maxRoofs: 3),
+        '强制唯一环',
+        '唯一环',
+      );
+
+  static SudokuHint? _forcingBest(
+    SudokuBoard board,
+    Iterable<_DeadlyRead> reads,
+    String technique,
+    String shape,
+  ) {
+    SudokuHint? best;
+    var bestExtras = 0;
+    for (final read in reads) {
+      final extras = _deadlyExtraCands(read);
+      if (extras.length < 2) continue;
+      final hint = _forcingOn(
+        board,
+        read.cells,
+        extras,
+        technique,
+        shape,
+      );
+      if (hint == null) continue;
+      final moreCases = extras.length > bestExtras;
+      final moreElims = extras.length == bestExtras &&
+          (best == null ||
+              hint.eliminations.length > best.eliminations.length);
+      if (best == null || moreCases || moreElims) {
+        best = hint;
+        bestExtras = extras.length;
+      }
+    }
+    return best;
+  }
+
+  static List<CandidateRef> _deadlyExtraCands(_DeadlyRead read) {
+    final out = <CandidateRef>[];
+    for (var i = 0; i < read.roofs.length; i++) {
+      final cell = read.roofs[i];
+      for (final d in read.roofExtras[i]) {
+        out.add(CandidateRef(cell[0], cell[1], d));
+      }
+    }
+    return out;
+  }
+
+  static SudokuHint? _forcingOn(
+    SudokuBoard board,
+    List<List<int>> cells,
+    List<CandidateRef> extras,
+    String technique,
+    String shape,
+  ) {
+    final branches = <_SinglesReplay>[];
+    for (final extra in extras) {
+      final g = _SinglesReplay.fromBoard(board, budget: 8);
+      g.assign(extra.row, extra.col, extra.num);
+      if (g.broken || g.spent == 0) return null;
+      branches.add(g);
+    }
+    final elims = <CandidateElim>[];
+    for (var row = 0; row < 9; row++) {
+      for (var col = 0; col < 9; col++) {
+        if (board.get(row, col) != 0) continue;
+        for (final d in board.getCandidates(row, col)) {
+          if (branches.every((g) => !g.has(row, col, d))) {
+            elims.add(CandidateElim(row, col, d));
+          }
+        }
+      }
+    }
+    if (elims.isEmpty) return null;
+    final blind = _SinglesReplay.fromBoard(board, budget: 8 * extras.length);
+    blind.propagate();
+    elims.removeWhere((e) => !blind.has(e.row, e.col, e.num));
+    if (elims.isEmpty) return null;
+    final extraText = extras
+        .map((e) => candRef(e.row, e.col, e.num))
+        .join('、');
+    return SudokuHint.elimination(
+      technique: technique,
+      explanation: '${cellsList(cells)} 构成一个$shape，'
+          '不可能只填底数，所以 $extraText 里必有一个为真。'
+          '每个多余候选各成一支，只沿唯余/摒除往下推，'
+          '各支都删掉 ${_elimsText(elims)}。',
+      eliminations: elims,
+      patternCells: [
+        ...hintCells(HintRole.pattern, cells),
+        ...hintCells(HintRole.extra, [
+          for (final e in extras) [e.row, e.col]
+        ]),
+        ..._targetCells(elims),
+      ],
+      patternCandidates: [
+        for (final e in extras) HintCandidate(e, HintRole.extra),
+        ..._targetCands(elims),
+      ],
+    );
+  }
+
   static SudokuHint? findSueDeCoq(SudokuBoard board) {
     for (var boxRow = 0; boxRow < 3; boxRow++) {
       for (var boxCol = 0; boxCol < 3; boxCol++) {
@@ -7209,6 +7401,38 @@ class _SinglesReplay {
   bool has(int row, int col, int d) => cand[row * 9 + col].contains(d);
 
   void assign(int row, int col, int d) => _assign(row * 9 + col, d);
+
+  /// 不加假设，只把当前盘面上已经能定的唯余/摒除推到预算用完或停住。
+  void propagate() {
+    while (!broken && spent < budget) {
+      var cell = -1;
+      var digit = 0;
+      for (var i = 0; i < 81; i++) {
+        if (value[i] != 0 || cand[i].length != 1) continue;
+        cell = i;
+        digit = cand[i].first;
+        break;
+      }
+      if (cell < 0) {
+        hidden:
+        for (var house = 0; house < 27; house++) {
+          for (var d = 1; d <= 9; d++) {
+            final places = [
+              for (final x in AdvancedTechniques._houseCells(house))
+                if (cand[x[0] * 9 + x[1]].contains(d)) x[0] * 9 + x[1]
+            ];
+            if (places.length == 1 && value[places.single] == 0) {
+              cell = places.single;
+              digit = d;
+              break hidden;
+            }
+          }
+        }
+      }
+      if (cell < 0) return;
+      _assign(cell, digit);
+    }
+  }
 
   void eliminate(int row, int col, int d) {
     _eliminateAt(row * 9 + col, d);
