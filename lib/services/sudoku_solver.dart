@@ -198,6 +198,7 @@ class SudokuSolver {
     ('ALS-XZ', AdvancedTechniques.findAlsXz),
     ('DDS', AdvancedTechniques.findDds),
     ('Death Blossom', AdvancedTechniques.findDeathBlossom),
+    ('WALS', AdvancedTechniques.findWals),
     ('Kraken Fish', AdvancedTechniques.findKrakenFish),
     // 毛刺数组「毛刺为真」那一支是把唯余摒除推到推不动为止，力度和强制链
     // 同级，不是 9.4 那一档的认形。排在 ALS-XZ 之前时它会把 ALS-XZ、

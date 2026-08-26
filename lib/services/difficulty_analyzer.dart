@@ -64,6 +64,7 @@ class DifficultyAnalyzer {
     'DDS': 95,
     'ALS-XY-Wing': 98,
     'Death Blossom': 96,
+    'WALS': 96,
     'Kraken Fish': 97,
     // 「毛刺为真」那一支推到推不动为止，读起来是强制链的力度，不是数组的
     // 认形，所以和 Kraken 同档而排在它后面，不占 9.4。

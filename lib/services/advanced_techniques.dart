@@ -5900,6 +5900,178 @@ class AdvancedTechniques {
     return false;
   }
 
+  // ---------------------------------------------------------------------------
+  // WALS：弱待定数组（Almost Hidden Set）
+  // ---------------------------------------------------------------------------
+
+  /// 一个房屋里 N 个数字恰好占 N+1 格。多出来那一格分两支：
+  /// 填的是这 N 个数字之一，还是不是。两支都删掉的候选才报。
+  static SudokuHint? findWals(SudokuBoard board) {
+    SudokuHint? best;
+    var bestUnion = 0;
+    for (var house = 0; house < 27; house++) {
+      final empty = [
+        for (final cell in _houseCells(house))
+          if (board.get(cell[0], cell[1]) == 0) cell
+      ];
+      if (empty.length < 3) continue;
+      final digits = <int>{};
+      for (final cell in empty) {
+        digits.addAll(board.getCandidates(cell[0], cell[1]));
+      }
+      final digitList = digits.toList()..sort();
+      for (var n = 2; n <= 4; n++) {
+        if (digitList.length < n) continue;
+        for (final combo in _combinations(digitList, n)) {
+          final spots = [
+            for (final cell in empty)
+              if (board.getCandidates(cell[0], cell[1]).any(combo.contains))
+                cell
+          ];
+          if (spots.length != n + 1) continue;
+          if (_walsHasHiddenSubset(board, combo, spots)) continue;
+          final union = <int>{};
+          for (final cell in spots) {
+            union.addAll(board.getCandidates(cell[0], cell[1]));
+          }
+          // 并集小到能当 ALS / 显性数组读，就不按「弱」待定数组讲。
+          if (union.length <= spots.length + 1) continue;
+          for (final split in spots) {
+            final onSplit = board
+                .getCandidates(split[0], split[1])
+                .where(combo.contains)
+                .length;
+            if (onSplit != 1) continue;
+            final hint = _walsOn(board, house, combo.toSet(), spots, split);
+            if (hint == null) continue;
+            final betterElims = best == null ||
+                hint.eliminations.length > best.eliminations.length;
+            final weaker = best != null &&
+                hint.eliminations.length == best.eliminations.length &&
+                union.length > bestUnion;
+            if (betterElims || weaker) {
+              best = hint;
+              bestUnion = union.length;
+            }
+          }
+        }
+      }
+    }
+    return best;
+  }
+
+  static bool _walsHasHiddenSubset(
+    SudokuBoard board,
+    List<int> digits,
+    List<List<int>> spots,
+  ) {
+    for (var k = 1; k < digits.length; k++) {
+      for (final sub in _combinations(digits, k)) {
+        final hit = spots
+            .where((cell) =>
+                board.getCandidates(cell[0], cell[1]).any(sub.contains))
+            .length;
+        if (hit <= k) return true;
+      }
+    }
+    return false;
+  }
+
+  static SudokuHint? _walsOn(
+    SudokuBoard board,
+    int house,
+    Set<int> base,
+    List<List<int>> spots,
+    List<int> split,
+  ) {
+    final rest = [
+      for (final cell in spots)
+        if (cell[0] != split[0] || cell[1] != split[1]) cell
+    ];
+
+    // 两支必须按「每删一个候选就立刻跟唯余/摒除」往下走。
+    // 先删完再全局扫，远处的唯余会把 replayBudget 抢走，教学页那 4 步到不了。
+    final a = _SinglesReplay.fromBoard(board, budget: 4);
+    var touchedA = false;
+    for (final d in board.getCandidates(split[0], split[1])) {
+      if (base.contains(d)) continue;
+      a.eliminate(split[0], split[1], d);
+      touchedA = true;
+    }
+    if (!touchedA || a.broken) return null;
+    if (base.every((d) => !a.has(split[0], split[1], d))) return null;
+
+    final b = _SinglesReplay.fromBoard(board, budget: 4);
+    var touchedB = false;
+    for (final d in base) {
+      if (!board.getCandidates(split[0], split[1]).contains(d)) continue;
+      b.eliminate(split[0], split[1], d);
+      touchedB = true;
+    }
+    if (!touchedB) return null;
+    for (final cell in rest) {
+      for (final d in board.getCandidates(cell[0], cell[1])) {
+        if (base.contains(d)) continue;
+        b.eliminate(cell[0], cell[1], d);
+      }
+    }
+    if (b.broken) return null;
+
+    final both = _commonLost(board, a, b, rest, base);
+    if (both.isEmpty) return null;
+
+    final baseText = (base.toList()..sort()).join('、');
+    final hl = _houseHighlight(house);
+    return SudokuHint.elimination(
+      technique: 'WALS',
+      explanation: '${_houseLabel(house)} 上 $baseText 一共占 ${spots.length} 格：'
+          '${cellsList(spots)}，比隐性数组多一格，是弱待定数组。'
+          '从 ${cellRef(split[0], split[1])} 分两支：'
+          '这一格填的是 $baseText 之一，或不是。'
+          '两支都删掉 ${_elimsText(both)}。',
+      eliminations: both,
+      patternCells: [
+        ...hintCells(HintRole.pattern, spots),
+        ..._targetCells(both),
+      ],
+      patternCandidates: [
+        for (final cell in spots)
+          for (final d in base.toList()..sort())
+            if (board.getCandidates(cell[0], cell[1]).contains(d))
+              HintCandidate(
+                CandidateRef(cell[0], cell[1], d),
+                HintRole.pattern,
+              ),
+        ..._targetCands(both),
+      ],
+      highlightRows: hl.rows,
+      highlightCols: hl.cols,
+      highlightBoxes: hl.boxes,
+    );
+  }
+
+  static List<CandidateElim> _commonLost(
+    SudokuBoard original,
+    _SinglesReplay a,
+    _SinglesReplay b,
+    List<List<int>> rest,
+    Set<int> base,
+  ) {
+    final elims = <CandidateElim>[];
+    for (final cell in rest) {
+      final row = cell[0];
+      final col = cell[1];
+      if (original.get(row, col) != 0) continue;
+      for (final d in original.getCandidates(row, col)) {
+        if (base.contains(d)) continue;
+        if (!a.has(row, col, d) && !b.has(row, col, d)) {
+          elims.add(CandidateElim(row, col, d));
+        }
+      }
+    }
+    return elims;
+  }
+
   static SudokuHint? findSueDeCoq(SudokuBoard board) {
     for (var boxRow = 0; boxRow < 3; boxRow++) {
       for (var boxCol = 0; boxCol < 3; boxCol++) {
@@ -6540,4 +6712,107 @@ class _Unit {
   final List<List<int>> cells;
 
   _Unit(this.type, this.label, this.cells);
+}
+
+/// 删候选后立刻跟唯余/摒除，步数按「填了几格」计。
+///
+/// 教学页的两支复核用同一套规则；先删完再全局扫会把有限预算花到远处。
+class _SinglesReplay {
+  final List<Set<int>> cand;
+  final List<int> value;
+  final int budget;
+  bool broken = false;
+  int spent = 0;
+
+  _SinglesReplay._(this.cand, this.value, this.budget);
+
+  factory _SinglesReplay.fromBoard(SudokuBoard board, {required int budget}) {
+    final cand = List<Set<int>>.generate(81, (i) {
+      final row = i ~/ 9, col = i % 9;
+      final v = board.get(row, col);
+      if (v != 0) return {v};
+      return board.getCandidates(row, col).toSet();
+    });
+    final value = List<int>.generate(81, (i) => board.get(i ~/ 9, i % 9));
+    return _SinglesReplay._(cand, value, budget);
+  }
+
+  bool has(int row, int col, int d) => cand[row * 9 + col].contains(d);
+
+  void eliminate(int row, int col, int d) {
+    _eliminateAt(row * 9 + col, d);
+  }
+
+  void _eliminateAt(int cell, int d) {
+    if (broken || !cand[cell].contains(d)) return;
+    if (value[cell] == d) {
+      broken = true;
+      return;
+    }
+    cand[cell].remove(d);
+    _drop(cell, d);
+  }
+
+  void _assign(int cell, int d) {
+    if (broken || value[cell] == d) return;
+    if (!cand[cell].contains(d)) {
+      broken = true;
+      return;
+    }
+    if (spent >= budget) return;
+    spent++;
+    value[cell] = d;
+    final others = cand[cell].where((x) => x != d).toList();
+    cand[cell] = {d};
+    for (final o in others) {
+      _drop(cell, o);
+      if (broken) return;
+    }
+    for (final p in _peers(cell)) {
+      _eliminateAt(p, d);
+      if (broken) return;
+    }
+  }
+
+  void _drop(int cell, int d) {
+    if (cand[cell].isEmpty) {
+      broken = true;
+      return;
+    }
+    if (cand[cell].length == 1 && value[cell] == 0) {
+      _assign(cell, cand[cell].first);
+      if (broken) return;
+    }
+    for (final house in AdvancedTechniques._housesOf(cell ~/ 9, cell % 9)) {
+      final places = [
+        for (final x in AdvancedTechniques._houseCells(house))
+          if (cand[x[0] * 9 + x[1]].contains(d)) x[0] * 9 + x[1]
+      ];
+      if (places.isEmpty) {
+        broken = true;
+        return;
+      }
+      if (places.length == 1 && value[places.first] == 0) {
+        _assign(places.first, d);
+        if (broken) return;
+      }
+    }
+  }
+
+  static List<int> _peers(int cell) {
+    final r = cell ~/ 9, c = cell % 9;
+    final out = <int>{};
+    for (var k = 0; k < 9; k++) {
+      out.add(r * 9 + k);
+      out.add(k * 9 + c);
+    }
+    final br = (r ~/ 3) * 3, bc = (c ~/ 3) * 3;
+    for (var i = 0; i < 3; i++) {
+      for (var j = 0; j < 3; j++) {
+        out.add((br + i) * 9 + bc + j);
+      }
+    }
+    out.remove(cell);
+    return out.toList();
+  }
 }

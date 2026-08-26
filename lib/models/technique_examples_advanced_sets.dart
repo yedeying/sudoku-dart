@@ -213,7 +213,7 @@ List<TechniqueInfo> advancedSetTechniqueExamples() => [
           ],
         ),
         legend: _walsLegend,
-        teachingOnly: true,
+        teachingOnly: false,
         structure: const TeachingStructure(
           family: TeachingFamily.almostHiddenSet,
           claim: TeachingClaim.elimination,
