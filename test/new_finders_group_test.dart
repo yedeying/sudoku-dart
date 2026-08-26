@@ -31,6 +31,7 @@ final _finders = <String, SudokuHint? Function(SudokuBoard)>{
   '毛刺数组': AdvancedTechniques.findBurredSubset,
   'DDS': AdvancedTechniques.findDds,
   'WALS': AdvancedTechniques.findWals,
+  '飞鱼导弹': AdvancedTechniques.findExocet,
 };
 
 List<String> _expertBank() =>

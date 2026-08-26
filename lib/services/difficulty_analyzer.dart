@@ -69,6 +69,7 @@ class DifficultyAnalyzer {
     // 「毛刺为真」那一支推到推不动为止，读起来是强制链的力度，不是数组的
     // 认形，所以和 Kraken 同档而排在它后面，不占 9.4。
     '毛刺数组': 97,
+    '飞鱼导弹': 97,
     'Nishio': 99,
     'Forcing Chain': 98,
     'Forcing Net': 99,

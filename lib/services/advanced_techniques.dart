@@ -6072,6 +6072,217 @@ class AdvancedTechniques {
     return elims;
   }
 
+  // ---------------------------------------------------------------------------
+  // 飞鱼导弹：Junior Exocet
+  // ---------------------------------------------------------------------------
+
+  /// 同一带里两个同宫同线基格，另外两宫各一对对象格。
+  /// 每个基格数字在 S 格上都能被至多两条房屋盖住时，目标格只剩基格数字。
+  static SudokuHint? findExocet(SudokuBoard board) {
+    SudokuHint? best;
+    for (final horizontal in const [true, false]) {
+      final hint = _exocetOriented(board, horizontal);
+      if (hint == null) continue;
+      if (best == null ||
+          hint.eliminations.length > best.eliminations.length) {
+        best = hint;
+      }
+    }
+    return best;
+  }
+
+  static SudokuHint? _exocetOriented(SudokuBoard board, bool horizontal) {
+    SudokuHint? best;
+    List<int> at(int line, int cross) =>
+        horizontal ? [line, cross] : [cross, line];
+    int crossOf(List<int> cell) => horizontal ? cell[1] : cell[0];
+
+    for (var band = 0; band < 3; band++) {
+      for (var li = 0; li < 3; li++) {
+        final baseLine = band * 3 + li;
+        final otherLines = [
+          for (var k = 0; k < 3; k++)
+            if (band * 3 + k != baseLine) band * 3 + k
+        ];
+        for (var boxAlong = 0; boxAlong < 3; boxAlong++) {
+          final inBox = [
+            for (var k = 0; k < 3; k++) at(baseLine, boxAlong * 3 + k)
+          ];
+          final empty = [
+            for (final cell in inBox)
+              if (board.get(cell[0], cell[1]) == 0) cell
+          ];
+          if (empty.length < 2) continue;
+          for (final pair in _combinations(empty, 2)) {
+            final bases = pair.toList();
+            final union = <int>{
+              ...board.getCandidates(bases[0][0], bases[0][1]),
+              ...board.getCandidates(bases[1][0], bases[1][1]),
+            };
+            if (union.length < 3 || union.length > 4) continue;
+            final usedCross = {crossOf(bases[0]), crossOf(bases[1])};
+            final freeCross = [
+              for (var k = 0; k < 3; k++) boxAlong * 3 + k
+            ].where((x) => !usedCross.contains(x)).toList();
+            if (freeCross.length != 1) continue;
+
+            final options = <List<({List<int> target, List<int> companion})>>[];
+            var stalled = false;
+            for (var ob = 0; ob < 3; ob++) {
+              if (ob == boxAlong) continue;
+              final found = <({List<int> target, List<int> companion})>[];
+              for (var k = 0; k < 3; k++) {
+                final x = ob * 3 + k;
+                final a = at(otherLines[0], x);
+                final b = at(otherLines[1], x);
+                final holdA = _exocetHoldsBase(board, a, union);
+                final holdB = _exocetHoldsBase(board, b, union);
+                if (holdA == holdB) continue;
+                final target = holdA ? a : b;
+                final companion = holdA ? b : a;
+                if (board.get(target[0], target[1]) != 0) continue;
+                found.add((target: target, companion: companion));
+              }
+              if (found.isEmpty) {
+                stalled = true;
+                break;
+              }
+              options.add(found);
+            }
+            if (stalled || options.length != 2) continue;
+
+            for (final p1 in options[0]) {
+              for (final p2 in options[1]) {
+                final wantCross = {
+                  freeCross.single,
+                  crossOf(p1.target),
+                  crossOf(p2.target),
+                };
+                if (wantCross.length != 3) continue;
+                if (!_exocetCovered(
+                    board, union, wantCross, band, horizontal)) {
+                  continue;
+                }
+                final targets = [p1.target, p2.target];
+                final companions = [p1.companion, p2.companion];
+                final elims = <CandidateElim>[];
+                for (final cell in targets) {
+                  for (final d in board.getCandidates(cell[0], cell[1])) {
+                    if (!union.contains(d)) {
+                      elims.add(CandidateElim(cell[0], cell[1], d));
+                    }
+                  }
+                }
+                if (elims.isEmpty) continue;
+                if (best != null &&
+                    elims.length <= best.eliminations.length) {
+                  continue;
+                }
+                final baseText = (union.toList()..sort()).join('、');
+                final bandLines = [band * 3, band * 3 + 1, band * 3 + 2];
+                final crosses = wantCross.toList()..sort();
+                best = SudokuHint.elimination(
+                  technique: '飞鱼导弹',
+                  explanation: '${cellsList(bases)} 同宫同线，'
+                      '候选并集是 $baseText。'
+                      '同一带另外两宫的对象格是 ${cellsList(targets)}（目标）'
+                      '和 ${cellsList(companions)}（伴随）。'
+                      '每个基格数字在交叉线伸出带外的 S 格上'
+                      '都被不超过两条房屋盖住，'
+                      '两个目标格必须分别落到两个基格数字上，'
+                      '于是删掉 ${_elimsText(elims)}。',
+                  eliminations: elims,
+                  patternCells: [
+                    ...hintCells(HintRole.pattern, bases),
+                    ...hintCells(HintRole.cover, targets),
+                    ...hintCells(HintRole.extra, companions),
+                    ..._targetCells(elims),
+                  ],
+                  patternCandidates: [
+                    for (final cell in [...bases, ...targets])
+                      for (final d in union.toList()..sort())
+                        if (board
+                            .getCandidates(cell[0], cell[1])
+                            .contains(d))
+                          HintCandidate(
+                            CandidateRef(cell[0], cell[1], d),
+                            HintRole.pattern,
+                          ),
+                    ..._targetCands(elims),
+                  ],
+                  highlightRows: horizontal ? bandLines : crosses,
+                  highlightCols: horizontal ? crosses : bandLines,
+                );
+              }
+            }
+          }
+        }
+      }
+    }
+    return best;
+  }
+
+  static bool _exocetHoldsBase(
+    SudokuBoard board,
+    List<int> cell,
+    Set<int> base,
+  ) {
+    final v = board.get(cell[0], cell[1]);
+    if (v != 0) return base.contains(v);
+    return board.getCandidates(cell[0], cell[1]).any(base.contains);
+  }
+
+  /// 每个基格数字在 S 格上的出现（给定数也算）都能被至多两条房屋盖住。
+  static bool _exocetCovered(
+    SudokuBoard board,
+    Set<int> base,
+    Set<int> wantCross,
+    int band,
+    bool horizontal,
+  ) {
+    final sCells = [
+      for (final x in wantCross)
+        for (var k = 0; k < 9; k++)
+          if (k ~/ 3 != band) horizontal ? [k, x] : [x, k]
+    ];
+    for (final d in base) {
+      final spots = [
+        for (final cell in sCells)
+          if (board.get(cell[0], cell[1]) == d ||
+              (board.get(cell[0], cell[1]) == 0 &&
+                  board.getCandidates(cell[0], cell[1]).contains(d)))
+            cell
+      ];
+      if (!_coveredByTwoHouses(spots)) return false;
+    }
+    return true;
+  }
+
+  static bool _coveredByTwoHouses(List<List<int>> spots) {
+    if (spots.length <= 2) return true;
+    final useful = <int>{
+      for (final cell in spots) ..._housesOf(cell[0], cell[1])
+    };
+    final houses = useful.toList();
+    for (final house in houses) {
+      if (spots.every((cell) => _housesOf(cell[0], cell[1]).contains(house))) {
+        return true;
+      }
+    }
+    for (var i = 0; i < houses.length; i++) {
+      for (var j = i + 1; j < houses.length; j++) {
+        final a = houses[i], b = houses[j];
+        if (spots.every((cell) {
+          final hs = _housesOf(cell[0], cell[1]);
+          return hs.contains(a) || hs.contains(b);
+        })) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   static SudokuHint? findSueDeCoq(SudokuBoard board) {
     for (var boxRow = 0; boxRow < 3; boxRow++) {
       for (var boxCol = 0; boxCol < 3; boxCol++) {

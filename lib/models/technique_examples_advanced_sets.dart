@@ -681,7 +681,7 @@ List<TechniqueInfo> advancedSetTechniqueExamples() => [
           ],
         ),
         legend: _exocetLegend,
-        teachingOnly: true,
+        teachingOnly: false,
         structure: const TeachingStructure(
           family: TeachingFamily.exocet,
           claim: TeachingClaim.elimination,

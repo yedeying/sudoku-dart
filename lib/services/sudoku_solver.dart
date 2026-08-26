@@ -205,6 +205,7 @@ class SudokuSolver {
     // Death Blossom、Kraken 该出面的局面全抢走——题库 160 题里 Sue de Coq
     // 与 Death Blossom 一次都露不了面。所以按实际力度排在 Kraken 之后。
     ('毛刺数组', AdvancedTechniques.findBurredSubset),
+    ('飞鱼导弹', AdvancedTechniques.findExocet),
     ('Forcing Chain', AdvancedTechniques.findForcingChain),
     ('ALS-XY-Wing', AdvancedTechniques.findAlsXyWing),
     ('Nishio', AdvancedTechniques.findNishio),
