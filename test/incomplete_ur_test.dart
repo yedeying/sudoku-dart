@@ -8,7 +8,7 @@ import 'package:sudoku_app/services/sudoku_solver.dart';
 
 import 'support/finder_soundness.dart';
 
-/// 唯一矩形 2 的教学盘：矩形 r7c2、r7c4、r9c2、r9c4，底数 `{6,9}`，
+/// 唯一矩形 Type 2 的教学盘：矩形 r7c2、r7c4、r9c2、r9c4，底数 `{6,9}`，
 /// r7c4、r9c4 各多出一个 3，唯一解里 r7c4 就是 3。
 const _ur2Puzzle =
     '687040001031008700049701008123596800956874123874123500005082410012400080408010002';
@@ -25,7 +25,7 @@ void main() {
     expect(
       AdvancedTechniques.findUniqueRectangleType2(board),
       isNull,
-      reason: 'r7c4 少了一个底数，标准唯一矩形 2 的认形条件已经不满足',
+      reason: 'r7c4 少了一个底数，标准唯一矩形 Type 2 的认形条件已经不满足',
     );
 
     final hint = AdvancedTechniques.findIncompleteUniqueRectangle(board);
@@ -46,7 +46,7 @@ void main() {
     );
   });
 
-  test('四角都完整时不抢唯一矩形 2 的活', () {
+  test('四角都完整时不抢唯一矩形 Type 2 的活', () {
     final board = SudokuBoard.fromString(_ur2Puzzle);
     expect(AdvancedTechniques.findUniqueRectangleType2(board), isNotNull);
     expect(AdvancedTechniques.findIncompleteUniqueRectangle(board), isNull);
@@ -76,16 +76,16 @@ void main() {
     expectEvidenceBeyondTargets(hint);
   });
 
-  test('不完整唯一矩形排在唯一矩形 1 之后、唯一矩形 2 之前，难度分 5.2', () {
+  test('不完整唯一矩形排在唯一矩形 Type 1 之后、唯一矩形 Type 2 之前，难度分 5.2', () {
     final order = SudokuSolver.hintSearchOrder;
     expect(order, contains('不完整唯一矩形'));
     expect(
-      order.indexOf('唯一矩形 1'),
+      order.indexOf('唯一矩形 Type 1'),
       lessThan(order.indexOf('不完整唯一矩形')),
     );
     expect(
       order.indexOf('不完整唯一矩形'),
-      lessThan(order.indexOf('唯一矩形 2')),
+      lessThan(order.indexOf('唯一矩形 Type 2')),
     );
     expect(
       order.indexOf('X-Wing'),

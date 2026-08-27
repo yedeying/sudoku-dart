@@ -70,7 +70,7 @@ void _expectNoQiu(SudokuBoard board) {
 }
 
 void main() {
-  group('淑芬', () {
+  group('淑芬致命结构', () {
     test('教学盘：两条整行、线外两格与四个交点齐全，r7c5 删除全部四个底数', () {
       final puzzle = _tech('qdp').examplePuzzle;
       final board = SudokuBoard.fromString(puzzle);
@@ -78,7 +78,7 @@ void main() {
       final hint = AdvancedTechniques.findQiu(board);
 
       expect(hint, isNotNull);
-      expect(hint!.technique, '淑芬');
+      expect(hint!.technique, '淑芬致命结构');
       expect(hint.isElimination, isTrue);
       expect(elimKeys(hint), {'6,4,1', '6,4,2', '6,4,3', '6,4,8'});
       expectEliminationsPresent(board, hint);
@@ -117,7 +117,7 @@ void main() {
       expect(hint.highlightRows, containsAll([0, 1, 6]));
       expect(hint.highlightCols, containsAll([3, 4]));
       expect(hint.highlightBoxes, containsAll([1, 7]));
-      expect(hint.links, isEmpty, reason: '这副淑芬不需要靠候选箭头证明');
+      expect(hint.links, isEmpty, reason: '这副淑芬致命结构不需要靠候选箭头证明');
     });
 
     test('两条整线不在同一个大行或大列时不报', () {
@@ -144,11 +144,11 @@ void main() {
       _expectNoQiu(_shape(leak: const [2, 5, 1]));
     });
 
-    test('线外两格都带额外候选时不冒充类型 1', () {
+    test('线外两格都带额外候选时不冒充 Type 1', () {
       _expectNoQiu(_shape(c1Extras: const {5}, c2Extras: const {5}));
     });
 
-    test('线外两格都不带额外候选时没有类型 1 结论', () {
+    test('线外两格都不带额外候选时没有 Type 1 结论', () {
       _expectNoQiu(_shape(c2Extras: const {}));
     });
 
@@ -201,15 +201,15 @@ void main() {
         }
       }
       // ignore: avoid_print
-      print('淑芬题库触发次数：$emissions');
+      print('淑芬致命结构题库触发次数：$emissions');
     }, timeout: const Timeout(Duration(minutes: 5)));
 
-    test('按难度排在探长之后、W-Wing 之前，并开放教学页', () {
+    test('按难度排在探长致命结构之后、W-Wing 之前，并开放教学页', () {
       final order = SudokuSolver.hintSearchOrder;
-      expect(order, contains('淑芬'));
-      expect(order.indexOf('探长'), lessThan(order.indexOf('淑芬')));
-      expect(order.indexOf('淑芬'), lessThan(order.indexOf('W-Wing')));
-      expect(DifficultyAnalyzer.techniqueScores, containsPair('淑芬', 82));
+      expect(order, contains('淑芬致命结构'));
+      expect(order.indexOf('探长致命结构'), lessThan(order.indexOf('淑芬致命结构')));
+      expect(order.indexOf('淑芬致命结构'), lessThan(order.indexOf('W-Wing')));
+      expect(DifficultyAnalyzer.techniqueScores, containsPair('淑芬致命结构', 82));
       expect(_tech('qdp').teachingOnly, isFalse);
     });
   });

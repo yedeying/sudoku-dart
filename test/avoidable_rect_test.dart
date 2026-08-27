@@ -58,7 +58,7 @@ void main() {
     expect(
       AdvancedTechniques.findAvoidableRectangle(board),
       isNull,
-      reason: '给定数本身就把整块对调堵死，矩形不致命',
+      reason: '已知数本身就把整块对调堵死，矩形不致命',
     );
   });
 
@@ -107,7 +107,7 @@ void main() {
             expect(
               board.isInitial(cell.row, cell.col),
               isFalse,
-              reason: '矩形上的角不能是给定数',
+              reason: '矩形上的角不能是已知数',
             );
           }
           break;
@@ -126,13 +126,13 @@ void main() {
     expect(hits, greaterThan(10), reason: '题库里应该常常走到可规避矩形');
   });
 
-  test('可规避矩形排在 BUG+1 之后、唯一矩形 4 之前，难度分 5.5', () {
+  test('可规避矩形排在 BUG+1 之后、唯一矩形 Type 4 之前，难度分 5.5', () {
     final order = SudokuSolver.hintSearchOrder;
     expect(order, contains('可规避矩形'));
     expect(order.indexOf('BUG+1'), lessThan(order.indexOf('可规避矩形')));
-    expect(order.indexOf('可规避矩形'), lessThan(order.indexOf('唯一矩形 4')));
+    expect(order.indexOf('可规避矩形'), lessThan(order.indexOf('唯一矩形 Type 4')));
     expect(
-      order.indexOf('唯一矩形 1'),
+      order.indexOf('唯一矩形 Type 1'),
       lessThan(order.indexOf('可规避矩形')),
       reason: '基础唯一矩形先报',
     );

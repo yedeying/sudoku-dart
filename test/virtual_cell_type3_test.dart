@@ -9,9 +9,9 @@ import 'package:sudoku_app/services/sudoku_solver.dart';
 
 /// 走虚拟格数组这一族。
 final _type3 = <String, SudokuHint? Function(SudokuBoard)>{
-  '扩展矩形 3': AdvancedTechniques.findExtendedRectType3,
-  '唯一环 3': AdvancedTechniques.findUniqueLoopType3,
-  'BUG 类型 3': AdvancedTechniques.findBugType3,
+  '扩展矩形 Type 3': AdvancedTechniques.findExtendedRectType3,
+  '唯一环 Type 3': AdvancedTechniques.findUniqueLoopType3,
+  'BUG Type 3': AdvancedTechniques.findBugType3,
 };
 
 List<String> _bank(String name) =>
@@ -71,7 +71,7 @@ void main() {
         }
       }
     }
-    expect(multi, greaterThan(0), reason: '题库里应当走到过多余候选不止一个的类型 3');
+    expect(multi, greaterThan(0), reason: '题库里应当走到过多余候选不止一个的 Type 3');
   }, timeout: const Timeout(Duration(minutes: 5)));
 
   test('例外格自己：虚拟格里的候选一个都不许删，虚拟格外的数组数字可以删', () {
@@ -121,7 +121,7 @@ void main() {
     expect(
       ownerElims,
       greaterThan(0),
-      reason: '数组数字里凡是落在虚拟格之外的，例外格上也该跟着删；题库里一次都没删过说明这一支没实现',
+      reason: '数组数字里凡是落在虚拟格之外的，例外格上也该跟着删；题库里一次都没删过说明这一种情况没实现',
     );
   }, timeout: const Timeout(Duration(minutes: 5)));
 }

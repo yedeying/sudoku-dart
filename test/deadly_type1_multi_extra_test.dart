@@ -8,18 +8,18 @@ import 'package:sudoku_app/services/sudoku_solver.dart';
 
 import 'support/finder_soundness.dart';
 
-/// 类型 1 只多出一格。那一格要是多出好几个候选，结论不是「填哪一个」，
+/// Type 1 只多出一格。那一格要是多出好几个候选，结论不是「填哪一个」，
 /// 而是「底数一个都填不了」——该删的是它身上的全部底数，而不是整块放弃。
 final _type1 = <String, SudokuHint? Function(SudokuBoard)>{
-  '扩展矩形 1': AdvancedTechniques.findExtendedRectType1,
-  '唯一环 1': AdvancedTechniques.findUniqueLoopType1,
+  '扩展矩形 Type 1': AdvancedTechniques.findExtendedRectType1,
+  '唯一环 Type 1': AdvancedTechniques.findUniqueLoopType1,
 };
 
 List<String> _bank(String name) =>
     PuzzleBank.parse(File('assets/puzzles/$name.txt').readAsStringSync());
 
 void main() {
-  test('唯一那一格多出好几个候选时，类型 1 删掉它身上的全部底数', () {
+  test('唯一那一格多出好几个候选时，Type 1 删掉它身上的全部底数', () {
     final cases = <String>[];
     for (final name in ['easy', 'medium', 'hard', 'expert']) {
       for (final puzzle in _bank(name)) {
@@ -101,7 +101,7 @@ void main() {
     expect(
       cases,
       isNotEmpty,
-      reason: '题库里应当走到过「唯一那一格多出好几个候选」的类型 1，否则这条路根本没被走过',
+      reason: '题库里应当走到过「唯一那一格多出好几个候选」的 Type 1，否则这条路根本没被走过',
     );
   }, timeout: const Timeout(Duration(minutes: 5)));
 
@@ -122,7 +122,7 @@ void main() {
           board.set(hint.row, hint.col, hint.value);
         }
       }
-      fail('这张盘上没走到多余候选不止一个的类型 1');
+      fail('这张盘上没走到多余候选不止一个的 Type 1');
     }
 
     void expectSound(String puzzle, SudokuHint hint) {
@@ -137,23 +137,23 @@ void main() {
       }
     }
 
-    test('扩展矩形 1：r7c3 多出好几个候选，三个底数一起删', () {
+    test('扩展矩形 Type 1：r7c3 多出好几个候选，三个底数一起删', () {
       const puzzle =
           '410905062380072019000004000168000007050040030700000285'
           '000700000840260073570408021';
       final hint = walkTo(puzzle, AdvancedTechniques.findExtendedRectType1);
-      expect(hint.technique, '扩展矩形 1');
+      expect(hint.technique, '扩展矩形 Type 1');
       expect(elimKeys(hint), {'6,2,2', '6,2,6', '6,2,9'});
       expectSound(puzzle, hint);
       expect(hint.explanation, contains('都可以删'));
     });
 
-    test('唯一环 1：r3c3 多出好几个候选，两个底数一起删', () {
+    test('唯一环 Type 1：r3c3 多出好几个候选，两个底数一起删', () {
       const puzzle =
           '500700032100326000000000000020070058010803040890040070'
           '000000000000654001230009005';
       final hint = walkTo(puzzle, AdvancedTechniques.findUniqueLoopType1);
-      expect(hint.technique, '唯一环 1');
+      expect(hint.technique, '唯一环 Type 1');
       expect(elimKeys(hint), {'2,2,8', '2,2,9'});
       expectSound(puzzle, hint);
       expect(hint.explanation, contains('都可以删'));

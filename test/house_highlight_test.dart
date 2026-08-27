@@ -11,14 +11,14 @@ import 'package:sudoku_app/services/sudoku_solver.dart';
 /// 关键房屋是一条具体房屋的技巧：虚拟格数组配在哪条房屋里、底数锁在哪条房屋里。
 /// 这一族的提示必须把那条房屋标出来，不管它是行、是列还是宫。
 final _houseFinders = <String, SudokuHint? Function(SudokuBoard)>{
-  '扩展矩形 3': AdvancedTechniques.findExtendedRectType3,
-  '扩展矩形 4': AdvancedTechniques.findExtendedRectType4,
-  '唯一环 3': AdvancedTechniques.findUniqueLoopType3,
-  '唯一环 4': AdvancedTechniques.findUniqueLoopType4,
-  'BUG 类型 3': AdvancedTechniques.findBugType3,
-  'BUG 类型 4': AdvancedTechniques.findBugType4,
-  '唯一矩形 3': AdvancedTechniques.findUniqueRectangleType3,
-  '唯一矩形 4': AdvancedTechniques.findUniqueRectangleType4,
+  '扩展矩形 Type 3': AdvancedTechniques.findExtendedRectType3,
+  '扩展矩形 Type 4': AdvancedTechniques.findExtendedRectType4,
+  '唯一环 Type 3': AdvancedTechniques.findUniqueLoopType3,
+  '唯一环 Type 4': AdvancedTechniques.findUniqueLoopType4,
+  'BUG Type 3': AdvancedTechniques.findBugType3,
+  'BUG Type 4': AdvancedTechniques.findBugType4,
+  '唯一矩形 Type 3': AdvancedTechniques.findUniqueRectangleType3,
+  '唯一矩形 Type 4': AdvancedTechniques.findUniqueRectangleType4,
 };
 
 List<String> _bank(String name) =>
@@ -106,18 +106,18 @@ void main() {
       reason: '这一族每一条都该在题库里走到过，漏了的那条等于没测：$seen',
     );
     // 唯一矩形的四个角正好压在两个宫上，两个例外格同行或同列时常常还共一个宫，
-    // 所以宫那一支在题库默认轨迹上就会走到，不是纸上的分支。
+    // 所以宫那一种情况在题库默认轨迹上就会走到，不是纸上的分支。
     expect(
       boxCases,
       isNotEmpty,
-      reason: '宫作为关键房屋的那一支一次都没走到，highlightBoxes 就成了死代码',
+      reason: '宫作为关键房屋的那一种情况一次都没走到，highlightBoxes 就成了死代码',
     );
   }, timeout: const Timeout(Duration(minutes: 3)));
 
   test('关键房屋是宫时，提示标的是宫，图上也照着涂', () {
-    // 这张盘顺着扩展矩形 3 自己的删除往下走，第 27 步上虚拟格的数组
+    // 这张盘顺着扩展矩形 Type 3 自己的删除往下走，第 27 步上虚拟格的数组
     // 只在 b5 里配得起来（r5、c6 上都配不成），于是关键房屋是一个宫。
-    // 题库默认轨迹上碰不到这一支，所以单独钉一张盘。
+    // 题库默认轨迹上碰不到这一种情况，所以单独钉一张盘。
     const puzzle =
         '236000591010050070008000400849000237000000000000428000'
         '097000140000306000580070026';
@@ -150,8 +150,8 @@ void main() {
       }
     }
 
-    expect(boxed, isNotNull, reason: '这张盘上应当走到关键房屋是宫的扩展矩形 3');
-    expect(boxed!.technique, '扩展矩形 3');
+    expect(boxed, isNotNull, reason: '这张盘上应当走到关键房屋是宫的扩展矩形 Type 3');
+    expect(boxed!.technique, '扩展矩形 Type 3');
     expect(boxed.highlightBoxes, [4]);
     expect(boxed.highlightRows, isEmpty);
     expect(boxed.highlightCols, isEmpty);

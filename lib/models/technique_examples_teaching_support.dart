@@ -22,8 +22,8 @@ CandidateRef tRef(int r, int c, int n) => CandidateRef(r, c, n);
 /// finder 已经算出这条删除，而这里的删除是靠盘面唯一解核对出来的，
 /// 写进 [TechniqueInfo.structure] 的 `conclusionFalse` 由测试复核。
 ///
-/// [strongLinks] 只在确认过所在房屋里该数字恰好两个候选位置时才传；
-/// [weakLinks] 只连同房屋、同数字的两个候选，那是天然成立的弱链。
+/// [strongLinks] 只在确认过所在区域里该数字恰好两个候选位置时才传；
+/// [weakLinks] 只连同区域、同数字的两个候选，那是天然成立的弱链。
 /// 两种连线都写成 `[r1, c1, r2, c2, digit]`。
 BoardMarkup schematicMarkup({
   List<List<int>> pattern = const [],

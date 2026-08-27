@@ -159,34 +159,34 @@ class SudokuSolver {
     ('空矩形', AdvancedTechniques.findEmptyRectangle),
     ('Jellyfish', AdvancedTechniques.findJellyfish),
     ('XY-Wing', _findXYWing),
-    ('唯一矩形 1', AdvancedTechniques.findUniqueRectangleType1),
+    ('唯一矩形 Type 1', AdvancedTechniques.findUniqueRectangleType1),
     ('不完整唯一矩形', AdvancedTechniques.findIncompleteUniqueRectangle),
-    ('唯一矩形 2', AdvancedTechniques.findUniqueRectangleType2),
+    ('唯一矩形 Type 2', AdvancedTechniques.findUniqueRectangleType2),
     ('BUG+1', AdvancedTechniques.findBugPlusOne),
     ('可规避矩形', AdvancedTechniques.findAvoidableRectangle),
     ('带鳍 Swordfish', AdvancedTechniques.findFinnedSwordfish),
-    ('唯一矩形 4', AdvancedTechniques.findUniqueRectangleType4),
+    ('唯一矩形 Type 4', AdvancedTechniques.findUniqueRectangleType4),
     ('隐性唯一矩形', AdvancedTechniques.findHiddenUniqueRectangle),
-    ('BUG 类型 2', AdvancedTechniques.findBugType2),
-    ('扩展矩形 1', AdvancedTechniques.findExtendedRectType1),
+    ('BUG Type 2', AdvancedTechniques.findBugType2),
+    ('扩展矩形 Type 1', AdvancedTechniques.findExtendedRectType1),
     ('XYZ-Wing', _findXYZWing),
     ('带鳍 Jellyfish', AdvancedTechniques.findFinnedJellyfish),
-    ('扩展矩形 2', AdvancedTechniques.findExtendedRectType2),
-    ('唯一矩形 3', AdvancedTechniques.findUniqueRectangleType3),
-    ('BUG 类型 4', AdvancedTechniques.findBugType4),
-    ('扩展矩形 4', AdvancedTechniques.findExtendedRectType4),
-    ('扩展矩形 3', AdvancedTechniques.findExtendedRectType3),
-    ('唯一环 1', AdvancedTechniques.findUniqueLoopType1),
-    ('BUG 类型 3', AdvancedTechniques.findBugType3),
-    ('唯一环 2', AdvancedTechniques.findUniqueLoopType2),
+    ('扩展矩形 Type 2', AdvancedTechniques.findExtendedRectType2),
+    ('唯一矩形 Type 3', AdvancedTechniques.findUniqueRectangleType3),
+    ('BUG Type 4', AdvancedTechniques.findBugType4),
+    ('扩展矩形 Type 4', AdvancedTechniques.findExtendedRectType4),
+    ('扩展矩形 Type 3', AdvancedTechniques.findExtendedRectType3),
+    ('唯一环 Type 1', AdvancedTechniques.findUniqueLoopType1),
+    ('BUG Type 3', AdvancedTechniques.findBugType3),
+    ('唯一环 Type 2', AdvancedTechniques.findUniqueLoopType2),
     ('Franken 鱼', AdvancedTechniques.findFrankenFish),
-    ('唯一环 4', AdvancedTechniques.findUniqueLoopType4),
+    ('唯一环 Type 4', AdvancedTechniques.findUniqueLoopType4),
     ('Simple Coloring', AdvancedTechniques.findSimpleColoring),
-    // 唯一环 3 是这一族里最重的一手（7.2），比 Simple Coloring（7.0）还深，
+    // 唯一环 Type 3 是这一族里最重的一手（7.2），比 Simple Coloring（7.0）还深，
     // 所以排在它后面；顺序必须跟难度分同向，见 hint_order_monotonic_test。
-    ('唯一环 3', AdvancedTechniques.findUniqueLoopType3),
-    ('探长', AdvancedTechniques.findBorescoper),
-    ('淑芬', AdvancedTechniques.findQiu),
+    ('唯一环 Type 3', AdvancedTechniques.findUniqueLoopType3),
+    ('探长致命结构', AdvancedTechniques.findBorescoper),
+    ('淑芬致命结构', AdvancedTechniques.findQiu),
     ('W-Wing', AdvancedTechniques.findWWing),
     ('XY-Chain', AdvancedTechniques.findXyChain),
     ('WXYZ-Wing', AdvancedTechniques.findWxyzWing),
@@ -204,7 +204,7 @@ class SudokuSolver {
     ('Death Blossom', AdvancedTechniques.findDeathBlossom),
     ('WALS', AdvancedTechniques.findWals),
     ('Kraken Fish', AdvancedTechniques.findKrakenFish),
-    // 毛刺数组「毛刺为真」那一支是把唯余摒除推到推不动为止，力度和强制链
+    // 毛刺数组「毛刺为真」那一种情况是把唯余摒除推到推不动为止，力度和强制链
     // 同级，不是 9.4 那一档的认形。排在 ALS-XZ 之前时它会把 ALS-XZ、
     // Death Blossom、Kraken 该出面的局面全抢走——题库 160 题里 Sue de Coq
     // 与 Death Blossom 一次都露不了面。所以按实际力度排在 Kraken 之后。
@@ -533,7 +533,7 @@ class SudokuSolver {
               explanation:
                   '${u.label} 中 ${cellRef(cells[i][0], cells[i][1])} 和 '
                   '${cellRef(cells[j][0], cells[j][1])} 形成数对 '
-                  '${ci.toList()..sort()}，可从该单元其它格删除这两个数字。',
+                  '${ci.toList()..sort()}，可从该区域其它格删除这两个数字。',
               eliminations: elims,
               patternCells: hintCells(HintRole.pattern, [cells[i], cells[j]]),
               patternCandidates: [
@@ -587,7 +587,7 @@ class SudokuSolver {
                     '${cellRef(cells[j][0], cells[j][1])}、'
                     '${cellRef(cells[k][0], cells[k][1])} '
                     '形成三数组 ${union.toList()..sort()}，'
-                    '可从该单元其它格删除这些数字。',
+                    '可从该区域其它格删除这些数字。',
                 eliminations: elims,
                 patternCells: hintCells(
                   HintRole.pattern,
@@ -1123,7 +1123,7 @@ class SudokuSolver {
               explanation: '${cellRef(pRow, pCol)} 是支点（候选 '
                   '${pCands.join('、')}），两翼 ${cellRef(w1Row, w1Col)} 和 '
                   '${cellRef(w2Row, w2Col)} 各带一个 $z。'
-                  '支点填哪个数都会逼出一翼的 $z，'
+                  '支点无论填哪个数字，都会在其中一翼推出 $z，'
                   '同时看见两翼处的 $z 可删。',
               eliminations: elims,
               patternCells: [

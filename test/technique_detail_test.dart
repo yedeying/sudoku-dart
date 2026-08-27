@@ -14,7 +14,7 @@ void main() {
     await tester
         .pumpWidget(MaterialApp(home: TechniqueDetailScreen(info: info)));
     expect(find.byType(SudokuGrid), findsOneWidget);
-    expect(find.text('本例怎么推'), findsOneWidget);
+    expect(find.text('本例推导'), findsOneWidget);
     expect(find.text('技巧定义'), findsOneWidget);
     expect(find.text('识别方法'), findsOneWidget);
     expect(find.text('注意事项'), findsOneWidget);

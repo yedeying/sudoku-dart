@@ -86,11 +86,11 @@ void main() {
     expect(AdvancedTechniques.findHiddenUniqueRectangle(board), isNull);
   });
 
-  test('隐性唯一矩形排在唯一矩形 4 之后、XYZ-Wing 之前，难度分 5.8', () {
+  test('隐性唯一矩形排在唯一矩形 Type 4 之后、XYZ-Wing 之前，难度分 5.8', () {
     final order = SudokuSolver.hintSearchOrder;
     expect(order, contains('隐性唯一矩形'));
     expect(order.indexOf('X-Wing'), lessThan(order.indexOf('隐性唯一矩形')));
-    expect(order.indexOf('唯一矩形 4'), lessThan(order.indexOf('隐性唯一矩形')));
+    expect(order.indexOf('唯一矩形 Type 4'), lessThan(order.indexOf('隐性唯一矩形')));
     expect(order.indexOf('隐性唯一矩形'), lessThan(order.indexOf('XYZ-Wing')));
     expect(
       order.indexOf('隐性唯一矩形'),

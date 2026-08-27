@@ -111,7 +111,7 @@ class TechniqueDetailScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _section('本例怎么推', info.walkthrough),
+                  _section('本例推导', info.walkthrough),
                   const SizedBox(height: 10),
                   _section('技巧定义', info.definition),
                   const SizedBox(height: 10),

@@ -101,7 +101,7 @@ void expectLoopGeometry(List<List<int>> cells) {
 }
 
 void main() {
-  group('唯一环 1', () {
+  group('唯一环 Type 1', () {
     test('教学盘：六格偶环只多出 2r7c7，那一格就填 2', () {
       final puzzle = _tech('ul1').examplePuzzle;
       final board = SudokuBoard.fromString(puzzle);
@@ -109,7 +109,7 @@ void main() {
       final hint = AdvancedTechniques.findUniqueLoopType1(board);
 
       expect(hint, isNotNull);
-      expect(hint!.technique, '唯一环 1');
+      expect(hint!.technique, '唯一环 Type 1');
       expect(hint.isElimination, isFalse);
       expect([hint.row, hint.col, hint.value], [6, 6, 2]);
       expectFillSound(puzzle, hint);
@@ -122,7 +122,7 @@ void main() {
       );
     });
 
-    test('抹掉那唯一的多余候选后，只剩底数的环不该报类型 1', () {
+    test('抹掉那唯一的多余候选后，只剩底数的环不该报 Type 1', () {
       final board = SudokuBoard.fromString(_tech('ul1').examplePuzzle);
       board.eliminateCandidate(6, 6, 2);
       expect(AdvancedTechniques.findUniqueLoopType1(board), isNull);
@@ -135,7 +135,7 @@ void main() {
     });
   });
 
-  group('唯一环 2', () {
+  group('唯一环 Type 2', () {
     test('教学盘：环上两格多出 4，共同可见处删 4', () {
       final puzzle = _tech('ul2').examplePuzzle;
       final board = SudokuBoard.fromString(puzzle);
@@ -143,7 +143,7 @@ void main() {
       final hint = AdvancedTechniques.findUniqueLoopType2(board);
 
       expect(hint, isNotNull);
-      expect(hint!.technique, '唯一环 2');
+      expect(hint!.technique, '唯一环 Type 2');
       expect(elimKeys(hint), {'0,6,4', '2,8,4'});
       expectEliminationsPresent(board, hint);
       expectEliminationsSound(puzzle, hint);
@@ -154,13 +154,13 @@ void main() {
       expect(_linkKeys(hint, ArrowKind.strong), {'2,6,4-2,7,4'});
     });
 
-    test('两格多出的不是同一个数字时不报类型 2', () {
+    test('两格多出的不是同一个数字时不报 Type 2', () {
       final board = SudokuBoard.fromString(_tech('ul4').examplePuzzle);
       expect(AdvancedTechniques.findUniqueLoopType2(board), isNull);
     });
   });
 
-  group('唯一环 4', () {
+  group('唯一环 Type 4', () {
     test('教学盘：c7 上 5 成强链，两个多余格各删底数 8', () {
       final puzzle = _tech('ul4').examplePuzzle;
       final board = SudokuBoard.fromString(puzzle);
@@ -168,7 +168,7 @@ void main() {
       final hint = AdvancedTechniques.findUniqueLoopType4(board);
 
       expect(hint, isNotNull);
-      expect(hint!.technique, '唯一环 4');
+      expect(hint!.technique, '唯一环 Type 4');
       expect(elimKeys(hint), {'1,6,8', '2,6,8'});
       expectEliminationsPresent(board, hint);
       expectEliminationsSound(puzzle, hint);
@@ -186,7 +186,7 @@ void main() {
     });
   });
 
-  group('唯一环 3', () {
+  group('唯一环 Type 3', () {
     test('教学盘：{1,6} 虚拟格和 r1c4 配成数对，c4 别处删 1 和 6', () {
       final puzzle = _tech('ul3').examplePuzzle;
       final board = SudokuBoard.fromString(puzzle);
@@ -194,7 +194,7 @@ void main() {
       final hint = AdvancedTechniques.findUniqueLoopType3(board);
 
       expect(hint, isNotNull);
-      expect(hint!.technique, '唯一环 3');
+      expect(hint!.technique, '唯一环 Type 3');
       expect(elimKeys(hint), {'1,3,1', '4,3,6'});
       expectEliminationsPresent(board, hint);
       expectEliminationsSound(puzzle, hint);
@@ -246,10 +246,10 @@ void main() {
             '${(elimKeys(hint).toList()..sort()).join(';')}';
 
     final finders = <String, SudokuHint? Function(SudokuBoard)>{
-      '唯一环 1': AdvancedTechniques.findUniqueLoopType1,
-      '唯一环 2': AdvancedTechniques.findUniqueLoopType2,
-      '唯一环 3': AdvancedTechniques.findUniqueLoopType3,
-      '唯一环 4': AdvancedTechniques.findUniqueLoopType4,
+      '唯一环 Type 1': AdvancedTechniques.findUniqueLoopType1,
+      '唯一环 Type 2': AdvancedTechniques.findUniqueLoopType2,
+      '唯一环 Type 3': AdvancedTechniques.findUniqueLoopType3,
+      '唯一环 Type 4': AdvancedTechniques.findUniqueLoopType4,
     };
 
     test('同一盘上反复搜，结果一字不差', () {
@@ -286,22 +286,22 @@ void main() {
 
   test('四型按难度排进提示顺序，各有难度分', () {
     final order = SudokuSolver.hintSearchOrder;
-    for (final name in ['唯一环 1', '唯一环 2', '唯一环 3', '唯一环 4']) {
+    for (final name in ['唯一环 Type 1', '唯一环 Type 2', '唯一环 Type 3', '唯一环 Type 4']) {
       expect(order, contains(name), reason: '$name 应进提示顺序');
     }
-    expect(order.indexOf('扩展矩形 3'), lessThan(order.indexOf('唯一环 1')));
-    expect(order.indexOf('唯一环 1'), lessThan(order.indexOf('唯一环 2')));
-    expect(order.indexOf('唯一环 2'), lessThan(order.indexOf('唯一环 4')));
-    // 唯一环 3（7.2）比 Simple Coloring（7.0）还深，排在它后面才跟难度分同向。
+    expect(order.indexOf('扩展矩形 Type 3'), lessThan(order.indexOf('唯一环 Type 1')));
+    expect(order.indexOf('唯一环 Type 1'), lessThan(order.indexOf('唯一环 Type 2')));
+    expect(order.indexOf('唯一环 Type 2'), lessThan(order.indexOf('唯一环 Type 4')));
+    // 唯一环 Type 3（7.2）比 Simple Coloring（7.0）还深，排在它后面才跟难度分同向。
     expect(
       order.indexOf('Simple Coloring'),
-      lessThan(order.indexOf('唯一环 3')),
+      lessThan(order.indexOf('唯一环 Type 3')),
     );
 
-    expect(DifficultyAnalyzer.techniqueScores, containsPair('唯一环 1', 66));
-    expect(DifficultyAnalyzer.techniqueScores, containsPair('唯一环 2', 68));
-    expect(DifficultyAnalyzer.techniqueScores, containsPair('唯一环 4', 70));
-    expect(DifficultyAnalyzer.techniqueScores, containsPair('唯一环 3', 72));
+    expect(DifficultyAnalyzer.techniqueScores, containsPair('唯一环 Type 1', 66));
+    expect(DifficultyAnalyzer.techniqueScores, containsPair('唯一环 Type 2', 68));
+    expect(DifficultyAnalyzer.techniqueScores, containsPair('唯一环 Type 4', 70));
+    expect(DifficultyAnalyzer.techniqueScores, containsPair('唯一环 Type 3', 72));
     for (final id in ['ul1', 'ul2', 'ul3', 'ul4']) {
       expect(_tech(id).teachingOnly, isFalse, reason: '$id 已有独立报法');
     }

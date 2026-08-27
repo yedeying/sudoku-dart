@@ -22,14 +22,14 @@ Set<String> _candKeys(SudokuHint hint, HintRole role) => {
     };
 
 void main() {
-  test('BUG 类型 3 教学盘：{2,3} 虚拟格和 r2c8 配成数对，c8 别处删 2、3', () {
+  test('BUG Type 3 教学盘：{2,3} 虚拟格和 r2c8 配成数对，c8 别处删 2、3', () {
     final puzzle = _tech('bug_type3').examplePuzzle;
     final board = SudokuBoard.fromString(puzzle);
 
     final hint = AdvancedTechniques.findBugType3(board);
 
     expect(hint, isNotNull);
-    expect(hint!.technique, 'BUG 类型 3');
+    expect(hint!.technique, 'BUG Type 3');
     expect(elimKeys(hint), {'5,7,2', '6,7,3'});
     expectEliminationsPresent(board, hint);
     expectEliminationsSound(puzzle, hint);
@@ -58,7 +58,7 @@ void main() {
     expect(touched, isNot(contains('1,7')));
   });
 
-  test('两个例外格多出同一个数字时不走虚拟格，那是类型 2', () {
+  test('两个例外格多出同一个数字时不走虚拟格，那是 Type 2', () {
     final board = SudokuBoard.fromString(_tech('bug_type2').examplePuzzle);
     expect(AdvancedTechniques.findBugType3(board), isNull);
   });
@@ -70,7 +70,7 @@ void main() {
     expect(AdvancedTechniques.findBugType3(board), isNull);
   });
 
-  test('同一张盘上类型 4 也成立，删的是另一批候选，类型 4 排在前面', () {
+  test('同一张盘上 Type 4 也成立，删的是另一批候选，Type 4 排在前面', () {
     final puzzle = _tech('bug_type3').examplePuzzle;
     final board = SudokuBoard.fromString(puzzle);
 
@@ -82,18 +82,18 @@ void main() {
     expect(elimKeys(type4).intersection(elimKeys(type3)), isEmpty);
 
     final order = SudokuSolver.hintSearchOrder;
-    expect(order.indexOf('BUG 类型 4'), lessThan(order.indexOf('BUG 类型 3')));
+    expect(order.indexOf('BUG Type 4'), lessThan(order.indexOf('BUG Type 3')));
     // 这张盘上还有更浅的 X-Wing，唯一性技巧都排在它后面，所以整体报法先给 X-Wing。
     expect(SudokuSolver.getHint(board)!.technique, 'X-Wing');
-    expect(order.indexOf('X-Wing'), lessThan(order.indexOf('BUG 类型 4')));
+    expect(order.indexOf('X-Wing'), lessThan(order.indexOf('BUG Type 4')));
   });
 
-  test('BUG 类型 3 排在唯一环 1 之后、唯一环 2 之前，难度分 6.6', () {
+  test('BUG Type 3 排在唯一环 Type 1 之后、唯一环 Type 2 之前，难度分 6.6', () {
     final order = SudokuSolver.hintSearchOrder;
-    expect(order, contains('BUG 类型 3'));
-    expect(order.indexOf('唯一环 1'), lessThan(order.indexOf('BUG 类型 3')));
-    expect(order.indexOf('BUG 类型 3'), lessThan(order.indexOf('唯一环 2')));
-    expect(DifficultyAnalyzer.techniqueScores, containsPair('BUG 类型 3', 66));
+    expect(order, contains('BUG Type 3'));
+    expect(order.indexOf('唯一环 Type 1'), lessThan(order.indexOf('BUG Type 3')));
+    expect(order.indexOf('BUG Type 3'), lessThan(order.indexOf('唯一环 Type 2')));
+    expect(DifficultyAnalyzer.techniqueScores, containsPair('BUG Type 3', 66));
     expect(_tech('bug_type3').teachingOnly, isFalse);
     expect(
       _tech('bug_plus_n').teachingOnly,

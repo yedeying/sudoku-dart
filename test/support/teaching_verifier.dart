@@ -5,7 +5,7 @@ import 'package:sudoku_app/services/sudoku_solver.dart';
 
 /// 教学盘面的独立复核工具。
 ///
-/// 这里刻意不碰任何 finder：全部结论都从盘面的给定数重新算候选、
+/// 这里刻意不碰任何 finder：全部结论都从盘面的已知数重新算候选、
 /// 或者用回溯求解器数解，这样教学页说的话和引擎实现是两条独立的证据链。
 /// 每个函数返回违规说明列表，空列表表示这一项通过。
 
@@ -78,7 +78,7 @@ List<String> markupCandidateViolations(String puzzle, BoardMarkup markup) {
   final board = SudokuBoard.fromString(puzzle);
   void check(CandidateRef ref, String what) {
     if (board.get(ref.row, ref.col) != 0) {
-      out.add('$what r${ref.row + 1}c${ref.col + 1} 是已填的给定数，不该标候选');
+      out.add('$what r${ref.row + 1}c${ref.col + 1} 是已填的已知数，不该标候选');
       return;
     }
     if (!board.getCandidates(ref.row, ref.col).contains(ref.num)) {
@@ -259,7 +259,7 @@ List<String> extrasExhaustiveViolations(
   final actual = <String>{};
   for (final cell in s.cells) {
     if (board.get(cell.row, cell.col) != 0) {
-      out.add('${cell.label} 是给定数，不能当结构格');
+      out.add('${cell.label} 是已知数，不能当结构格');
       continue;
     }
     final cands = board.getCandidates(cell.row, cell.col);
@@ -301,7 +301,7 @@ List<String> extrasExhaustiveViolations(
   final allowed = <Set<int>>[];
   void add(CellRef c, bool restricted) {
     if (board.get(c.row, c.col) != 0) {
-      out.add('${c.label} 是给定数，不能当结构格');
+      out.add('${c.label} 是已知数，不能当结构格');
       return;
     }
     final cands = board.getCandidates(c.row, c.col);
@@ -409,7 +409,7 @@ bool _hasSwap(
 
 /// 致命结构的公共核对：结构格上「只填底数」的每一种填法都必须能被换掉。
 ///
-/// 这是唯一矩形、扩展矩形、唯一环、探长、淑芬共用的那条原理，
+/// 这是唯一矩形、扩展矩形、唯一环、探长致命结构、淑芬致命结构共用的那条原理，
 /// 不靠任何家族专属的图形常识：只要有一种填法换不掉，这个结构就不致命，
 /// 教学页据它下的结论也就不成立。
 ///
@@ -634,7 +634,7 @@ List<String> loopGeometryViolations(TeachingStructure s) {
   return out;
 }
 
-/// 探长（三数 BDP）的几何。
+/// 探长致命结构（三数 BDP）的几何。
 ///
 /// 按 kazusa《三数探长致命结构的基本推理》：一个宫里两行两列取三格的直角，
 /// 直角的两行伸到宫外同一列上各一格，两列伸到宫外同一行上各一格，共七格三个数。
@@ -642,11 +642,11 @@ List<String> loopGeometryViolations(TeachingStructure s) {
 List<String> borescoperGeometryViolations(TeachingStructure s) {
   final out = <String>[];
   if (s.cells.length != 7) {
-    out.add('三数探长是七格，声明了 ${s.cells.length} 个');
+    out.add('三数探长致命结构是七格，声明了 ${s.cells.length} 个');
     return out;
   }
   if (s.baseDigits.length != 3) {
-    out.add('三数探长用三个数字，声明了 ${s.baseDigits.length} 个');
+    out.add('三数探长致命结构用三个数字，声明了 ${s.baseDigits.length} 个');
   }
   final triple = <String>[];
   final pair = <String>[];
@@ -658,7 +658,7 @@ List<String> borescoperGeometryViolations(TeachingStructure s) {
     } else if (hit == 2) {
       pair.add(houseName(h));
     } else {
-      out.add('${houseName(h)} 上占了 $hit 格，探长的房屋只能占 2 格或 3 格');
+      out.add('${houseName(h)} 上占了 $hit 格，探长致命结构的房屋只能占 2 格或 3 格');
     }
   }
   if (triple.length != 3) {
@@ -674,12 +674,12 @@ List<String> borescoperGeometryViolations(TeachingStructure s) {
   }
   final boxes = s.boxes;
   if (boxes.length != 3) {
-    out.add('三数探长横跨三个宫，实际跨 ${boxes.length} 个：$boxes');
+    out.add('三数探长致命结构横跨三个宫，实际跨 ${boxes.length} 个：$boxes');
   }
   return out;
 }
 
-/// 淑芬（QDP）的几何。
+/// 淑芬致命结构（QDP）的几何。
 ///
 /// 按 kazusa《淑芬致命结构的基本推理》列出的结构特征：
 /// 1. 结构 = 两条整线 L1、L2 上的全部空格，加线外两格 C1、C2；
@@ -692,7 +692,7 @@ List<String> qiuGeometryViolations(String puzzle, TeachingStructure s) {
   final out = <String>[];
   final board = SudokuBoard.fromString(puzzle);
   if (s.cells.length != 2) {
-    out.add('淑芬的线外格恰好两个，声明了 ${s.cells.length} 个');
+    out.add('淑芬致命结构的线外格恰好两个，声明了 ${s.cells.length} 个');
     return out;
   }
   final c1 = s.cells[0], c2 = s.cells[1];
@@ -725,7 +725,7 @@ List<String> qiuGeometryViolations(String puzzle, TeachingStructure s) {
       if (board.get(r, c) != 0) continue;
       if (!declared.contains('$r,$c')) {
         out.add('${horizontal ? "r${line + 1}" : "c${line + 1}"} 上的空格 '
-            'r${r + 1}c${c + 1} 没有算进结构，淑芬要求整线上的空格一个不漏');
+            'r${r + 1}c${c + 1} 没有算进结构，淑芬致命结构要求整线上的空格一个不漏');
       }
     }
   }
@@ -750,7 +750,7 @@ List<String> qiuGeometryViolations(String puzzle, TeachingStructure s) {
     ...board.getCandidates(c2.row, c2.col),
   };
   if (s.baseDigits.length < 2 || s.baseDigits.length > 4) {
-    out.add('淑芬的底数是 2–4 个，声明了 ${s.baseDigits.length} 个');
+    out.add('淑芬致命结构的底数是 2–4 个，声明了 ${s.baseDigits.length} 个');
   }
   for (final d in s.baseDigits) {
     if (!union.contains(d)) {
@@ -770,7 +770,7 @@ List<String> qiuGeometryViolations(String puzzle, TeachingStructure s) {
     }
   }
   if (joint.isEmpty) {
-    out.add('交点格全是给定数，结构不成立');
+    out.add('交点格全是已知数，结构不成立');
     return out;
   }
   final jointBoxes = joint.map((c) => c.box).toSet();
@@ -787,14 +787,14 @@ List<String> qiuGeometryViolations(String puzzle, TeachingStructure s) {
     if (filled != 0) {
       if (s.baseDigits.contains(filled)) {
         out.add('底数 $filled 在 ${houseName(box)} 里已经填在交点格外的 '
-            'r${r + 1}c${col + 1} 上，淑芬的第 7 条不成立');
+            'r${r + 1}c${col + 1} 上，淑芬致命结构的第 7 条不成立');
       }
       continue;
     }
     for (final d in board.getCandidates(r, col)) {
       if (s.baseDigits.contains(d)) {
         out.add('底数 $d 在 ${houseName(box)} 里还能落到 r${r + 1}c${col + 1}，'
-            '不只在交点格上，淑芬的第 7 条不成立');
+            '不只在交点格上，淑芬致命结构的第 7 条不成立');
       }
     }
   }
@@ -1448,7 +1448,7 @@ List<String> lockedSetViolations(String puzzle, TeachingStructure s) {
   final union = <int>{};
   for (final cell in s.cells) {
     if (board.get(cell.row, cell.col) != 0) {
-      out.add('${cell.label} 是给定数，不能算进锁定集');
+      out.add('${cell.label} 是已知数，不能算进锁定集');
       continue;
     }
     final cands = board.getCandidates(cell.row, cell.col);
@@ -1655,8 +1655,8 @@ Set<String> _lockedOutOfHouse(
 /// * 毛刺为假 → 剩下的 N 个数字被 N 格锁死，房屋里别处的这些数字都能删；
 /// * 毛刺为真 → 那一格填掉毛刺，顺着唯余摒除往下推。
 ///
-/// 两支都删掉的候选就是这一页的收获，也正是「把毛刺当推理节点」的意思——
-/// 只画一张 ALS 的图、不交代这两支各推出什么，是说不出结论的。
+/// 两种情况都删掉的候选就是这一页的收获，也正是「把毛刺当推理节点」的意思——
+/// 只画一张 ALS 的图、不交代这两种情况各推出什么，是说不出结论的。
 List<String> burredSubsetViolations(String puzzle, TeachingStructure s) {
   final out = <String>[];
   final board = SudokuBoard.fromString(puzzle);
@@ -1682,7 +1682,7 @@ List<String> burredSubsetViolations(String puzzle, TeachingStructure s) {
   final union = <int>{};
   for (final c in s.cells) {
     if (board.get(c.row, c.col) != 0) {
-      out.add('${c.label} 是给定数，不能算进数组');
+      out.add('${c.label} 是已知数，不能算进数组');
       continue;
     }
     if (!houseCells(house).any((x) => x[0] == c.row && x[1] == c.col)) {
@@ -1743,19 +1743,19 @@ List<String> burredSubsetViolations(String puzzle, TeachingStructure s) {
   final cellKeys = {for (final c in s.cells) '${c.row},${c.col}'};
   final lock = _lockedOutOfHouse(board, house, cellKeys, base);
   if (lock.isEmpty) {
-    out.add('${houseName(house)} 里数组之外没有底数候选，「毛刺为假」这一支删不出东西');
+    out.add('${houseName(house)} 里数组之外没有底数候选，「毛刺为假」这一种情况删不出东西');
     return out;
   }
   final budget = s.replayBudget;
   if (budget == null) {
-    out.add('毛刺为真那一支要声明只许往下填几格（replayBudget）');
+    out.add('毛刺为真那一种情况要声明只许往下填几格（replayBudget）');
     return out;
   }
   final probe = LogicGrid.fromBoard(puzzle);
   probe.budget = budget;
   probe.assign(burr.row * 9 + burr.col, burr.num, '假设');
   if (probe.broken) {
-    out.add('毛刺 ${_candLabel(burr)} 为真这一支当场矛盾，那它直接就能删，'
+    out.add('毛刺 ${_candLabel(burr)} 为真这一种情况当场矛盾，那它直接就能删，'
         '不必按毛刺数组讲');
     return out;
   }
@@ -1764,7 +1764,7 @@ List<String> burredSubsetViolations(String puzzle, TeachingStructure s) {
       if (!probe.has(_keyCell(k), _keyDigit(k))) k
   };
   if (both.isEmpty) {
-    out.add('两支的交集是空的：毛刺为真那一支（往下填 $budget 格）'
+    out.add('两种情况的交集是空的：毛刺为真那一种情况（往下填 $budget 格）'
         '一个都没删到，这一页得不出结论');
   }
   out.addAll(_sameElims(s.conclusionFalse, both, '毛刺数组'));
@@ -1824,7 +1824,7 @@ List<String> rankZeroViolations(
   final cellKeys = <String>{};
   for (final c in s.cells) {
     if (board.get(c.row, c.col) != 0) {
-      out.add('${c.label} 是给定数，不能算进结构');
+      out.add('${c.label} 是已知数，不能算进结构');
       continue;
     }
     if (board.getCandidates(c.row, c.col).length < 2) {
@@ -1989,11 +1989,11 @@ List<String> mslsViolations(String puzzle, TeachingStructure s) {
 
 /// 弱待定数组（AHS，隐性一侧的待定数组）。
 ///
-/// 一个房屋里 N 个数字的落点合起来恰好 N+1 格，于是分成两支：
+/// 一个房屋里 N 个数字的落点合起来恰好 N+1 格，于是分成两种情况：
 /// * 那多出来的一格填的是这 N 个数字之一 → 它上面别的候选都得让位；
 /// * 它填的不是 → N 个数字被锁进其余 N 格，那 N 格上别的候选都得让位。
 ///
-/// 两支都删掉的候选就是这一页的收获。它和 ALS-W-Wing 不是一回事：
+/// 两种情况都删掉的候选就是这一页的收获。它和 ALS-W-Wing 不是一回事：
 /// ALS 数的是「格子上的候选并集」（显性一侧），AHS 数的是
 /// 「房屋里某几个数字的落点个数」（隐性一侧），所以这里还要核对
 /// 同一批格子的候选并集大到撑不成 ALS——否则这张图两边都读得通，讲不清区别。
@@ -2084,7 +2084,7 @@ List<String> almostHiddenSetViolations(String puzzle, TeachingStructure s) {
   }
   final split = s.splitCell;
   if (split == null) {
-    out.add('弱待定数组要声明从哪一格分成两支');
+    out.add('弱待定数组要声明从哪一格分成两种情况');
     return out;
   }
   if (!actual.contains('${split.row},${split.col}')) {
@@ -2099,13 +2099,13 @@ List<String> almostHiddenSetViolations(String puzzle, TeachingStructure s) {
   if (out.isNotEmpty) return out;
 
   final z = split.row * 9 + split.col;
-  // 甲支：分支格填的是成员数字，于是它上面的非成员候选都能去掉。
+  // 情况一：分支格填的是成员数字，于是它上面的非成员候选都能去掉。
   final used = LogicGrid.fromBoard(puzzle);
   used.budget = budget;
   for (final d in board.getCandidates(split.row, split.col)) {
     if (!digits.contains(d)) used.eliminate(z, d);
   }
-  // 乙支：分支格不是成员数字，成员就锁进其余各格，那几格的非成员候选都能去掉。
+  // 情况二：分支格不是成员数字，成员就锁进其余各格，那几格的非成员候选都能去掉。
   final free = LogicGrid.fromBoard(puzzle);
   free.budget = budget;
   for (final d in digits) {
@@ -2118,17 +2118,17 @@ List<String> almostHiddenSetViolations(String puzzle, TeachingStructure s) {
     }
   }
   if (used.broken) {
-    out.add('「${split.label} 填成员数字」这一支当场矛盾，'
+    out.add('「${split.label} 填成员数字」这一种情况当场矛盾，'
         '那它直接就能定下来，不必按弱待定数组讲');
   }
   if (free.broken) {
-    out.add('「${split.label} 不填成员数字」这一支当场矛盾，'
+    out.add('「${split.label} 不填成员数字」这一种情况当场矛盾，'
         '那它直接就能定下来，不必按弱待定数组讲');
   }
   if (out.isNotEmpty) return out;
   final both = _bothBranchKills(puzzle, used, free);
   if (both.isEmpty) {
-    out.add('两支的交集是空的，这一页得不出任何结论');
+    out.add('两种情况的交集是空的，这一页得不出任何结论');
   }
   out.addAll(_sameElims(s.conclusionFalse, both, '弱待定数组'));
   out.addAll(_beyondSinglesViolations(puzzle, both, '弱待定数组'));
@@ -2176,7 +2176,7 @@ List<String> dynamicChainViolations(String puzzle, TeachingStructure s) {
   }
   final budget = s.replayBudget;
   if (budget == null) {
-    out.add('动态 AIC 要声明每一支只许往下填几格（replayBudget）');
+    out.add('动态 AIC 要声明每一种情况只许往下填几格（replayBudget）');
     return out;
   }
   if (board.get(a.assume.row, a.assume.col) != 0 ||
@@ -2281,7 +2281,7 @@ List<String> dynamicChainViolations(String puzzle, TeachingStructure s) {
     branch.budget = probe.spent + budget;
     branch.assign(c.row * 9 + c.col, a.linkDigit, '沿强链假设');
     if (!branch.broken) {
-      out.add('沿动态强链假设 ${a.linkDigit}${c.label} 这一支往下填 $budget 格'
+      out.add('沿动态强链假设 ${a.linkDigit}${c.label} 这一种情况往下填 $budget 格'
           '并没有矛盾，收不了口');
     }
   }
@@ -2332,7 +2332,7 @@ List<String> exocetViolations(String puzzle, TeachingStructure s) {
   final b1 = e.baseCells[0], b2 = e.baseCells[1];
   for (final c in e.baseCells) {
     if (board.get(c.row, c.col) != 0) {
-      out.add('基格 ${c.label} 是给定数');
+      out.add('基格 ${c.label} 是已知数');
     }
   }
   if (out.isNotEmpty) return out;
@@ -2384,7 +2384,7 @@ List<String> exocetViolations(String puzzle, TeachingStructure s) {
   for (int i = 0; i < 2; i++) {
     final t = e.targets[i], c = e.companions[i];
     if (board.get(t.row, t.col) != 0) {
-      out.add('目标格 ${t.label} 是给定数');
+      out.add('目标格 ${t.label} 是已知数');
       continue;
     }
     if (line(t) == baseLine) {
@@ -2455,7 +2455,7 @@ List<String> exocetViolations(String puzzle, TeachingStructure s) {
     }
   }
 
-  // 覆盖线：每个基格数字在 S 格上的落点（含给定数）都要被不超过两条房屋盖住。
+  // 覆盖线：每个基格数字在 S 格上的落点（含已知数）都要被不超过两条房屋盖住。
   final sCells = <List<int>>[];
   for (final x in wantCross) {
     for (int k = 0; k < 9; k++) {
@@ -2513,7 +2513,7 @@ List<String> exocetViolations(String puzzle, TeachingStructure s) {
 
 /// 只会「唯余 + 摒除」两招的候选盘，用来独立复核一支假设能推出什么。
 ///
-/// 只给它这两招是故意的：强制类技巧的每一支都只沿唯一后果往下推，
+/// 只给它这两招是故意的：强制类技巧的每一种情况都只沿唯一后果往下推，
 /// 既不能顺手用上别的技巧，也不能借盘面的唯一解反推结论。
 class LogicGrid {
   final List<Set<int>> cand =
@@ -2521,8 +2521,8 @@ class LogicGrid {
   final List<int> value = List<int>.filled(81, 0);
   bool broken = false;
 
-  /// 还许往下填几格。教学页要写得出这一支，所以推理长度必须夹得住：
-  /// 不设上限的话唯余摒除常常顺手把整盘解完，那时「这一支删掉了某个候选」
+  /// 还许往下填几格。教学页要写得出这一种情况，所以推理长度必须夹得住：
+  /// 不设上限的话唯余摒除常常顺手把整盘解完，那时「这一种情况删掉了某个候选」
   /// 就只是在复述答案，说明不了结构本身的力量。
   int budget = 1 << 30;
   int spent = 0;
@@ -2537,7 +2537,7 @@ class LogicGrid {
       final d = ch == '.' ? 0 : int.parse(ch);
       if (d != 0) assign(i, d);
     }
-    // 给定数不算进预算，从这里开始数假设推出来的那几步。
+    // 已知数不算进预算，从这里开始数假设推出来的那几步。
     spent = 0;
     trace.clear();
   }
@@ -2785,7 +2785,7 @@ List<CellRef> _graveOwners(
   return owners;
 }
 
-/// 死盘类型 2 / +n 的删除：同时看得见全部例外格的位置上，那个数字站不住。
+/// 死盘 Type 2 / +n 的删除：同时看得见全部例外格的位置上，那个数字站不住。
 ///
 /// 道理：奇偶条件成立的盘面解数为偶数，题目却唯一解，所以多余候选不能同时为假；
 /// 这一档的多余候选又都是同一个数字 c，于是 c 至少落在这些例外格之一。
@@ -2901,7 +2901,7 @@ List<String> graveClaimViolations(String puzzle, TeachingStructure s) {
       out.addAll(_sameElims(
         s.conclusionFalse,
         computed,
-        plus ? '死盘 +n' : '死盘类型 2',
+        plus ? '死盘 +n' : '死盘 Type 2',
       ));
       if (s.conclusionTrue.isNotEmpty) {
         out.add('这一档给的是删除结论，不该声明填数');
@@ -2914,21 +2914,21 @@ List<String> graveClaimViolations(String puzzle, TeachingStructure s) {
       final ea = byCell['${a.row},${a.col}']!.single;
       final eb = byCell['${b.row},${b.col}']!.single;
       if (ea == eb) {
-        out.add('两个例外格多出的是同一个数字 $ea，那是类型 2，不必绕锁定');
+        out.add('两个例外格多出的是同一个数字 $ea，那是 Type 2，不必绕锁定');
         break;
       }
       final house = _graveSharedHouse(owners, s, out);
       if (house == null) break;
       final lock = s.lockDigit;
       if (lock == null) {
-        out.add('类型 4 要写明被锁在这条房屋里的那个共有底数');
+        out.add('Type 4 要写明被锁在这条房屋里的那个共有底数');
         break;
       }
       final baseA = _graveBase(board, a, {ea});
       final baseB = _graveBase(board, b, {eb});
       if (!baseA.contains(lock) || !baseB.contains(lock)) {
         out.add('$lock 不是 ${a.label}（底数 $baseA）与 ${b.label}（底数 $baseB）'
-            '共有的底数，撑不起类型 4');
+            '共有的底数，撑不起 Type 4');
         break;
       }
       final spots = [
@@ -2956,7 +2956,7 @@ List<String> graveClaimViolations(String puzzle, TeachingStructure s) {
         for (final d in board.getCandidates(b.row, b.col))
           if (d != lock && d != eb) '${b.row},${b.col},$d',
       };
-      out.addAll(_sameElims(s.conclusionFalse, computed, '死盘类型 4'));
+      out.addAll(_sameElims(s.conclusionFalse, computed, '死盘 Type 4'));
       if (s.conclusionTrue.isNotEmpty) {
         out.add('这一档给的是删除结论，不该声明填数');
       }
@@ -2968,7 +2968,7 @@ List<String> graveClaimViolations(String puzzle, TeachingStructure s) {
       final ea = byCell['${a.row},${a.col}']!.single;
       final eb = byCell['${b.row},${b.col}']!.single;
       if (ea == eb) {
-        out.add('两个例外格多出的是同一个数字 $ea，那是类型 2，不必并虚拟格');
+        out.add('两个例外格多出的是同一个数字 $ea，那是 Type 2，不必并虚拟格');
         break;
       }
       final house = _graveSharedHouse(owners, s, out);
@@ -2976,7 +2976,7 @@ List<String> graveClaimViolations(String puzzle, TeachingStructure s) {
       final members = s.subsetCells;
       final digits = s.subsetDigits;
       if (members.isEmpty) {
-        out.add('类型 3 要写明和虚拟格配成数组的那些格子');
+        out.add('Type 3 要写明和虚拟格配成数组的那些格子');
         break;
       }
       if (digits.length != members.length + 1) {
@@ -3029,7 +3029,7 @@ List<String> graveClaimViolations(String puzzle, TeachingStructure s) {
       if (computed.isEmpty) {
         out.add('${houseName(house)} 上没有别的格子带这几个数字，这一档删不出东西');
       }
-      out.addAll(_sameElims(s.conclusionFalse, computed, '死盘类型 3'));
+      out.addAll(_sameElims(s.conclusionFalse, computed, '死盘 Type 3'));
       if (s.conclusionTrue.isNotEmpty) {
         out.add('这一档给的是删除结论，不该声明填数');
       }
@@ -3040,17 +3040,17 @@ List<String> graveClaimViolations(String puzzle, TeachingStructure s) {
       final a = owners[0], b = owners[1];
       final ea = byCell['${a.row},${a.col}']!.single;
       final eb = byCell['${b.row},${b.col}']!.single;
-      // 直接型能用上就不该停在链节点上：同数字互见是类型 2，
-      // 同房屋则可能凑得出类型 3 / 4。
+      // 直接型能用上就不该停在链节点上：同数字互见是 Type 2，
+      // 同房屋则可能凑得出 Type 3 / 4。
       if (ea == eb && sees(a.row, a.col, b.row, b.col)) {
-        out.add('两个例外候选是同一个数字又互相看得见，那是类型 2，能直接删，'
+        out.add('两个例外候选是同一个数字又互相看得见，那是 Type 2，能直接删，'
             '不该绕成一条链');
         break;
       }
       if (housesOf(a.row, a.col)
           .any((h) => housesOf(b.row, b.col).contains(h))) {
         out.add('${a.label} 与 ${b.label} 同处一条房屋，'
-            '该先看类型 3 / 4 能不能直接删，再谈接链');
+            '该先看 Type 3 / 4 能不能直接删，再谈接链');
         break;
       }
       final budget = s.replayBudget;
@@ -3117,11 +3117,11 @@ List<String> claimViolations(String puzzle, TeachingStructure s) {
         out.add('这一页只讲到「至少一个多余候选为真」，不该带填数或删除结论');
       }
       if (s.extras.length < 2) {
-        out.add('只剩一个多余候选时就是类型 1，该给出填数结论，不能停在致命性上');
+        out.add('只剩一个多余候选时就是 Type 1，该给出填数结论，不能停在致命性上');
       }
     case TeachingClaim.type1:
       if (s.extras.length != 1) {
-        out.add('类型 1 要求整个结构只多出一个候选，实际有 ${s.extras.length} 个');
+        out.add('Type 1 要求整个结构只多出一个候选，实际有 ${s.extras.length} 个');
         break;
       }
       final e = s.extras.single;
@@ -3131,21 +3131,21 @@ List<String> claimViolations(String puzzle, TeachingStructure s) {
         for (final t in s.conclusionTrue) '${t.row},${t.col},${t.num}'
       };
       if (got.length != want.length || !want.containsAll(got)) {
-        out.add('类型 1 的结论应当就是「多出来的 ${e.num}r${e.row + 1}c${e.col + 1} '
+        out.add('Type 1 的结论应当就是「多出来的 ${e.num}r${e.row + 1}c${e.col + 1} '
             '必须为真」，实际声明了 $got');
       }
       if (s.conclusionFalse.isNotEmpty) {
-        out.add('类型 1 给的是填数结论，不该同时声明删除');
+        out.add('Type 1 给的是填数结论，不该同时声明删除');
       }
     case TeachingClaim.type2:
       final digits = s.extras.map((e) => e.num).toSet();
       if (digits.length != 1 || extraCells.length < 2) {
-        out.add('类型 2 要求恰好两格以上多出同一个数字，'
+        out.add('Type 2 要求恰好两格以上多出同一个数字，'
             '实际多出的数字是 $digits，分布在 ${extraCells.length} 格上');
         break;
       }
       if (byCell.values.any((v) => v.length != 1)) {
-        out.add('类型 2 的每个带额外候选的格子只能多出一个数字');
+        out.add('Type 2 的每个带额外候选的格子只能多出一个数字');
       }
       out.addAll(_restPureBase(board, s, byCell.keys.toSet()));
       final c = digits.single;
@@ -3162,22 +3162,22 @@ List<String> claimViolations(String puzzle, TeachingStructure s) {
         }
       }
       if (computed.isEmpty) {
-        out.add('没有任何位置同时看得见这几格，类型 2 在这个盘面上删不出东西');
+        out.add('没有任何位置同时看得见这几格，Type 2 在这个盘面上删不出东西');
       }
-      out.addAll(_sameElims(s.conclusionFalse, computed, '类型 2'));
+      out.addAll(_sameElims(s.conclusionFalse, computed, 'Type 2'));
       if (s.conclusionTrue.isNotEmpty) {
-        out.add('类型 2 给的是删除结论，不该声明填数');
+        out.add('Type 2 给的是删除结论，不该声明填数');
       }
     case TeachingClaim.qiuType1:
       if (extraCells.length != 1) {
-        out.add('淑芬类型 1 要求线外两格里只有一格带额外候选，'
+        out.add('淑芬致命结构 Type 1 要求线外两格里只有一格带额外候选，'
             '实际有 ${extraCells.length} 格');
         break;
       }
       final owner = _cellOf(extraCells.single);
       final clean = s.cells.where((c) => c != owner).toList();
       if (clean.length != 1) {
-        out.add('淑芬的线外格应为两个，实际 ${s.cells.length} 个');
+        out.add('淑芬致命结构的线外格应为两个，实际 ${s.cells.length} 个');
         break;
       }
       final computedQ = <String>{
@@ -3187,13 +3187,13 @@ List<String> claimViolations(String puzzle, TeachingStructure s) {
       if (computedQ.isEmpty) {
         out.add('${owner.label} 上没有底数，删不出东西');
       }
-      out.addAll(_sameElims(s.conclusionFalse, computedQ, '淑芬类型 1'));
+      out.addAll(_sameElims(s.conclusionFalse, computedQ, '淑芬致命结构 Type 1'));
       if (s.conclusionTrue.isNotEmpty) {
-        out.add('淑芬类型 1 给的是删除结论，不该声明填数');
+        out.add('淑芬致命结构 Type 1 给的是删除结论，不该声明填数');
       }
     case TeachingClaim.type3:
       if (extraCells.length < 2) {
-        out.add('类型 3 要求至少两格带额外候选，实际 ${extraCells.length} 格');
+        out.add('Type 3 要求至少两格带额外候选，实际 ${extraCells.length} 格');
         break;
       }
       out.addAll(_restPureBase(board, s, byCell.keys.toSet()));
@@ -3224,7 +3224,7 @@ List<String> claimViolations(String puzzle, TeachingStructure s) {
       final union = <int>{...virtual};
       for (final cell in s.subsetCells) {
         if (board.get(cell.row, cell.col) != 0) {
-          out.add('数组格 ${cell.label} 是给定数');
+          out.add('数组格 ${cell.label} 是已知数');
           continue;
         }
         if (!houseCells(house)
@@ -3251,26 +3251,26 @@ List<String> claimViolations(String puzzle, TeachingStructure s) {
         }
       }
       if (computed3.isEmpty) {
-        out.add('${houseName(house)} 里没有别的格子含这组数字，类型 3 删不出东西');
+        out.add('${houseName(house)} 里没有别的格子含这组数字，Type 3 删不出东西');
       }
-      out.addAll(_sameElims(s.conclusionFalse, computed3, '类型 3'));
+      out.addAll(_sameElims(s.conclusionFalse, computed3, 'Type 3'));
       if (s.conclusionTrue.isNotEmpty) {
-        out.add('类型 3 给的是删除结论，不该声明填数');
+        out.add('Type 3 给的是删除结论，不该声明填数');
       }
     case TeachingClaim.type4:
       if (extraCells.length != 2) {
-        out.add('类型 4 要求恰好两格带额外候选，实际 ${extraCells.length} 格');
+        out.add('Type 4 要求恰好两格带额外候选，实际 ${extraCells.length} 格');
         break;
       }
       out.addAll(_restPureBase(board, s, byCell.keys.toSet()));
       final owners = extraCells.map(_cellOf).toList();
       final x = s.lockDigit;
       if (x == null || !s.baseDigits.contains(x)) {
-        out.add('类型 4 要声明一个被锁住的底数，实际 lockDigit=$x');
+        out.add('Type 4 要声明一个被锁住的底数，实际 lockDigit=$x');
         break;
       }
       if (s.lockHouses.length != 1) {
-        out.add('类型 4 只锁一个房屋，实际声明了 ${s.lockHouses.length} 个');
+        out.add('Type 4 只锁一个房屋，实际声明了 ${s.lockHouses.length} 个');
         break;
       }
       final h = s.lockHouses.single;
@@ -3281,7 +3281,7 @@ List<String> claimViolations(String puzzle, TeachingStructure s) {
       if (inHouse.length != 2 ||
           !owners.every((o) => housesOf(o.row, o.col).contains(h))) {
         out.add('${houseName(h)} 里的结构格是 $inHouse，'
-            '类型 4 要求它恰好盖住带额外候选的那两格');
+            'Type 4 要求它恰好盖住带额外候选的那两格');
       }
       final places = [
         for (final cell in houseCells(h))
@@ -3302,9 +3302,9 @@ List<String> claimViolations(String puzzle, TeachingStructure s) {
           }
         }
       }
-      out.addAll(_sameElims(s.conclusionFalse, computed4, '类型 4'));
+      out.addAll(_sameElims(s.conclusionFalse, computed4, 'Type 4'));
       if (s.conclusionTrue.isNotEmpty) {
-        out.add('类型 4 给的是删除结论，不该声明填数');
+        out.add('Type 4 给的是删除结论，不该声明填数');
       }
     case TeachingClaim.hiddenRect:
       final b = s.lockDigit;
@@ -3383,7 +3383,7 @@ List<String> claimViolations(String puzzle, TeachingStructure s) {
       out.addAll(_restPureBase(board, s, byCell.keys.toSet()));
       final e1 = s.extras[0], e2 = s.extras[1];
       if (e1.num == e2.num && sees(e1.row, e1.col, e2.row, e2.col)) {
-        out.add('两个多余候选是同一个数字又互相看得见，那是类型 2，能直接删，'
+        out.add('两个多余候选是同一个数字又互相看得见，那是 Type 2，能直接删，'
             '不该停在链节点上');
       }
     case TeachingClaim.forcing:
@@ -3414,7 +3414,7 @@ List<String> claimViolations(String puzzle, TeachingStructure s) {
 /// 可规避矩形的前提：矩形里已填的那个角必须是玩家自己推出来填的。
 ///
 /// 静态教学盘只存得下候选，存不下「这一格是谁填的」，所以这里核对的是
-/// 教学页真正说得出口的那句话：四个角在题目里都不是给定数，
+/// 教学页真正说得出口的那句话：四个角在题目里都不是已知数，
 /// 而唯一解会让 [TeachingStructure.filledCorner] 这一角落上底数
 /// [TeachingStructure.filledDigit]——也就是说，对局里这一格确实由玩家自己填出来，
 /// 填完的那一刻矩形就成了可规避矩形。
@@ -3457,17 +3457,17 @@ List<String> avoidableFillViolations(String puzzle, TeachingStructure s) {
 /// 1. **从页面那张盘面起步**。用 [LogicGrid.fromBoard]，不能用
 ///    [LogicGrid.fromPuzzle]——后者一建好就把唯余摒除推到了底，
 ///    假设的那一格常常已经被填成同一个数字，`assign` 直接返回，
-///    这一支根本没走，结论却是从推完的盘面上读出来的。
+///    这一种情况根本没走，结论却是从推完的盘面上读出来的。
 /// 2. **假设必须真的是个假设**。被假设的候选要在页面这张盘面上还活着，
 ///    而且填进去之后 [LogicGrid.spent] 得真的涨（不是原地打转）。
 /// 3. **推理长度夹得住**。[TeachingStructure.replayBudget] 必须声明且有限，
-///    每一支只许唯余摒除往下填这么多格；不设上限的话常常顺手把整盘解完，
-///    「两支都删掉同一个候选」就退化成了「答案里本来就不是它」。
+///    每一种情况只许唯余摒除往下填这么多格；不设上限的话常常顺手把整盘解完，
+///    「两种情况都删掉同一个候选」就退化成了「答案里本来就不是它」。
 /// 4. **结论得超出基础招式**。不加任何假设、光靠唯余摒除盲推
 ///    `replayBudget × 支数` 格（也就是整套论证花掉的全部步数），
 ///    如果声明的删除自己就掉下来了，那这一页教的是唯余摒除，不是强制致命结构。
 ///
-/// 另外每一支都不能当场矛盾：某支一填就矛盾，说明那个多余候选可以直接删掉，
+/// 另外每一种情况都不能当场矛盾：某支一填就矛盾，说明那个多余候选可以直接删掉，
 /// 页面该讲的是那个删除，而不是绕一圈取交集。
 List<String> forcingViolations(String puzzle, TeachingStructure s) {
   final out = <String>[];
@@ -3482,7 +3482,7 @@ List<String> forcingViolations(String puzzle, TeachingStructure s) {
   }
   final budget = s.replayBudget;
   if (budget == null) {
-    out.add('强制类技巧要声明每一支只许往下填几格（replayBudget）');
+    out.add('强制类技巧要声明每一种情况只许往下填几格（replayBudget）');
     return out;
   }
   if (budget <= 0 || budget > 20) {
@@ -3493,18 +3493,18 @@ List<String> forcingViolations(String puzzle, TeachingStructure s) {
   for (final e in s.extras) {
     final tag = _candLabel(e);
     if (board.get(e.row, e.col) != 0) {
-      out.add('假设 $tag 那一格在页面上已经填好了，这一支是空的');
+      out.add('假设 $tag 那一格在页面上已经填好了，这一种情况是空的');
       continue;
     }
     if (!board.getCandidates(e.row, e.col).contains(e.num)) {
-      out.add('假设 $tag 在页面这张盘面上并不存在，这一支无从谈起');
+      out.add('假设 $tag 在页面这张盘面上并不存在，这一种情况无从谈起');
       continue;
     }
     final branch = LogicGrid.fromBoard(puzzle);
     branch.budget = budget;
     branch.assign(e.row * 9 + e.col, e.num, '假设');
     if (branch.spent == 0) {
-      out.add('假设 $tag 填进去之后盘面没有任何变化，这一支空转');
+      out.add('假设 $tag 填进去之后盘面没有任何变化，这一种情况空转');
       continue;
     }
     if (branch.broken) {
@@ -3514,15 +3514,15 @@ List<String> forcingViolations(String puzzle, TeachingStructure s) {
     }
     for (final t in s.conclusionTrue) {
       if (branch.value[t.row * 9 + t.col] != t.num) {
-        out.add('假设 $tag 这一支往下填 $budget 格推不出 '
+        out.add('假设 $tag 这一种情况往下填 $budget 格推不出 '
             'r${t.row + 1}c${t.col + 1}=${t.num}'
-            '（这一支实际填了 ${branch.spent} 格：${branch.trace.join(" → ")}）');
+            '（这一种情况实际填了 ${branch.spent} 格：${branch.trace.join(" → ")}）');
       }
     }
     for (final f in s.conclusionFalse) {
       if (branch.cand[f.row * 9 + f.col].contains(f.num)) {
-        out.add('假设 $tag 这一支往下填 $budget 格删不掉 ${_candLabel(f)}'
-            '（这一支实际填了 ${branch.spent} 格：${branch.trace.join(" → ")}）');
+        out.add('假设 $tag 这一种情况往下填 $budget 格删不掉 ${_candLabel(f)}'
+            '（这一种情况实际填了 ${branch.spent} 格：${branch.trace.join(" → ")}）');
       }
     }
   }

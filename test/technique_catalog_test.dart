@@ -43,36 +43,36 @@ const _reviewTableNames = <String>[
   '空矩形',
   'Jellyfish',
   'XY-Wing',
-  '唯一矩形 1',
+  '唯一矩形 Type 1',
   '双生鱼',
   '不完整唯一矩形',
-  '唯一矩形 2',
+  '唯一矩形 Type 2',
   'BUG+1',
   '可规避矩形',
   '带鳍 Swordfish',
   '自噬',
-  '唯一矩形 4',
+  '唯一矩形 Type 4',
   '隐性唯一矩形',
   'XYZ-Wing',
-  '扩展矩形 1',
-  'BUG 类型 2',
-  '扩展矩形 2',
+  '扩展矩形 Type 1',
+  'BUG Type 2',
+  '扩展矩形 Type 2',
   '带鳍 Jellyfish',
-  '唯一矩形 3',
-  'BUG 类型 4',
-  '扩展矩形 4',
-  '扩展矩形 3',
-  '唯一环 1',
-  'BUG 类型 3',
-  '唯一环 2',
+  '唯一矩形 Type 3',
+  'BUG Type 4',
+  '扩展矩形 Type 4',
+  '扩展矩形 Type 3',
+  '唯一环 Type 1',
+  'BUG Type 3',
+  '唯一环 Type 2',
   'BUG+n',
-  '唯一环 4',
-  '唯一环 3',
+  '唯一环 Type 4',
+  '唯一环 Type 3',
   'Franken 鱼',
   'Simple Coloring',
-  '探长',
+  '探长致命结构',
   'Mutant 鱼',
-  '淑芬',
+  '淑芬致命结构',
   'W-Wing',
   'XY-Chain',
   'WXYZ-Wing',
@@ -243,7 +243,7 @@ void main() {
         expect(
           board.get(ref.row, ref.col),
           0,
-          reason: '${t.id}: $what r${ref.row + 1}c${ref.col + 1} 已经是给定数，'
+          reason: '${t.id}: $what r${ref.row + 1}c${ref.col + 1} 已经是已知数，'
               '不该在上面标候选',
         );
         expect(
@@ -303,13 +303,16 @@ void main() {
       names,
       containsAll([
         'Franken 鱼',
-        '唯一矩形 1',
-        '唯一矩形 2',
-        '唯一矩形 3',
-        '唯一矩形 4',
+        '唯一矩形 Type 1',
+        '唯一矩形 Type 2',
+        '唯一矩形 Type 3',
+        '唯一矩形 Type 4',
+        '探长致命结构',
+        '淑芬致命结构',
       ]),
     );
-    expect(names.any((name) => name.contains('唯一矩形 Type')), isFalse);
+    expect(names, isNot(contains('探长')));
+    expect(names, isNot(contains('淑芬')));
     expect(names, isNot(contains('Franken/Mutant Fish')));
 
     expect(
@@ -326,19 +329,19 @@ void main() {
     );
     expect(
       DifficultyAnalyzer.techniqueScores,
-      containsPair('唯一矩形 1', 50),
+      containsPair('唯一矩形 Type 1', 50),
     );
     expect(
       DifficultyAnalyzer.techniqueScores,
-      containsPair('唯一矩形 2', 54),
+      containsPair('唯一矩形 Type 2', 54),
     );
     expect(
       DifficultyAnalyzer.techniqueScores,
-      containsPair('唯一矩形 3', 62),
+      containsPair('唯一矩形 Type 3', 62),
     );
     expect(
       DifficultyAnalyzer.techniqueScores,
-      containsPair('唯一矩形 4', 56),
+      containsPair('唯一矩形 Type 4', 56),
     );
     expect(
       DifficultyAnalyzer.techniqueScores,
@@ -349,9 +352,20 @@ void main() {
       containsPair('Franken 鱼', 68),
     );
     expect(
-      DifficultyAnalyzer.techniqueScores.keys
-          .any((name) => name.contains('唯一矩形 Type')),
-      isFalse,
+      DifficultyAnalyzer.techniqueScores,
+      containsPair('探长致命结构', 74),
+    );
+    expect(
+      DifficultyAnalyzer.techniqueScores,
+      containsPair('淑芬致命结构', 82),
+    );
+    expect(
+      DifficultyAnalyzer.techniqueScores,
+      isNot(contains('探长')),
+    );
+    expect(
+      DifficultyAnalyzer.techniqueScores,
+      isNot(contains('淑芬')),
     );
     expect(
       DifficultyAnalyzer.techniqueScores,
@@ -487,7 +501,7 @@ void main() {
               board.get(ref.row, ref.col),
               0,
               reason: '${t.id}: 删除目标 (${ref.row + 1},${ref.col + 1}) '
-                  '应该是空格，不该是已填的给定数',
+                  '应该是空格，不该是已填的已知数',
             );
             expect(
               _completionExists(board, ref.row, ref.col, ref.num),
@@ -500,7 +514,7 @@ void main() {
               board.get(ref.row, ref.col),
               0,
               reason: '${t.id}: 结论格 (${ref.row + 1},${ref.col + 1}) '
-                  '应该是空格，不该是已填的给定数',
+                  '应该是空格，不该是已填的已知数',
             );
             expect(
               _completionExists(board, ref.row, ref.col, ref.num),

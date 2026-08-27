@@ -68,7 +68,7 @@ void _expectSixCellGeometry(SudokuHint hint) {
 }
 
 void main() {
-  group('扩展矩形 1', () {
+  group('扩展矩形 Type 1', () {
     test('教学盘：六格只多出 5r3c8，那一格就填 5', () {
       final puzzle = _tech('er1').examplePuzzle;
       final board = SudokuBoard.fromString(puzzle);
@@ -76,7 +76,7 @@ void main() {
       final hint = AdvancedTechniques.findExtendedRectType1(board);
 
       expect(hint, isNotNull);
-      expect(hint!.technique, '扩展矩形 1');
+      expect(hint!.technique, '扩展矩形 Type 1');
       expect(hint.isElimination, isFalse);
       expect([hint.row, hint.col, hint.value], [2, 7, 5]);
       expectFillSound(puzzle, hint);
@@ -93,20 +93,20 @@ void main() {
       );
     });
 
-    test('抹掉一个底数候选后六格不再都含底数，类型 1 就不成立', () {
+    test('抹掉一个底数候选后六格不再都含底数，Type 1 就不成立', () {
       final board = SudokuBoard.fromString(_tech('er1').examplePuzzle);
       board.eliminateCandidate(1, 5, 4);
       expect(AdvancedTechniques.findExtendedRectType1(board), isNull);
     });
 
-    test('抹掉那唯一的多余候选后，只剩底数的六格不该报类型 1', () {
+    test('抹掉那唯一的多余候选后，只剩底数的六格不该报 Type 1', () {
       final board = SudokuBoard.fromString(_tech('er1').examplePuzzle);
       board.eliminateCandidate(2, 7, 5);
       expect(AdvancedTechniques.findExtendedRectType1(board), isNull);
     });
   });
 
-  group('扩展矩形 2', () {
+  group('扩展矩形 Type 2', () {
     test('教学盘：同侧两格多出 7，共同可见处删 7', () {
       final puzzle = _tech('er2').examplePuzzle;
       final board = SudokuBoard.fromString(puzzle);
@@ -114,7 +114,7 @@ void main() {
       final hint = AdvancedTechniques.findExtendedRectType2(board);
 
       expect(hint, isNotNull);
-      expect(hint!.technique, '扩展矩形 2');
+      expect(hint!.technique, '扩展矩形 Type 2');
       expect(elimKeys(hint), {'2,4,7', '5,4,7', '8,3,7'});
       expectEliminationsPresent(board, hint);
       expectEliminationsSound(puzzle, hint);
@@ -126,7 +126,7 @@ void main() {
           reason: '两个多余候选至少一真，画成强链');
     });
 
-    test('两格多出的不是同一个数字时不报类型 2', () {
+    test('两格多出的不是同一个数字时不报 Type 2', () {
       final board = SudokuBoard.fromString(_tech('er4').examplePuzzle);
       expect(AdvancedTechniques.findExtendedRectType2(board), isNull);
     });
@@ -145,7 +145,7 @@ void main() {
       final hint = AdvancedTechniques.findExtendedRectType2(board);
 
       expect(hint, isNotNull, reason: 'r8 这一对同时少了 3，对调依旧走得通');
-      expect(hint!.technique, '扩展矩形 2');
+      expect(hint!.technique, '扩展矩形 Type 2');
       expect(elimKeys(hint), {'2,4,7', '5,4,7', '8,3,7'});
       expectEliminationsPresent(board, hint);
       expectEliminationsSound(puzzle, hint);
@@ -169,7 +169,7 @@ void main() {
     });
   });
 
-  group('扩展矩形 4', () {
+  group('扩展矩形 Type 4', () {
     test('教学盘：r3 上 4 成强链，两个多余格各删两个底数', () {
       final puzzle = _tech('er4').examplePuzzle;
       final board = SudokuBoard.fromString(puzzle);
@@ -177,7 +177,7 @@ void main() {
       final hint = AdvancedTechniques.findExtendedRectType4(board);
 
       expect(hint, isNotNull);
-      expect(hint!.technique, '扩展矩形 4');
+      expect(hint!.technique, '扩展矩形 Type 4');
       expect(elimKeys(hint), {'2,1,6', '2,1,9', '2,7,6', '2,7,9'});
       expectEliminationsPresent(board, hint);
       expectEliminationsSound(puzzle, hint);
@@ -203,7 +203,7 @@ void main() {
       final hint = AdvancedTechniques.findExtendedRectType4(board);
 
       expect(hint, isNotNull, reason: 'r1 这一对同时少了 4，对调依旧走得通');
-      expect(hint!.technique, '扩展矩形 4');
+      expect(hint!.technique, '扩展矩形 Type 4');
       expect(elimKeys(hint), {'2,1,6', '2,1,9', '2,7,6', '2,7,9'});
       expectEliminationsPresent(board, hint);
       expectEliminationsSound(puzzle, hint);
@@ -211,7 +211,7 @@ void main() {
       _expectSixCellGeometry(hint);
     });
 
-    test('结构自己那两条三格线锁不出强链，不该拿来当类型 4 的房屋', () {
+    test('结构自己那两条三格线锁不出强链，不该拿来当 Type 4 的房屋', () {
       final hint = AdvancedTechniques.findExtendedRectType4(
         SudokuBoard.fromString(_tech('er4').examplePuzzle),
       );
@@ -222,7 +222,7 @@ void main() {
     });
   });
 
-  group('扩展矩形 3', () {
+  group('扩展矩形 Type 3', () {
     test('教学盘：{1,5} 虚拟格和 r4c1 配成数对，r4 别处删 1', () {
       final puzzle = _tech('er3').examplePuzzle;
       final board = SudokuBoard.fromString(puzzle);
@@ -230,7 +230,7 @@ void main() {
       final hint = AdvancedTechniques.findExtendedRectType3(board);
 
       expect(hint, isNotNull);
-      expect(hint!.technique, '扩展矩形 3');
+      expect(hint!.technique, '扩展矩形 Type 3');
       expect(elimKeys(hint), {'3,6,1', '3,7,1'});
       expectEliminationsPresent(board, hint);
       expectEliminationsSound(puzzle, hint);
@@ -260,13 +260,13 @@ void main() {
         expect(
           const {'1,3', '1,4', '1,5', '3,3'},
           isNot(contains('${e.row},${e.col}')),
-          reason: '结构格上的底数不是类型 3 的删除对象',
+          reason: '结构格上的底数不是 Type 3 的删除对象',
         );
       }
     });
 
     test('两个多余格不同房屋时合不成虚拟格', () {
-      // 类型 1 的教学盘只有一个多余候选，凑不出虚拟格。
+      // Type 1 的教学盘只有一个多余候选，凑不出虚拟格。
       final board = SudokuBoard.fromString(_tech('er1').examplePuzzle);
       expect(AdvancedTechniques.findExtendedRectType3(board), isNull);
     });
@@ -282,20 +282,20 @@ void main() {
 
   test('四型按难度排进提示顺序，各有难度分', () {
     final order = SudokuSolver.hintSearchOrder;
-    for (final name in ['扩展矩形 1', '扩展矩形 2', '扩展矩形 3', '扩展矩形 4']) {
+    for (final name in ['扩展矩形 Type 1', '扩展矩形 Type 2', '扩展矩形 Type 3', '扩展矩形 Type 4']) {
       expect(order, contains(name), reason: '$name 应进提示顺序');
     }
-    expect(order.indexOf('唯一矩形 2'), lessThan(order.indexOf('扩展矩形 1')));
-    expect(order.indexOf('扩展矩形 1'), lessThan(order.indexOf('扩展矩形 2')));
-    expect(order.indexOf('扩展矩形 2'), lessThan(order.indexOf('扩展矩形 4')));
-    expect(order.indexOf('扩展矩形 4'), lessThan(order.indexOf('扩展矩形 3')));
-    expect(order.indexOf('唯一矩形 3'), lessThan(order.indexOf('扩展矩形 4')));
-    expect(order.indexOf('扩展矩形 3'), lessThan(order.indexOf('Franken 鱼')));
+    expect(order.indexOf('唯一矩形 Type 2'), lessThan(order.indexOf('扩展矩形 Type 1')));
+    expect(order.indexOf('扩展矩形 Type 1'), lessThan(order.indexOf('扩展矩形 Type 2')));
+    expect(order.indexOf('扩展矩形 Type 2'), lessThan(order.indexOf('扩展矩形 Type 4')));
+    expect(order.indexOf('扩展矩形 Type 4'), lessThan(order.indexOf('扩展矩形 Type 3')));
+    expect(order.indexOf('唯一矩形 Type 3'), lessThan(order.indexOf('扩展矩形 Type 4')));
+    expect(order.indexOf('扩展矩形 Type 3'), lessThan(order.indexOf('Franken 鱼')));
 
-    expect(DifficultyAnalyzer.techniqueScores, containsPair('扩展矩形 1', 60));
-    expect(DifficultyAnalyzer.techniqueScores, containsPair('扩展矩形 2', 62));
-    expect(DifficultyAnalyzer.techniqueScores, containsPair('扩展矩形 4', 63));
-    expect(DifficultyAnalyzer.techniqueScores, containsPair('扩展矩形 3', 65));
+    expect(DifficultyAnalyzer.techniqueScores, containsPair('扩展矩形 Type 1', 60));
+    expect(DifficultyAnalyzer.techniqueScores, containsPair('扩展矩形 Type 2', 62));
+    expect(DifficultyAnalyzer.techniqueScores, containsPair('扩展矩形 Type 4', 63));
+    expect(DifficultyAnalyzer.techniqueScores, containsPair('扩展矩形 Type 3', 65));
     for (final id in ['er1', 'er2', 'er3', 'er4']) {
       expect(_tech(id).teachingOnly, isFalse, reason: '$id 已有独立报法');
     }

@@ -28,11 +28,11 @@ List<List<int>> _structureCells(SudokuHint hint) => [
         [int.parse(key.split(',')[0]), int.parse(key.split(',')[1])],
     ];
 
-/// 三数探长的几何，按 kazusa《三数探长致命结构的基本推理》逐条数：
+/// 三数探长致命结构的几何，按 kazusa《三数探长致命结构的基本推理》逐条数：
 /// 七格、跨三个宫，房屋占格数只许 2 或 3，占三格的必须是一行一列一宫各一条，
-/// 占两格的必须是两行两列两宫。数不齐就不是探长——整组换排法也走不通。
+/// 占两格的必须是两行两列两宫。数不齐就不是探长致命结构——整组换排法也走不通。
 void expectBorescoperGeometry(List<List<int>> cells) {
-  expect(cells, hasLength(7), reason: '三数探长是七格');
+  expect(cells, hasLength(7), reason: '三数探长致命结构是七格');
 
   final triple = <String>[];
   final pair = <String>[];
@@ -50,7 +50,7 @@ void expectBorescoperGeometry(List<List<int>> cells) {
             ? 'c'
             : 'b';
     expect(hit == 2 || hit == 3, isTrue,
-        reason: '房屋 $house 上占了 $hit 格，探长的房屋只能占 2 格或 3 格');
+        reason: '房屋 $house 上占了 $hit 格，探长致命结构的房屋只能占 2 格或 3 格');
     if (hit == 3) {
       triple.add(kind);
     } else {
@@ -63,12 +63,12 @@ void expectBorescoperGeometry(List<List<int>> cells) {
   expect(
     {for (final c in cells) (c[0] ~/ 3) * 3 + c[1] ~/ 3},
     hasLength(3),
-    reason: '三数探长横跨三个宫',
+    reason: '三数探长致命结构横跨三个宫',
   );
 }
 
 void main() {
-  group('探长', () {
+  group('探长致命结构', () {
     test('教学盘：七格三数只有 r2c7 跳得出底数，那一格填 6', () {
       final puzzle = _tech('bdp').examplePuzzle;
       final board = SudokuBoard.fromString(puzzle);
@@ -76,7 +76,7 @@ void main() {
       final hint = AdvancedTechniques.findBorescoper(board);
 
       expect(hint, isNotNull);
-      expect(hint!.technique, '探长');
+      expect(hint!.technique, '探长致命结构');
       expect(hint.isElimination, isFalse);
       expect([hint.row, hint.col, hint.value], [1, 6, 6]);
       expectFillSound(puzzle, hint);
@@ -120,10 +120,10 @@ void main() {
 
     test('按难度排进提示顺序，有难度分，教学页不再是教学专属', () {
       final order = SudokuSolver.hintSearchOrder;
-      expect(order, contains('探长'));
-      expect(order.indexOf('唯一环 3'), lessThan(order.indexOf('探长')));
-      expect(order.indexOf('探长'), lessThan(order.indexOf('W-Wing')));
-      expect(DifficultyAnalyzer.techniqueScores, containsPair('探长', 74));
+      expect(order, contains('探长致命结构'));
+      expect(order.indexOf('唯一环 Type 3'), lessThan(order.indexOf('探长致命结构')));
+      expect(order.indexOf('探长致命结构'), lessThan(order.indexOf('W-Wing')));
+      expect(DifficultyAnalyzer.techniqueScores, containsPair('探长致命结构', 74));
       expect(_tech('bdp').teachingOnly, isFalse);
     });
   });

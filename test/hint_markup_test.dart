@@ -113,7 +113,7 @@ void main() {
 
   test('锁在宫里的一手把整个宫淡亮，宫外不受影响', () {
     final hint = SudokuHint.elimination(
-      technique: '扩展矩形 3',
+      technique: '扩展矩形 Type 3',
       explanation: 'test',
       eliminations: [CandidateElim(4, 5, 7)],
       patternCells: const [

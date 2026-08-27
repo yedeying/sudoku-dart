@@ -12,14 +12,14 @@ TechniqueInfo _tech(String id) =>
     TechniqueCatalog.all.firstWhere((t) => t.id == id);
 
 void main() {
-  test('BUG 类型 4 教学盘：r4 上 8 成强链，两个例外格各删一个底数', () {
+  test('BUG Type 4 教学盘：r4 上 8 成强链，两个例外格各删一个底数', () {
     final puzzle = _tech('bug_type4').examplePuzzle;
     final board = SudokuBoard.fromString(puzzle);
 
     final hint = AdvancedTechniques.findBugType4(board);
 
     expect(hint, isNotNull);
-    expect(hint!.technique, 'BUG 类型 4');
+    expect(hint!.technique, 'BUG Type 4');
     expect(elimKeys(hint), {'3,4,5', '3,5,2'});
     expectEliminationsPresent(board, hint);
     expectEliminationsSound(puzzle, hint);
@@ -37,30 +37,30 @@ void main() {
     );
   });
 
-  test('两个例外格多出同一个数字时，类型 4 的强链推理照样成立', () {
-    // 类型 2 那张教学盘：r2c5 与 r3c5 多出来的都是 2，
+  test('两个例外格多出同一个数字时，Type 4 的强链推理照样成立', () {
+    // Type 2 那张教学盘：r2c5 与 r3c5 多出来的都是 2，
     // 但两格同在 c5，共有底数 9 在 c5 上只剩这两格，是条独立的强链，
-    // 于是各自的「另一个底数」4 和 7 也能删——和类型 2 删的不是同一批候选。
+    // 于是各自的「另一个底数」4 和 7 也能删——和 Type 2 删的不是同一批候选。
     final puzzle = _tech('bug_type2').examplePuzzle;
     final board = SudokuBoard.fromString(puzzle);
 
     final hint = AdvancedTechniques.findBugType4(board);
 
-    expect(hint, isNotNull, reason: '多余候选相同不妨碍类型 4 的锁定推理');
-    expect(hint!.technique, 'BUG 类型 4');
+    expect(hint, isNotNull, reason: '多余候选相同不妨碍 Type 4 的锁定推理');
+    expect(hint!.technique, 'BUG Type 4');
     expect(elimKeys(hint), {'1,4,4', '2,4,7'});
     expectEliminationsPresent(board, hint);
     expectEliminationsSound(puzzle, hint);
     expectEvidenceBeyondTargets(hint);
     expect(hint.highlightCols, [4], reason: '锁定发生在 c5 这条线上');
 
-    // 同一张盘上类型 2 也成立，删的是另一批候选；两手都在时由更早的类型 2 出面。
+    // 同一张盘上 Type 2 也成立，删的是另一批候选；两手都在时由更早的 Type 2 出面。
     final type2 = AdvancedTechniques.findBugType2(board);
     expect(type2, isNotNull);
     expect(elimKeys(type2!).intersection(elimKeys(hint)), isEmpty);
     expect(
-      SudokuSolver.hintSearchOrder.indexOf('BUG 类型 2'),
-      lessThan(SudokuSolver.hintSearchOrder.indexOf('BUG 类型 4')),
+      SudokuSolver.hintSearchOrder.indexOf('BUG Type 2'),
+      lessThan(SudokuSolver.hintSearchOrder.indexOf('BUG Type 4')),
     );
   });
 
@@ -71,17 +71,17 @@ void main() {
     expect(AdvancedTechniques.findBugType4(board), isNull);
   });
 
-  test('BUG 类型 4 排在唯一矩形 3 之后、Franken 鱼之前，难度分 6.2', () {
+  test('BUG Type 4 排在唯一矩形 Type 3 之后、Franken 鱼之前，难度分 6.2', () {
     final order = SudokuSolver.hintSearchOrder;
-    expect(order, contains('BUG 类型 4'));
-    expect(order.indexOf('BUG 类型 2'), lessThan(order.indexOf('BUG 类型 4')));
-    expect(order.indexOf('唯一矩形 3'), lessThan(order.indexOf('BUG 类型 4')));
-    expect(order.indexOf('BUG 类型 4'), lessThan(order.indexOf('Franken 鱼')));
+    expect(order, contains('BUG Type 4'));
+    expect(order.indexOf('BUG Type 2'), lessThan(order.indexOf('BUG Type 4')));
+    expect(order.indexOf('唯一矩形 Type 3'), lessThan(order.indexOf('BUG Type 4')));
+    expect(order.indexOf('BUG Type 4'), lessThan(order.indexOf('Franken 鱼')));
     expect(
-      order.indexOf('BUG 类型 4'),
+      order.indexOf('BUG Type 4'),
       lessThan(order.indexOf('Simple Coloring')),
     );
-    expect(DifficultyAnalyzer.techniqueScores, containsPair('BUG 类型 4', 62));
+    expect(DifficultyAnalyzer.techniqueScores, containsPair('BUG Type 4', 62));
     expect(_tech('bug_type4').teachingOnly, isFalse);
   });
 }

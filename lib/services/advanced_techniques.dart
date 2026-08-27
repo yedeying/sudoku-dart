@@ -22,7 +22,7 @@ typedef _ErReading = ({
 /// 各家族的枚举器只负责保证一件事：这些格子要是最后全落在底数里，
 /// 整块结构就能换一种排法而盘外毫无变化，于是题目多解。
 /// 有了这一条，「至少一个多余候选为真」就成立，
-/// 类型 1–4 的推理对每个家族都是同一段话，不必按家族各写一遍。
+/// Type 1–4 的推理对每个家族都是同一段话，不必按家族各写一遍。
 typedef _DeadlyRead = ({
   List<List<int>> cells,
   Set<int> baseDigits,
@@ -134,7 +134,7 @@ class AdvancedTechniques {
             technique: '显性四数组',
             explanation: '${unit.label} 中 ${cellsList(quad)} '
                 '候选并集只有 ${sortedDigits.join('、')}，'
-                '这四个数字占满这些格，可从该单元其它格删除它们。',
+                '这四个数字占满这些格，可从该区域其它格删除它们。',
             eliminations: eliminations,
             patternCells: hintCells(HintRole.pattern, quad),
             patternCandidates: [
@@ -512,7 +512,7 @@ class AdvancedTechniques {
   }
 
   // ---------------------------------------------------------------------------
-  // Unique Rectangle Type 1 - 唯一矩形类型 1（填数）
+  // Unique Rectangle Type 1 - 唯一矩形 Type 1（填数）
   // ---------------------------------------------------------------------------
 
   static SudokuHint? findUniqueRectangleType1(SudokuBoard board) {
@@ -546,7 +546,7 @@ class AdvancedTechniques {
                 row: i2,
                 col: j2,
                 value: extraNum,
-                technique: '唯一矩形 1',
+                technique: '唯一矩形 Type 1',
                 explanation: '题目保证唯一解。${cellRef(i, j)}, ${cellRef(i, j2)}, '
                     '${cellRef(i2, j)}, ${cellRef(i2, j2)} 形成唯一矩形，'
                     '为避免多解，${cellRef(i2, j2)} 必须填 $extraNum。',
@@ -576,7 +576,7 @@ class AdvancedTechniques {
                 row: i2,
                 col: j,
                 value: extraNum,
-                technique: '唯一矩形 1',
+                technique: '唯一矩形 Type 1',
                 explanation: '题目保证唯一解。${cellRef(i, j)}, ${cellRef(i, j2)}, '
                     '${cellRef(i2, j)}, ${cellRef(i2, j2)} 形成唯一矩形，'
                     '为避免多解，${cellRef(i2, j)} 必须填 $extraNum。',
@@ -778,7 +778,7 @@ class AdvancedTechniques {
             }
             if (elims.isNotEmpty) {
               return SudokuHint.elimination(
-                technique: '唯一矩形 2',
+                technique: '唯一矩形 Type 2',
                 explanation: '题目保证唯一解。四个格子形成唯一矩形，额外数字 $digit '
                     '出现在同一侧两格，可从它们共同可见处删除 $digit。',
                 eliminations: elims,
@@ -896,10 +896,10 @@ class AdvancedTechniques {
                     final digits = union.toList()..sort();
                     final hl = _houseHighlight(house);
                     return SudokuHint.elimination(
-                      technique: '唯一矩形 3',
+                      technique: '唯一矩形 Type 3',
                       explanation: '题目保证唯一解。唯一矩形的额外候选与 ${_houseLabel(house)} '
                           '其它格子组成数组 ${digits.join('、')}，'
-                          '可删除这条房屋里其余格子的这些候选。',
+                          '可删除这个区域里其余格子的这些候选。',
                       eliminations: elims,
                       patternCells: [
                         ...hintCells(HintRole.pattern, [
@@ -993,7 +993,7 @@ class AdvancedTechniques {
                 if (elims.isNotEmpty) {
                   final hl = _houseHighlight(house);
                   return SudokuHint.elimination(
-                    technique: '唯一矩形 4',
+                    technique: '唯一矩形 Type 4',
                     explanation:
                         '题目保证唯一解。${_houseLabel(house)} 里数字 $conjugate 只剩这两格，'
                         '形成强链，因此这两格可删除数字 $other。',
@@ -1039,9 +1039,9 @@ class AdvancedTechniques {
   // ---------------------------------------------------------------------------
 
   /// 四个角最后要是都落在底数 `{a,b}` 里，把这两个数整块对调就能得到另一张
-  /// 跟给定数毫无冲突的完整盘，题目就成了两解。所以「四角全落在底数里」不成立。
+  /// 跟已知数毫无冲突的完整盘，题目就成了两解。所以「四角全落在底数里」不成立。
   ///
-  /// 这条推理只跟给定数有关：候选表当下还剩什么、哪个角已经被玩家填上，都不影响它。
+  /// 这条推理只跟已知数有关：候选表当下还剩什么、哪个角已经被玩家填上，都不影响它。
   /// 不完整唯一矩形和可规避矩形就是从这里分出来的两种读法，
   /// 所以两者共用同一段几何，只在「角是空的还是已填」上分岔。
   static SudokuHint? _findDeadlyRectangle(
@@ -1059,7 +1059,7 @@ class AdvancedTechniques {
               [r2, c1],
               [r2, c2],
             ];
-            // 只要有一个角是给定数，对调就会改动题面，第二张盘造不出来。
+            // 只要有一个角是已知数，对调就会改动题面，第二张盘造不出来。
             if (corners.any((cell) => board.isInitial(cell[0], cell[1]))) {
               continue;
             }
@@ -1118,12 +1118,12 @@ class AdvancedTechniques {
     final digits = pair.toList()..sort();
     final base = '${digits[0]}、${digits[1]}';
     final premise = avoidable
-        ? '${cellsList(corners)} 四个角都不是给定数，'
+        ? '${cellsList(corners)} 四个角都不是已知数，'
             '${cellsList(filled)} 上的数字是推出来填的，'
-            '把底数 $base 整块对调仍然只跟给定数打交道'
-        : '${cellsList(corners)} 四个角都不是给定数，'
-            '底数 $base 整块对调只跟给定数打交道；'
-            '认形看的是给定数，不看候选表当下还剩什么';
+            '把底数 $base 整块对调仍然只跟已知数打交道'
+        : '${cellsList(corners)} 四个角都不是已知数，'
+            '底数 $base 整块对调只跟已知数打交道；'
+            '认形看的是已知数，不看候选表当下还剩什么';
 
     if (roofs.length == 1) {
       final roof = roofs.first;
@@ -1231,13 +1231,13 @@ class AdvancedTechniques {
   /// 不完整唯一矩形：矩形还是那个矩形，只是某个角上的底数在之前几步里被删掉过。
   ///
   /// 删除是「在题目唯一解这个前提下」推出来的结论，挡不住整块对调造出来的第二张盘，
-  /// 所以认形只看给定数：四个角都不是给定数，这个矩形就依旧致命。
+  /// 所以认形只看已知数：四个角都不是已知数，这个矩形就依旧致命。
   static SudokuHint? findIncompleteUniqueRectangle(SudokuBoard board) =>
       _findDeadlyRectangle(board, avoidable: false);
 
   /// 可规避矩形：角上已经填了数字，而且这些数字必须是玩家自己推出来填的。
   ///
-  /// 给定数会把对调堵死，所以四个角只要有一个是题面印上去的，这一招就不能用。
+  /// 已知数会把对调堵死，所以四个角只要有一个是题面印上去的，这一招就不能用。
   static SudokuHint? findAvoidableRectangle(SudokuBoard board) =>
       _findDeadlyRectangle(board, avoidable: true);
 
@@ -1320,7 +1320,7 @@ class AdvancedTechniques {
                       '${cellsList([target, colPartner])}，两条都是强链。'
                       '${cellRef(row, col)} 一旦填 $gone，'
                       '这两条强链就把 ${cellRef(rowPartner[0], rowPartner[1])}、'
-                      '${cellRef(colPartner[0], colPartner[1])} 都逼成 $lock，'
+                      '${cellRef(colPartner[0], colPartner[1])} 都只能填 $lock，'
                       '${cellRef(diagonal[0], diagonal[1])} 只剩 $gone，'
                       '四角凑成致命排法，所以 $gone 可以从 '
                       '${cellRef(row, col)} 上删掉。',
@@ -1401,12 +1401,12 @@ class AdvancedTechniques {
     ];
   }
 
-  /// 类型 1：只有一格跳出底数，那一格就填不了底数。
+  /// Type 1：只有一格跳出底数，那一格就填不了底数。
   ///
   /// 多余候选恰好一个时结论最干脆——那一格只能填它，直接给填数。
   /// 多余候选有好几个时并不是「这一手不成立」，只是不知道填哪一个：
   /// 能确定的是底数一个都填不了，所以删掉这一格上剩下的全部底数。
-  /// 从前这一支直接放弃，等于把一条站得住的删除白扔了。
+  /// 从前这一种情况直接放弃，等于把一条站得住的删除白扔了。
   static SudokuHint? _deadlyType1(
     SudokuBoard board,
     _DeadlyRead read,
@@ -1485,7 +1485,7 @@ class AdvancedTechniques {
     );
   }
 
-  /// 类型 2：恰好两格多出同一个数字，删同时看得见这两格的位置。
+  /// Type 2：恰好两格多出同一个数字，删同时看得见这两格的位置。
   static SudokuHint? _deadlyType2(
     SudokuBoard board,
     _DeadlyRead read,
@@ -1540,7 +1540,7 @@ class AdvancedTechniques {
     );
   }
 
-  /// 类型 3：两格的多余候选合成虚拟格，和同房屋的格子配数组。
+  /// Type 3：两格的多余候选合成虚拟格，和同房屋的格子配数组。
   ///
   /// 虚拟格代表的是完整性约束——「这两格里至少有一格要跳出底数」——
   /// 所以它整体只顶一格用，绝不能把两个多余候选拆开当普通裸对删。
@@ -1552,7 +1552,7 @@ class AdvancedTechniques {
   ) {
     if (read.roofs.length != 2) return null;
     final virtual = {...read.roofExtras[0], ...read.roofExtras[1]};
-    // 两格多出同一个数字时虚拟格只有一个候选，那是类型 2 的活，不走这里。
+    // 两格多出同一个数字时虚拟格只有一个候选，那是 Type 2 的活，不走这里。
     if (virtual.length < 2) return null;
     final roofs = read.roofs;
     final structureKeys = {
@@ -1591,7 +1591,7 @@ class AdvancedTechniques {
             '${onRoof ? '数组锁住的 ${outside.join('、')} '
                 '不在虚拟格里，${cellsList(roofs)} 自己也填不了——'
                 '哪一格填了它，「至少一格跳出底数」就得靠另一格兑现，'
-                '这条房屋里就有 ${size + 1} 个格子去占 $size 个数字，占不下——'
+                '这个区域里就有 ${size + 1} 个格子去占 $size 个数字，占不下——'
                 '所以这两格上的 ${outside.join('、')} 一并删去。' : ''}',
         eliminations: sub.elims,
         patternCells: [
@@ -1647,7 +1647,7 @@ class AdvancedTechniques {
     return null;
   }
 
-  /// 类型 4：某个底数被锁在带多余候选那两格所共处的房屋里，删这两格的其它底数。
+  /// Type 4：某个底数被锁在带多余候选那两格所共处的房屋里，删这两格的其它底数。
   ///
   /// 锁定房屋只可能是「恰好盖住这两格」的那一条——结构自己那种一条线上摆三格的
   /// 房屋里，每个底数本来就要各占一次，锁不出强链，这里的落点计数会自己把它挡掉。
@@ -1692,7 +1692,7 @@ class AdvancedTechniques {
           explanation: '题目保证唯一解。${cellsList(read.cells)} 构成一个$shape，'
               '每一格都含底数 ${(read.baseDigits.toList()..sort()).join('、')}；'
               '带额外候选的只有 ${cellsList(roofs)} 两格。'
-              '再看 ${_houseLabel(house)}：底数 $lock 在这条房屋里只剩这两格，是条强链，'
+              '再看 ${_houseLabel(house)}：底数 $lock 在这个区域里只剩这两格，是条强链，'
               '$lock 一定落在其中之一。'
               '哪一格填了别的底数，$lock 就被推到对面那格，'
               '于是两格都落在底数里、$shape 凑成死结——'
@@ -1746,7 +1746,7 @@ class AdvancedTechniques {
   ///   那一格就要占掉一个虚拟格候选。于是这条房屋里，
   ///   k−1 个数组格 + 这一格的 d + 另一格的那个候选，一共 k+1 个格子
   ///   占了 k+1 个互不相同、全都属于数组的数字，而数组只锁着 k 个——鸽笼矛盾。
-  ///   所以 d 填不了。这一支从前整块漏掉了。
+  ///   所以 d 填不了。这一种情况从前整块漏掉了。
   static _SubsetRead? _virtualSubsetRead(
     SudokuBoard board,
     int house,
@@ -1802,7 +1802,7 @@ class AdvancedTechniques {
   }
 
   // ---------------------------------------------------------------------------
-  // 扩展矩形 1–4
+  // 扩展矩形 Type 1–4
   // ---------------------------------------------------------------------------
 
   /// 六格扩展矩形的全部读法。
@@ -1815,7 +1815,7 @@ class AdvancedTechniques {
   ///
   /// 搜索规模写死在这里：3 个宫柱（宫带）× 27 对线 × 2 种朝向 = 162 副几何，
   /// 每副几何再从六格候选的交集里取三个底数，多余候选超过两格的直接丢掉——
-  /// 四型里最宽的类型 2 也只用得上两格。
+  /// 四型里最宽的 Type 2 也只用得上两格。
   static Iterable<_DeadlyRead> _extendedRectReads(
     SudokuBoard board, {
     int maxRoofs = 2,
@@ -1849,7 +1849,7 @@ class AdvancedTechniques {
   ///
   /// 底数从「两条线各自候选并集的交集」里取——每条线都要放齐三个底数，
   /// 一条线上根本出不来的数字当不了底数。多余候选超过两格的读法先丢掉，
-  /// 四型里最宽的类型 2 也只用得上两格；这一步把绝大多数底数组合挡在对调复核之前。
+  /// 四型里最宽的 Type 2 也只用得上两格；这一步把绝大多数底数组合挡在对调复核之前。
   static Iterable<_DeadlyRead> _extendedRectReadsOn(
     SudokuBoard board,
     List<List<int>> lineA,
@@ -1954,7 +1954,7 @@ class AdvancedTechniques {
 
   static SudokuHint? findExtendedRectType1(SudokuBoard board) {
     for (final read in _extendedRectReads(board)) {
-      final hint = _deadlyType1(board, read, '扩展矩形 1', '扩展矩形');
+      final hint = _deadlyType1(board, read, '扩展矩形 Type 1', '扩展矩形');
       if (hint != null) return hint;
     }
     return null;
@@ -1962,7 +1962,7 @@ class AdvancedTechniques {
 
   static SudokuHint? findExtendedRectType2(SudokuBoard board) {
     for (final read in _extendedRectReads(board)) {
-      final hint = _deadlyType2(board, read, '扩展矩形 2', '扩展矩形');
+      final hint = _deadlyType2(board, read, '扩展矩形 Type 2', '扩展矩形');
       if (hint != null) return hint;
     }
     return null;
@@ -1970,7 +1970,7 @@ class AdvancedTechniques {
 
   static SudokuHint? findExtendedRectType3(SudokuBoard board) {
     for (final read in _extendedRectReads(board)) {
-      final hint = _deadlyType3(board, read, '扩展矩形 3', '扩展矩形');
+      final hint = _deadlyType3(board, read, '扩展矩形 Type 3', '扩展矩形');
       if (hint != null) return hint;
     }
     return null;
@@ -1978,14 +1978,14 @@ class AdvancedTechniques {
 
   static SudokuHint? findExtendedRectType4(SudokuBoard board) {
     for (final read in _extendedRectReads(board)) {
-      final hint = _deadlyType4(board, read, '扩展矩形 4', '扩展矩形');
+      final hint = _deadlyType4(board, read, '扩展矩形 Type 4', '扩展矩形');
       if (hint != null) return hint;
     }
     return null;
   }
 
   // ---------------------------------------------------------------------------
-  // 唯一环 1–4
+  // 唯一环 Type 1–4
   // ---------------------------------------------------------------------------
 
   /// 环长上限。六格、八格两档就够覆盖人看得出来的唯一环，
@@ -2012,7 +2012,7 @@ class AdvancedTechniques {
   /// 底数的个数分毫不差，盘外看不出任何差别——于是解不唯一。
   ///
   /// 搜索规模是写死的：底数对 36 种，环长不超过 [_loopMaxCells]，
-  /// 多余候选一超过两格就砍掉分支（四型里最宽的类型 2 也只用得上两格），
+  /// 多余候选一超过两格就砍掉分支（四型里最宽的 Type 2 也只用得上两格），
   /// 再加一条 [_loopVisitBudget] 的访问上限兜底——每个起点各发一份，
   /// 谁也占不到谁的。
   /// 交替走法本身还自带一层强剪枝：横着走用掉的行、竖着走用掉的列都不许重复，
@@ -2173,7 +2173,7 @@ class AdvancedTechniques {
 
   static SudokuHint? findUniqueLoopType1(SudokuBoard board) {
     for (final read in _uniqueLoopReads(board)) {
-      final hint = _deadlyType1(board, read, '唯一环 1', '唯一环');
+      final hint = _deadlyType1(board, read, '唯一环 Type 1', '唯一环');
       if (hint != null) return hint;
     }
     return null;
@@ -2181,7 +2181,7 @@ class AdvancedTechniques {
 
   static SudokuHint? findUniqueLoopType2(SudokuBoard board) {
     for (final read in _uniqueLoopReads(board)) {
-      final hint = _deadlyType2(board, read, '唯一环 2', '唯一环');
+      final hint = _deadlyType2(board, read, '唯一环 Type 2', '唯一环');
       if (hint != null) return hint;
     }
     return null;
@@ -2189,7 +2189,7 @@ class AdvancedTechniques {
 
   static SudokuHint? findUniqueLoopType3(SudokuBoard board) {
     for (final read in _uniqueLoopReads(board)) {
-      final hint = _deadlyType3(board, read, '唯一环 3', '唯一环');
+      final hint = _deadlyType3(board, read, '唯一环 Type 3', '唯一环');
       if (hint != null) return hint;
     }
     return null;
@@ -2197,14 +2197,14 @@ class AdvancedTechniques {
 
   static SudokuHint? findUniqueLoopType4(SudokuBoard board) {
     for (final read in _uniqueLoopReads(board)) {
-      final hint = _deadlyType4(board, read, '唯一环 4', '唯一环');
+      final hint = _deadlyType4(board, read, '唯一环 Type 4', '唯一环');
       if (hint != null) return hint;
     }
     return null;
   }
 
   // ---------------------------------------------------------------------------
-  // 探长（Borescoper's Deadly Pattern，三数）
+  // 探长致命结构（Borescoper's Deadly Pattern，三数）
   // ---------------------------------------------------------------------------
 
   /// 「结构格只填底数」的这一种填法 [f] 能不能换成另一种。
@@ -2246,9 +2246,9 @@ class AdvancedTechniques {
 
   /// 这组格子当真是致命结构吗：每一种「只填底数」的填法都换得掉，而且至少有一种。
   ///
-  /// 不靠任何家族专属的图形常识，只数房屋——所以同一段代码对探长、矩形、
+  /// 不靠任何家族专属的图形常识，只数房屋——所以同一段代码对探长致命结构、矩形、
   /// 环都成立。有一种填法换不掉，「至少一个多余候选为真」就不成立，
-  /// 类型 1–4 也就一条都不能报。
+  /// Type 1–4 也就一条都不能报。
   static bool _deadlyByExchange(
     List<Set<int>> allowed,
     List<List<int>> cellHouses,
@@ -2282,7 +2282,7 @@ class AdvancedTechniques {
     return any && ok;
   }
 
-  /// 三数探长的全部几何。
+  /// 三数探长致命结构的全部几何。
   ///
   /// 按 kazusa《三数探长致命结构的基本推理》：一个宫里两行两列交出四格、
   /// 去掉一角剩三格（直角），直角那两行各伸出一格落到宫外同一列，
@@ -2329,7 +2329,7 @@ class AdvancedTechniques {
 
   /// 一副七格几何上的全部读法。
   ///
-  /// 类型 1–4 里最宽的也只用得上两个多余格，所以七格里至少五格的候选要落在
+  /// Type 1–4 里最宽的也只用得上两个多余格，所以七格里至少五格的候选要落在
   /// 三个底数里；反过来说，底数只能是某五格候选的并集，而且那个并集正好三个数。
   /// 这一步用位掩码把 128 个子集扫一遍就完了，绝大多数几何在这里就被剪掉，
   /// 剩下的才值得跑一遍致命性复核。
@@ -2404,17 +2404,17 @@ class AdvancedTechniques {
     }
   }
 
-  /// 探长：七格三数的致命结构，用法完全照搬唯一矩形 1–4。
+  /// 探长致命结构：七格三数的致命结构，用法完全照搬唯一矩形 Type 1–4。
   ///
-  /// 目录里只有「探长」一条名字，所以四型合成一个报法，内部按
-  /// 类型 1、2、4、3 的老顺序试——更好认的先出面。
+  /// 目录里只有「探长致命结构」一条名字，所以四型合成一个报法，内部按
+  /// Type 1、2、4、3 的老顺序试——更好认的先出面。
   static SudokuHint? findBorescoper(SudokuBoard board) {
     final reads = _borescoperReads(board).toList();
     if (reads.isEmpty) return null;
     const makers = [_deadlyType1, _deadlyType2, _deadlyType4, _deadlyType3];
     for (final make in makers) {
       for (final read in reads) {
-        final hint = make(board, read, '探长', '探长致命结构');
+        final hint = make(board, read, '探长致命结构', '探长致命结构');
         if (hint != null) return hint;
       }
     }
@@ -2422,16 +2422,16 @@ class AdvancedTechniques {
   }
 
   // ---------------------------------------------------------------------------
-  // 淑芬（Qiu's Deadly Pattern / QDP，类型 1）
+  // 淑芬致命结构（Qiu's Deadly Pattern / QDP，Type 1）
   // ---------------------------------------------------------------------------
 
-  /// 淑芬类型 1：两条同带整线，加上线外同宫同交叉线的两格。
+  /// 淑芬致命结构 Type 1：两条同带整线，加上线外同宫同交叉线的两格。
   ///
   /// 搜索边界固定：横竖两向 × 3 个带 × 每带 3 对线 × 6 条带外交叉线
   /// × 3 个交点宫 × 宫内 3 对交叉线。每副几何只从线外两格的候选并集里
   /// 取 2–4 个底数；空盘上线外格都有 9 个候选，会在组合前直接剪掉。
   ///
-  /// 这里只报类型 1：线外两格恰好一格带非底数候选，删除那格上的全部底数。
+  /// 这里只报 Type 1：线外两格恰好一格带非底数候选，删除那格上的全部底数。
   /// 不调用求解器，也不读取答案。
   static SudokuHint? findQiu(SudokuBoard board) {
     // 同一盘面上常能读出好几副几何（教学盘上 r6 那对线外格会先撞上
@@ -2488,7 +2488,7 @@ class AdvancedTechniques {
     final cands1 = board.getCandidates(c1[0], c1[1]);
     final cands2 = board.getCandidates(c2[0], c2[1]);
     if (cands1.isEmpty || cands2.isEmpty) return null;
-    // 类型 1 至少有一格完全落在 2–4 个底数里；两格都超过四候选时不可能。
+    // Type 1 至少有一格完全落在 2–4 个底数里；两格都超过四候选时不可能。
     if (cands1.length > 4 && cands2.length > 4) return null;
 
     final intersections = <List<int>>[
@@ -2517,7 +2517,7 @@ class AdvancedTechniques {
 
     final pool = ({...cands1, ...cands2}.toList()..sort());
     // 从大到小取底数：{1,2,3,8} 成立时，它的真子集 {1,3} 也会过关，
-    // 从小到大搜会先报子集、把完整的四数淑芬抢走。
+    // 从小到大搜会先报子集、把完整的四数淑芬致命结构抢走。
     for (var size = pool.length < 4 ? pool.length : 4; size >= 2; size--) {
       for (final digits in _combinations(pool, size)) {
         final base = digits.toSet();
@@ -2607,7 +2607,7 @@ class AdvancedTechniques {
         }
 
         return SudokuHint.elimination(
-          technique: '淑芬',
+          technique: '淑芬致命结构',
           explanation: '题目保证唯一解。'
               '${horizontal ? rowsList(lines) : colsList(lines)} 是同一个大'
               '${horizontal ? "行" : "列"}里的两条整线，取线上全部空格；'
@@ -2720,7 +2720,7 @@ class AdvancedTechniques {
     final usedHouse = <int>{};
 
     /// committing 一条边房屋：封住它圈外的落点，同时把「看得见全部守卫」
-    /// 的候选落点集收窄。收窄到空就说明这一支再往下走也删不出东西。
+    /// 的候选落点集收窄。收窄到空就说明这一种情况再往下走也删不出东西。
     List<int>? commit(int h, int a, int b, List<int> visible) {
       final newGuards = <int>[];
       for (final i in houseSpots[h]) {
@@ -2856,11 +2856,11 @@ class AdvancedTechniques {
     return SudokuHint.elimination(
       technique: '死环',
       explanation:
-          '盯数字 $digit。${cellsList(cycle)} 首尾连成一个 ${cycle.length} 格的奇数圈，'
+          '观察数字 $digit。${cellsList(cycle)} 首尾连成一个 ${cycle.length} 格的奇数圈，'
           '相邻两格分别同处 ${houses.map(_houseLabel).join('、')}，'
-          '这几条房屋互不相同，而且每条只占了圈上两格。'
-          '这些房屋里圈外还剩的 $digit 是 ${cellsList(guards)}，叫守卫。'
-          '先把守卫全假设为假：每条边的房屋里 $digit 就只剩圈上两格，条条都成了真强链，'
+          '这几个区域互不相同，而且每个区域只占圈上两格。'
+          '这些区域里圈外还剩的 $digit 是 ${cellsList(guards)}，叫守卫。'
+          '先把守卫全假设为假：每条边所在区域里 $digit 就只剩圈上两格，每条边都成了真强链，'
           '沿圈真假交替绕回起点时奇偶对不上，矛盾。'
           '所以守卫里至少有一个为真——'
           '同时看得见 ${cellsList(guards)} 的位置都放不下 $digit。'
@@ -2906,11 +2906,11 @@ class AdvancedTechniques {
   /// * 毛刺为假 → 剩下的 N 个数字被 N 格锁死，这条房屋里别处的这些数字都能删；
   /// * 毛刺为真 → 那一格填掉毛刺，顺着唯余摒除往下推。
   ///
-  /// 只有两支都删掉的候选才算结论。甲支单删的那一串不能报——
-  /// 乙支里它可能好端端地活着。
+  /// 只有两种情况都删掉的候选才算结论。情况一单删的那一串不能报——
+  /// 情况二里它可能好端端地活着。
   static SudokuHint? findBurredSubset(SudokuBoard board) {
-    // 两格的「数组」是一个双值格加一个三值格，甲支就是现成的裸对，
-    // 乙支不过是把那一格填下去看一眼——那是裸对加短链，不是毛刺数组。
+    // 两格的「数组」是一个双值格加一个三值格，情况一就是现成的裸对，
+    // 情况二不过是把那一格填下去看一眼——那是裸对加短链，不是毛刺数组。
     // 报它只会把浅技巧换个难名字，所以从三格起。
     for (var size = 3; size <= 5; size++) {
       for (var house = 0; house < 27; house++) {
@@ -2988,8 +2988,8 @@ class AdvancedTechniques {
 
       final probe = board.copy();
       probe.set(owner[0], owner[1], burr);
-      // 毛刺为真那一支就是「填下去，顺着唯余摒除推到推不动为止」，
-      // 不再往前假设第二步——所以这一支里没有回溯。
+      // 毛刺为真那一种情况就是「填下去，顺着唯余摒除推到推不动为止」，
+      // 不再往前假设第二步——所以这一种情况里没有回溯。
       final replay = _propagateSingles(probe);
       // 当场矛盾说明毛刺本身就能删，那是 Nishio 的活，不按毛刺数组讲。
       if (replay.contradiction != null) continue;
@@ -3016,12 +3016,12 @@ class AdvancedTechniques {
             '${_houseLabel(house)} 上的 ${cellsList(cells)} 一共 ${cells.length} 格，'
             '候选并集是 ${(union.toList()..sort()).join('、')} 共 ${union.length} 个数字，'
             '多出来的 $burr 只落在 ${cellRef(owner[0], owner[1])} 上，这一枚就是毛刺。'
-            '把它当成推理节点分两支看：'
+            '把它当成推理节点分成两种情况看：'
             '毛刺为假时，${cellsList(cells)} 就是锁住 $baseText 的显性数组，'
             '${_houseLabel(house)} 里别处的这些数字全删；'
             '毛刺为真时，${cellRef(owner[0], owner[1])} 填 $burr，'
             '顺着唯余摒除往下推。'
-            '两支都删掉的是 ${_elimsText(both)}，这才是站得住的结论。'
+            '两种情况都删掉的是 ${_elimsText(both)}，这才是站得住的结论。'
             '${onlyA.isEmpty ? '' : '（${_elimsText(onlyA)} 只有前一支删得掉，'
                 '后一支里还活着，不能算进来。）'}',
         eliminations: both,
@@ -5364,7 +5364,7 @@ class AdvancedTechniques {
     return true;
   }
 
-  /// BUG 类型 2：两个例外格多出的是同一个数字。
+  /// BUG Type 2：两个例外格多出的是同一个数字。
   ///
   /// 两个多余候选不能同时为假，否则盘面退回死盘、解数成偶数，和唯一解冲突。
   /// 这一档多出来的又是同一个数字，所以它至少落在两个例外格之一，
@@ -5393,10 +5393,10 @@ class AdvancedTechniques {
     }
     if (elims.isEmpty) return null;
     return SudokuHint.elimination(
-      technique: 'BUG 类型 2',
+      technique: 'BUG Type 2',
       explanation: '题目保证唯一解。除了 ${cellsList(owners)}，'
           '盘上每个空格都只剩两个候选，而且把这两格多出来的 $digit 拿掉之后，'
-          '每个房屋里每个未填数字都恰好出现两次——那就是一张双值死盘，解的个数会是偶数。'
+          '每个区域里每个未填数字都恰好出现两次——那就是一张双值死盘，解的个数会是偶数。'
           '所以 $digit 至少在这两格之一为真，同时看得见它们的位置都能删 $digit。',
       eliminations: elims,
       patternCells: [
@@ -5417,14 +5417,14 @@ class AdvancedTechniques {
     );
   }
 
-  /// BUG 类型 3：两个例外格落在同一条房屋里，各多出一个不同的数字。
+  /// BUG Type 3：两个例外格落在同一条房屋里，各多出一个不同的数字。
   ///
-  /// 起点和类型 2、4 是同一条：把两个多余候选拿掉之后盘面满足完整的死盘奇偶条件，
+  /// 起点和 Type 2、4 是同一条：把两个多余候选拿掉之后盘面满足完整的死盘奇偶条件，
   /// 解数为偶数，而题目保证唯一解，所以这两个多余候选至少一个为真。
   /// 于是这两格合起来只顶一格用，候选就是那两个额外数字——
   /// 把这个虚拟格和同房屋其它格子配成数组，再按数组规则删。
   ///
-  /// 虚拟格和矩形族的类型 3 是同一套 [_virtualSubsetRead]：
+  /// 虚拟格和矩形族的 Type 3 是同一套 [_virtualSubsetRead]：
   /// 都是「这两格里至少有一格要跳出底数」，只是死盘的底数是各格自己那一对。
   /// 也正因为这样，两个例外格自己一个都不能删——不知道是哪一格跳出去，
   /// 拆开删就把完整性约束当成裸对用了。
@@ -5437,7 +5437,7 @@ class AdvancedTechniques {
   }
 
   static SudokuHint? _bugType3Hint(SudokuBoard board, _GraveExceptions grave) {
-    // 多出来的是同一个数字时虚拟格只剩一个候选，那一手归类型 2，不必绕数组。
+    // 多出来的是同一个数字时虚拟格只剩一个候选，那一手归 Type 2，不必绕数组。
     if (grave.extras[0] == grave.extras[1]) return null;
     final owners = grave.owners;
     final virtual = {grave.extras[0], grave.extras[1]};
@@ -5459,12 +5459,12 @@ class AdvancedTechniques {
       final onOwner =
           sub.elims.any((e) => ownerKeys.contains('${e.row},${e.col}'));
       return SudokuHint.elimination(
-        technique: 'BUG 类型 3',
+        technique: 'BUG Type 3',
         explanation: '题目保证唯一解。除了 ${cellsList(owners)}，'
             '盘上每个空格都只剩两个候选；把 '
             '${candRef(owners[0][0], owners[0][1], grave.extras[0])}、'
             '${candRef(owners[1][0], owners[1][1], grave.extras[1])} '
-            '拿掉之后每个房屋里每个未填数字都恰好出现两次，是一张双值死盘，'
+            '拿掉之后每个区域里每个未填数字都恰好出现两次，是一张双值死盘，'
             '所以这两个多余候选至少一个为真。'
             '把它们合成一个候选为 ${grave.extras[0]}、${grave.extras[1]} 的虚拟格，'
             '这个虚拟格只顶一格用；'
@@ -5474,7 +5474,7 @@ class AdvancedTechniques {
             '${onOwner ? '数组锁住的 ${outside.join('、')} '
                 '不在虚拟格里，${cellsList(owners)} 自己也填不了——'
                 '哪一格填了它，多余候选就得靠另一格兑现，'
-                '这条房屋里就有 ${size + 1} 个格子去占 $size 个数字，占不下——'
+                '这个区域里就有 ${size + 1} 个格子去占 $size 个数字，占不下——'
                 '所以这两格上的 ${outside.join('、')} 一并删去。' : ''}',
         eliminations: sub.elims,
         patternCells: [
@@ -5524,7 +5524,7 @@ class AdvancedTechniques {
     return null;
   }
 
-  /// BUG 类型 4：两个例外格落在同一条房屋里，共有的某个底数在这条房屋里只剩这两格。
+  /// BUG Type 4：两个例外格落在同一条房屋里，共有的某个底数在这条房屋里只剩这两格。
   ///
   /// 多余候选不能同时为假；共有底数的强链又说它必落在两格之一。
   /// 若某格填了自己「另一个底数」，强链就把共有底数推给对面那格，
@@ -5532,8 +5532,8 @@ class AdvancedTechniques {
   /// 所以两个例外格的另一个底数都可以删。
   ///
   /// 这段推理只用到「两个多余候选至少一真」和那条强链，
-  /// 两格多出来的是不是同一个数字并不相干：多出同一个数字时类型 2 也成立，
-  /// 但两档删的不是同一批候选，所以这里不因为撞上类型 2 就收手。
+  /// 两格多出来的是不是同一个数字并不相干：多出同一个数字时 Type 2 也成立，
+  /// 但两档删的不是同一批候选，所以这里不因为撞上 Type 2 就收手。
   static SudokuHint? findBugType4(SudokuBoard board) {
     for (final grave in _graveReadings(board)) {
       final hint = _bugType4Hint(board, grave);
@@ -5574,12 +5574,12 @@ class AdvancedTechniques {
         if (elims.isEmpty) continue;
         final hl = _houseHighlight(house);
         return SudokuHint.elimination(
-          technique: 'BUG 类型 4',
+          technique: 'BUG Type 4',
           explanation: '题目保证唯一解。除了 ${cellsList(owners)}，'
               '盘上每个空格都只剩两个候选；把 '
               '${candRef(owners[0][0], owners[0][1], grave.extras[0])}、'
               '${candRef(owners[1][0], owners[1][1], grave.extras[1])} '
-              '拿掉之后每个房屋里每个未填数字都恰好出现两次，是一张双值死盘，'
+              '拿掉之后每个区域里每个未填数字都恰好出现两次，是一张双值死盘，'
               '所以这两个多余候选至少一个为真。'
               '再看 ${_houseLabel(house)}：$lock 只剩 ${cellsList(owners)} 两格，是条强链。'
               '哪一格填了自己的另一个底数，$lock 就被推到对面，'
@@ -5971,9 +5971,9 @@ class AdvancedTechniques {
       explanation: '${cellsList(cells)} 一共 ${cells.length} 格，'
           '候选并集是 ${(union.toList()..sort()).join("、")}，'
           '正好 ${union.length} 个数字。'
-          '每个数字的结构落点都能被一条房屋装下：$houseText。'
+          '每个数字的结构落点都能被一个区域装下：$houseText。'
           '这三条以上的片换不成两条，所以不是 Sue de Coq；'
-          '格子也没有落在同一个房屋里，所以不是显性数组。'
+          '格子也没有落在同一个区域里，所以不是显性数组。'
           '${cells.length} 格配 ${cells.length} 片，rank 0，'
           '每片里结构之外的同名候选都删：${_elimsText(elims)}。',
       eliminations: elims,
@@ -6013,8 +6013,8 @@ class AdvancedTechniques {
   // WALS：弱待定数组（Almost Hidden Set）
   // ---------------------------------------------------------------------------
 
-  /// 一个房屋里 N 个数字恰好占 N+1 格。多出来那一格分两支：
-  /// 填的是这 N 个数字之一，还是不是。两支都删掉的候选才报。
+  /// 一个房屋里 N 个数字恰好占 N+1 格。多出来那一格分成两种情况：
+  /// 填的是这 N 个数字之一，还是不是。两种情况都删掉的候选才报。
   static SudokuHint? findWals(SudokuBoard board) {
     SudokuHint? best;
     var bestUnion = 0;
@@ -6135,9 +6135,9 @@ class AdvancedTechniques {
       technique: 'WALS',
       explanation: '${_houseLabel(house)} 上 $baseText 一共占 ${spots.length} 格：'
           '${cellsList(spots)}，比隐性数组多一格，是弱待定数组。'
-          '从 ${cellRef(split[0], split[1])} 分两支：'
+          '从 ${cellRef(split[0], split[1])} 分成两种情况：'
           '这一格填的是 $baseText 之一，或不是。'
-          '两支都删掉 ${_elimsText(both)}。',
+          '两种情况都删掉 ${_elimsText(both)}。',
       eliminations: both,
       patternCells: [
         ...hintCells(HintRole.pattern, spots),
@@ -6297,7 +6297,7 @@ class AdvancedTechniques {
                       '同一带另外两宫的对象格是 ${cellsList(targets)}（目标）'
                       '和 ${cellsList(companions)}（伴随）。'
                       '每个基格数字在交叉线伸出带外的 S 格上'
-                      '都被不超过两条房屋盖住，'
+                      '都被不超过两个区域覆盖，'
                       '两个目标格必须分别落到两个基格数字上，'
                       '于是删掉 ${_elimsText(elims)}。',
                   eliminations: elims,
@@ -6341,7 +6341,7 @@ class AdvancedTechniques {
     return board.getCandidates(cell[0], cell[1]).any(base.contains);
   }
 
-  /// 每个基格数字在 S 格上的出现（给定数也算）都能被至多两条房屋盖住。
+  /// 每个基格数字在 S 格上的出现（已知数也算）都能被至多两条房屋盖住。
   static bool _exocetCovered(
     SudokuBoard board,
     Set<int> base,
@@ -6517,7 +6517,7 @@ class AdvancedTechniques {
       explanation: '${cellsList(owners)} 差一步才构成$shape。'
           '挡住致命形的是 $extraText，这两个候选不能同时为假。'
           '把它们当成一个链节点往外接，'
-          '两支都走到矛盾的候选可以删：${_elimsText(elims)}。',
+          '两种情况都走到矛盾的候选可以删：${_elimsText(elims)}。',
       eliminations: elims,
       patternCells: [
         ...hintCells(HintRole.pattern, owners),
@@ -7019,7 +7019,7 @@ class AdvancedTechniques {
                   '${cellRef(near[0][0], near[0][1])} 直接看到 '
                   '${cellRef(row, col)}；假设 ${candRef(far[0], far[1], digit)}'
                   '${assumed.path.isEmpty ? '' : ' → ${_pathText(assumed.path)}'}，'
-                  '同样逼掉 ${candRef(row, col, digit)}。',
+                  '同样推出 ${candRef(row, col, digit)} 可删。',
               eliminations: [CandidateElim(row, col, digit)],
               patternCells: [
                 HintCell(near[0][0], near[0][1], HintRole.pattern),

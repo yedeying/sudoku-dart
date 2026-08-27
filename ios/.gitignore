@@ -12,6 +12,9 @@
 Icon?
 **/Pods/
 **/.symlinks/
+Podfile.lock
+Runner.xcodeproj/project.pbxproj
+Runner.xcworkspace/contents.xcworkspacedata
 profile
 xcuserdata
 **/.generated/

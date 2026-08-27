@@ -75,7 +75,7 @@ void main() {
       );
     });
 
-    test('类型 2 那种同数字互见不报待定', () {
+    test('Type 2 那种同数字互见不报待定', () {
       final board = SudokuBoard.fromString(_tech('ur2').examplePuzzle);
       expect(AdvancedTechniques.findPendingUr(board), isNull);
     });
@@ -210,7 +210,7 @@ void main() {
       expect(_cellKeys(hint, HintRole.extra), containsAll({'6,0', '8,3'}));
     });
 
-    test('类型 2 那种同数字互见不报待定', () {
+    test('Type 2 那种同数字互见不报待定', () {
       final board = SudokuBoard.fromString(_tech('bug_type2').examplePuzzle);
       expect(AdvancedTechniques.findPendingBug(board), isNull);
     });

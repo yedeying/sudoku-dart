@@ -81,7 +81,7 @@ void main() {
     for (final t in TechniqueCatalog.all) {
       final s = t.structure;
       if (s == null) continue;
-      // 结构声明里的 extras 是「多出来的候选」。类型 1 那种「多出来的必须为真」
+      // 结构声明里的 extras 是「多出来的候选」。Type 1 那种「多出来的必须为真」
       // 只在恰好一个 extra 时成立，这时它必须就是唯一解里的那个数字。
       if (s.conclusionTrue.isEmpty && s.conclusionFalse.isEmpty) continue;
       final bad = conclusionViolations(
@@ -197,7 +197,7 @@ void main() {
       });
 
       test('假设一个已经填好的格子会被抓住（空转分支）', () {
-        // 拿页面上一个给定数当假设：这一支填不进任何东西，什么都推不出来，
+        // 拿页面上一个已知数当假设：这一种情况填不进任何东西，什么都推不出来，
         // 老实现正是在这里空转——闭包先把格子填好，assign 直接返回。
         final board = SudokuBoard.fromString(page.examplePuzzle);
         CandidateRef? filled;
@@ -214,7 +214,7 @@ void main() {
             page.examplePuzzle,
             tweak(extras: [...real.extras, filled!]),
           ).join('\n'),
-          contains('已经填好了，这一支是空的'),
+          contains('已经填好了，这一种情况是空的'),
         );
       });
 
@@ -313,12 +313,12 @@ void main() {
       List<CellRef> ownersOf(TeachingStructure s) =>
           [for (final e in s.extras) CellRef(e.row, e.col)];
 
-      group('类型 2', () {
+      group('Type 2', () {
         final page = byId['bug_type2']!;
         final s = page.structure!;
 
         test('删到只看得见一个例外格的位置上会被抓住', () {
-          // 类型 2 的依据是「这个数字至少落在例外格之一」，
+          // Type 2 的依据是「这个数字至少落在例外格之一」，
           // 所以只有同时看得见全部例外格的位置才删得动。
           final board = SudokuBoard.fromString(page.examplePuzzle);
           final owners = ownersOf(s);
@@ -356,8 +356,8 @@ void main() {
           );
         });
 
-        test('例外候选不是同一个数字却按类型 2 讲会被抓住', () {
-          // 类型 3 那张盘面的两个例外候选是 2 和 3，共同可见处根本无从谈起。
+        test('例外候选不是同一个数字却按 Type 2 讲会被抓住', () {
+          // Type 3 那张盘面的两个例外候选是 2 和 3，共同可见处根本无从谈起。
           final other = byId['bug_type3']!;
           expect(
             checkGrave(
@@ -369,7 +369,7 @@ void main() {
         });
       });
 
-      group('类型 3', () {
+      group('Type 3', () {
         final page = byId['bug_type3']!;
         final s = page.structure!;
 
@@ -442,12 +442,12 @@ void main() {
         });
       });
 
-      group('类型 4', () {
+      group('Type 4', () {
         final page = byId['bug_type4']!;
         final s = page.structure!;
 
         test('强链数字写成例外格自己多出来的那个会被抓住', () {
-          // 类型 4 锁的必须是两个例外格共有的底数；
+          // Type 4 锁的必须是两个例外格共有的底数；
           // 多出来的那个候选恰恰不是底数，拿它当强链就全错了。
           expect(
             checkGrave(page, graveLike(s, lockDigit: s.extras.first.num)),
@@ -1078,7 +1078,7 @@ void main() {
       });
 
       test('只有一支删得掉的候选被当成结论会被抓住', () {
-        // 甲支把 4r7c7 删了，乙支却把它填成真，交集里没有它。
+        // 情况一把 4r7c7 删了，情况二却把它填成真，交集里没有它。
         expect(
           check(
             burr,
@@ -1104,7 +1104,7 @@ void main() {
       final s = wals.structure!;
 
       test('只有一支删得掉的成员候选被当成结论会被抓住', () {
-        // 甲支 r3c7=4 把 5r3c7 删了，乙支却把 r3c7 填成 5。
+        // 情况一 r3c7=4 把 5r3c7 删了，情况二却把 r3c7 填成 5。
         expect(
           check(
             wals,

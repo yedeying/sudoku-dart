@@ -33,7 +33,7 @@ void expectBurredSubset(
   expect(cells.length, greaterThanOrEqualTo(2), reason: '毛刺数组至少两格');
   final union = <int>{};
   for (final c in cells) {
-    expect(board.get(c[0], c[1]), 0, reason: '给定数不能算进数组');
+    expect(board.get(c[0], c[1]), 0, reason: '已知数不能算进数组');
     final cands = board.getCandidates(c[0], c[1]);
     expect(cands.length, greaterThanOrEqualTo(2), reason: '单候选格是唯余法');
     union.addAll(cands);
@@ -88,14 +88,14 @@ void main() {
       expect(hint.highlightRows, contains(6), reason: '数组所在的那条房屋要亮出来');
     });
 
-    test('甲支单独删掉的候选不算结论，只报两支的交集', () {
+    test('情况一单独删掉的候选不算结论，只报两种情况的交集', () {
       final puzzle = _tech('burr_array').examplePuzzle;
       final board = SudokuBoard.fromString(puzzle);
       final hint = AdvancedTechniques.findBurredSubset(board)!;
       expect(elimKeys(hint), isNot(contains('6,6,4')),
-          reason: '4r7c7 只在「毛刺为假」那一支里死，另一支没删到，报它就是错的');
+          reason: '4r7c7 只在「毛刺为假」那一种情况里死，另一种情况没删到，报它就是错的');
       for (final e in hint.eliminations) {
-        // 毛刺为真那一支：把毛刺填下去顺着唯余摒除推，这几个必须真的没了。
+        // 毛刺为真那一种情况：把毛刺填下去顺着唯余摒除推，这几个必须真的没了。
         final probe = SudokuBoard.fromString(puzzle);
         probe.set(6, 7, 7);
         var moved = true;
@@ -117,7 +117,7 @@ void main() {
               (probe.get(e.row, e.col) == 0 &&
                   probe.getCandidates(e.row, e.col).contains(e.num)),
           isFalse,
-          reason: '${e.num}r${e.row + 1}c${e.col + 1} 在「毛刺为真」那一支里没死，不能删',
+          reason: '${e.num}r${e.row + 1}c${e.col + 1} 在「毛刺为真」那一种情况里没死，不能删',
         );
       }
     });
@@ -182,7 +182,7 @@ void main() {
       final order = SudokuSolver.hintSearchOrder;
       expect(order, contains('毛刺数组'));
       expect(order.indexOf('死环'), lessThan(order.indexOf('毛刺数组')));
-      // 乙支推到推不动为止，力度同强制链，所以和 Kraken 同档、排在它之后。
+      // 情况二推到推不动为止，力度同强制链，所以和 Kraken 同档、排在它之后。
       // 按 9.4 排到 ALS-XZ 前面时它会把后面三种深技巧该出面的局面全抢走。
       expect(order.indexOf('Kraken Fish'), lessThan(order.indexOf('毛刺数组')));
       expect(DifficultyAnalyzer.techniqueScores, containsPair('毛刺数组', 97));
