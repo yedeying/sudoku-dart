@@ -7450,13 +7450,6 @@ class AdvancedTechniques {
     return null;
   }
 
-  static MarkupArrow _strong(int r1, int c1, int r2, int c2, int digit) =>
-      MarkupArrow(
-        from: CandidateRef(r1, c1, digit),
-        to: CandidateRef(r2, c2, digit),
-        kind: ArrowKind.strong,
-      );
-
   static String _pathText(List<List<int>> path) =>
       path.map((step) => candRef(step[0], step[1], step[2])).join(' → ');
 

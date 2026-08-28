@@ -59,12 +59,6 @@ const _nishioLegend = [
 
 /// 链类通用标记：起点涂 start（绿），终点涂 end（黄），中继格涂 node（蓝），
 /// 被删除候选所在格涂 elimCell（浅黄）、候选本身涂 elimCand（红）。
-Color _cellRole(List<int> start, List<int> end, int r, int c) {
-  if (r == start[0] && c == start[1]) return TeachingColors.start;
-  if (r == end[0] && c == end[1]) return TeachingColors.end;
-  return TeachingColors.node;
-}
-
 BoardMarkup _chainMarkup({
   required List<int> start,
   required List<int> end,
