@@ -144,6 +144,9 @@ class AppTheme {
         space: 1,
         thickness: 1,
       ),
+      tooltipTheme: const TooltipThemeData(
+        preferBelow: false,
+      ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(

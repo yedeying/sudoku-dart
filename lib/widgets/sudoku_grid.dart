@@ -11,6 +11,7 @@ class SudokuGrid extends StatelessWidget {
   final Function(int row, int col) onCellTap;
   final void Function(int row, int col, int num)? onCandidateTap;
   final Set<int> conflictCells;
+  final Set<CandidateRef> conflictCandidates;
   final bool showCandidates;
   final BoardMarkup? markup;
   final bool readOnly;
@@ -26,6 +27,7 @@ class SudokuGrid extends StatelessWidget {
     required this.onCellTap,
     this.onCandidateTap,
     this.conflictCells = const {},
+    this.conflictCandidates = const {},
     this.showCandidates = false,
     this.markup,
     this.readOnly = false,
@@ -164,10 +166,10 @@ class SudokuGrid extends StatelessWidget {
                         ? (markWash.computeLuminance() > 0.5
                             ? Colors.black87
                             : Colors.white)
-                        : isInitial
-                            ? palette.givenDigit
-                            : hasConflict
-                                ? palette.conflictDigit
+                        : hasConflict
+                            ? palette.conflictDigit
+                            : isInitial
+                                ? palette.givenDigit
                                 : palette.userDigit,
                   ),
                 ),
@@ -216,6 +218,7 @@ class SudokuGrid extends StatelessWidget {
           final dimmed = filter != null && num != filter;
           final sameDigit = sameDigitCandidates.contains(ref);
           final isAnchor = arrowAnchor == ref;
+          final inConflict = conflictCandidates.contains(ref);
           // 高亮一律用圆圈底色，数字只负责在底色上保持可读。
           final Color? chipColor = struck
               ? palette.candidateStruck
@@ -223,7 +226,9 @@ class SudokuGrid extends StatelessWidget {
                   ? palette.anchor
                   : cColor ?? (sameDigit ? palette.sameDigit : null);
           final Color glyphColor;
-          if (chipColor != null) {
+          if (inConflict) {
+            glyphColor = palette.conflictDigit;
+          } else if (chipColor != null) {
             glyphColor = chipColor.computeLuminance() > 0.5
                 ? Colors.black87
                 : Colors.white;

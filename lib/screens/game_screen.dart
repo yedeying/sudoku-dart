@@ -221,6 +221,8 @@ class _GameScreenState extends State<GameScreen> {
                                               gameState.showCandidates,
                                           conflictCells:
                                               gameState.getConflictCells(),
+                                          conflictCandidates: gameState
+                                              .candidateColorConflictRefs(),
                                           markup: gameState.displayMarkup,
                                           sameDigitCells: gameState
                                               .sameDigitHighlightCells(),

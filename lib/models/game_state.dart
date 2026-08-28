@@ -1091,7 +1091,7 @@ class GameState extends ChangeNotifier {
     return true;
   }
 
-  /// 当前所有冲突格子（用于高亮）
+  /// 当前所有冲突格子（成数互撞，或候选色看见了同宫成数）
   Set<int> getConflictCells() {
     final conflicts = <int>{};
     if (_board == null) return conflicts;
@@ -1102,7 +1102,43 @@ class GameState extends ChangeNotifier {
         }
       }
     }
+    conflicts.addAll(_candidateColorConflicts().cells);
     return conflicts;
+  }
+
+  /// 与成数共宫的上色候选，数字要标红。
+  Set<CandidateRef> candidateColorConflictRefs() =>
+      _candidateColorConflicts().refs;
+
+  ({Set<int> cells, Set<CandidateRef> refs}) _candidateColorConflicts() {
+    final cells = <int>{};
+    final refs = <CandidateRef>{};
+    if (_board == null) return (cells: cells, refs: refs);
+    for (final ref in userMarkup.candidateColors.keys) {
+      if (!_board!.visibleCandidates(ref.row, ref.col).contains(ref.num)) {
+        continue;
+      }
+      if (_board!.canPlace(ref.row, ref.col, ref.num)) continue;
+      refs.add(ref);
+      _addFilledPeers(ref.row, ref.col, ref.num, cells);
+    }
+    return (cells: cells, refs: refs);
+  }
+
+  void _addFilledPeers(int row, int col, int digit, Set<int> cells) {
+    for (int j = 0; j < 9; j++) {
+      if (_board!.get(row, j) == digit) cells.add(row * 9 + j);
+    }
+    for (int i = 0; i < 9; i++) {
+      if (_board!.get(i, col) == digit) cells.add(i * 9 + col);
+    }
+    final boxRow = (row ~/ 3) * 3;
+    final boxCol = (col ~/ 3) * 3;
+    for (int i = boxRow; i < boxRow + 3; i++) {
+      for (int j = boxCol; j < boxCol + 3; j++) {
+        if (_board!.get(i, j) == digit) cells.add(i * 9 + j);
+      }
+    }
   }
 
   bool hasConflict(int row, int col) {

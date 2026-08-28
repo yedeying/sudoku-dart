@@ -15,6 +15,11 @@ void main() {
         isNot(AppTheme.lightFor(rose).colorScheme.primary));
   });
 
+  test('tooltip 优先出现在控件上方，避免挡住棋盘和数字区', () {
+    expect(AppTheme.light().tooltipTheme.preferBelow, isFalse);
+    expect(AppTheme.dark().tooltipTheme.preferBelow, isFalse);
+  });
+
   test('强调色与标记色是同一套色相', () {
     expect(ThemeController.swatchFor(AccentId.blue), MarkupPalette.blue);
     expect(ThemeController.swatchFor(AccentId.gold), MarkupPalette.gold);
