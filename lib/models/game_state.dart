@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'sudoku_board.dart';
 import 'board_markup.dart';
+import 'puzzle_grade.dart';
+import '../services/current_game_store.dart';
 import '../services/puzzle_bank.dart';
 import '../services/sudoku_solver.dart';
 
@@ -21,7 +23,8 @@ class HintSession {
 /// 游戏状态管理
 class GameState extends ChangeNotifier {
   SudokuBoard? _board;
-  String _difficulty = 'medium';
+  String _difficulty = 'normal';
+  String? _puzzleId;
   DateTime? _startTime;
   int _elapsedSeconds = 0;
   int _hintsUsed = 0;
@@ -63,6 +66,12 @@ class GameState extends ChangeNotifier {
   // Getters
   SudokuBoard? get board => _board;
   String get difficulty => _difficulty;
+  String? get puzzleId => _puzzleId;
+  bool get hasResumableGame =>
+      _board != null &&
+      _isPlaying &&
+      !_justCompleted &&
+      !_board!.isComplete();
   int get elapsedSeconds => _elapsedSeconds;
   int get hintsUsed => _hintsUsed;
   bool get isPlaying => _isPlaying;
@@ -93,12 +102,41 @@ class GameState extends ChangeNotifier {
     return merged;
   }
 
-  /// 开始新游戏：从内置公开题库按难度随机抽一题。
+  /// 开始新游戏：从内置题库按难度随机抽一题，覆盖当前缓存。
   Future<void> startNewGame(String difficulty) async {
+    final record = await PuzzleBank.loadRecord(difficulty);
     _difficulty = difficulty;
-    _board = await PuzzleBank.load(difficulty);
+    _puzzleId = record.id;
+    _board = SudokuBoard.fromString(record.grid);
     _resetSessionState();
     notifyListeners();
+    await _persistCurrent();
+  }
+
+  /// 启动时恢复上一盘未完成的对局（含自定义）。没有就不做事。
+  Future<void> restoreCurrent() async {
+    try {
+      final data = await CurrentGameStore.read();
+      if (data == null) return;
+      final board = CurrentGameStore.restoreBoard(data);
+      if (board.isComplete()) {
+        await CurrentGameStore.clear();
+        return;
+      }
+      _board = board;
+      _difficulty = data['difficulty'] as String? ?? 'custom';
+      _puzzleId = data['id'] as String?;
+      _elapsedSeconds = data['elapsedSeconds'] as int? ?? 0;
+      _hintsUsed = data['hintsUsed'] as int? ?? 0;
+      _showCandidates = data['showCandidates'] as bool? ?? false;
+      _candidateMode = data['candidateMode'] as bool? ?? false;
+      _startTime = DateTime.now().subtract(Duration(seconds: _elapsedSeconds));
+      _isPlaying = true;
+      _justCompleted = false;
+      notifyListeners();
+    } catch (_) {
+      await CurrentGameStore.clear();
+    }
   }
 
   /// 加载示例游戏（用于快速测试）
@@ -106,16 +144,38 @@ class GameState extends ChangeNotifier {
     await startNewGame(difficulty);
   }
 
+  /// 教学页「用此盘对局」时切到对局页。
+  int? _requestedShellIndex;
+  int? get requestedShellIndex => _requestedShellIndex;
+
+  void clearShellRequest() {
+    _requestedShellIndex = null;
+  }
+
   /// 从字符串加载游戏（手动输入）
-  void loadCustomGame(String puzzleString) {
+  void loadCustomGame(
+    String puzzleString, {
+    bool showCandidates = false,
+    int? shellIndex,
+    String difficulty = 'custom',
+  }) {
     try {
       _board = SudokuBoard.fromString(puzzleString);
-      _difficulty = 'custom';
+      _difficulty = difficulty;
+      _puzzleId = difficulty == 'custom' ? 'custom' : _puzzleId ?? 'custom';
       _resetSessionState();
+      _showCandidates = showCandidates;
+      if (shellIndex != null) _requestedShellIndex = shellIndex;
       notifyListeners();
+      _persistCurrent();
     } catch (e) {
       debugPrint('加载自定义游戏失败: $e');
     }
+  }
+
+  /// 把教学页上的那张盘带进对局，并打开候选。
+  void loadTeachingBoard(String puzzleString) {
+    loadCustomGame(puzzleString, showCandidates: true, shellIndex: 0);
   }
 
   /// 新棋盘 = 全新一局：显示开关、笔记模式、标记全部回到初始状态。
@@ -186,6 +246,7 @@ class GameState extends ChangeNotifier {
       _board!.toggleUserCandidate(_selectedRow!, _selectedCol!, number);
       _showCandidates = true;
       notifyListeners();
+      _persistCurrent();
       return;
     }
 
@@ -206,6 +267,7 @@ class GameState extends ChangeNotifier {
       _isPlaying = false;
       _justCompleted = true;
     }
+    _persistCurrent();
 
     notifyListeners();
   }
@@ -232,6 +294,7 @@ class GameState extends ChangeNotifier {
 
     _board!.clear(_selectedRow!, _selectedCol!);
     notifyListeners();
+    _persistCurrent();
   }
 
   /// 获取提示（不增加提示计数，仅查看）。
@@ -375,6 +438,16 @@ class GameState extends ChangeNotifier {
     for (final cand in hint.patternCandidates) {
       m.candidateColors[cand.ref] = _hintCandidateColor(cand.role);
     }
+    for (final arrow in hint.links) {
+      m.candidateColors.putIfAbsent(
+        arrow.from,
+        () => _hintCandidateColor(HintRole.link),
+      );
+      m.candidateColors.putIfAbsent(
+        arrow.to,
+        () => _hintCandidateColor(HintRole.link),
+      );
+    }
     m.arrows.addAll(hint.links);
     return m;
   }
@@ -382,22 +455,37 @@ class GameState extends ChangeNotifier {
   /// 当前盘面 81 位数字串（空格为 0），用于分享残局。
   String exportPuzzle() => _board?.toStringRepresentation() ?? '';
 
-  /// 连续应用教学目录第 1 条（唯余），或第 1–2 条（唯余+摒除）。
-  /// 不计提示次数。返回填入的格子数。
-  int applySimpleFills({required bool includeHiddenSingle}) {
-    if (_board == null) return 0;
+  /// 连续应用基础技巧，不计提示次数。
+  ///
+  /// 默认只走唯余，[includeHiddenSingle] 再加上摒除。专业 / 大师 / 地狱 /
+  /// 自定义还会连走数对、数组、区块的删除，再继续填。
+  ({int filled, int eliminated}) applySimpleFills({
+    required bool includeHiddenSingle,
+  }) {
+    if (_board == null) return (filled: 0, eliminated: 0);
+    final allowed = <String>{'唯余法'};
+    if (includeHiddenSingle) allowed.add('摒除法（行/列/宫）');
+    final extended = PuzzleGrades.extendsQuickFill(_difficulty);
+    if (extended) {
+      allowed
+        ..add('摒除法（行/列/宫）')
+        ..addAll(PuzzleGrades.quickFillExtraTechniques);
+    }
     var filled = 0;
-    while (true) {
+    var eliminated = 0;
+    for (var i = 0; i < 200; i++) {
       final hint = SudokuSolver.getHint(_board!);
-      if (hint == null || hint.isElimination) break;
-      final naked = hint.technique == '唯余法';
-      final hidden = hint.technique == '摒除法（行/列/宫）';
-      if (!naked && !(includeHiddenSingle && hidden)) break;
+      if (hint == null) break;
+      if (!allowed.contains(hint.technique)) break;
       applyHint(hint, countHint: false);
-      filled++;
+      if (hint.isElimination) {
+        eliminated += hint.eliminations.length;
+      } else {
+        filled++;
+      }
     }
     clearHintMarkup();
-    return filled;
+    return (filled: filled, eliminated: eliminated);
   }
 
   /// 自动应用提示（填数或删除候选），默认计一次提示
@@ -430,6 +518,7 @@ class GameState extends ChangeNotifier {
       hintMarkup = null;
       hintSession = null;
       notifyListeners();
+      _persistCurrent();
       return;
     }
 
@@ -779,6 +868,7 @@ class GameState extends ChangeNotifier {
       _isPlaying = true;
     }
     notifyListeners();
+    _persistCurrent();
   }
 
   /// 重做
@@ -802,6 +892,7 @@ class GameState extends ChangeNotifier {
       _isPlaying = false;
       _justCompleted = true;
     }
+    _persistCurrent();
     notifyListeners();
   }
 
@@ -881,20 +972,7 @@ class GameState extends ChangeNotifier {
     score -= (_elapsedSeconds ~/ 60) * 10;
     score -= _hintsUsed * 50;
 
-    switch (_difficulty) {
-      case 'easy':
-        score += 100;
-        break;
-      case 'medium':
-        score += 300;
-        break;
-      case 'hard':
-        score += 500;
-        break;
-      case 'expert':
-        score += 800;
-        break;
-    }
+    score += PuzzleGrades.byId(_difficulty)?.scoreBonus ?? 200;
 
     return score.clamp(0, 2000);
   }
@@ -968,11 +1046,41 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> _persistQueue = Future<void>.value();
+
+  Future<void> persistForTest() => _persistCurrent();
+
+  Future<void> _persistCurrent() {
+    _persistQueue = _persistQueue.then((_) => _writeCurrent()).catchError((_) {});
+    return _persistQueue;
+  }
+
+  Future<void> _writeCurrent() async {
+    if (_board == null || !hasResumableGame) {
+      if (_justCompleted || (_board?.isComplete() ?? false)) {
+        await CurrentGameStore.clear();
+      }
+      return;
+    }
+    try {
+      await CurrentGameStore.write(CurrentGameStore.snapshot(
+        id: _puzzleId ?? 'custom',
+        difficulty: _difficulty,
+        board: _board!,
+        elapsedSeconds: _elapsedSeconds,
+        hintsUsed: _hintsUsed,
+        showCandidates: _showCandidates,
+        candidateMode: _candidateMode,
+      ));
+    } catch (_) {}
+  }
+
   void autoFillCandidates() {
     if (_board == null) return;
     _board!.fillAllCandidates();
     _showCandidates = true;
     notifyListeners();
+    _persistCurrent();
   }
 
   void clearAllCandidates() {
@@ -983,6 +1091,7 @@ class GameState extends ChangeNotifier {
       }
     }
     notifyListeners();
+    _persistCurrent();
   }
 }
 

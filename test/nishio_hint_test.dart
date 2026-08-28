@@ -34,7 +34,7 @@ void main() {
     for (var i = 0; i < 80; i++) {
       final hint = SudokuSolver.getHint(board);
       if (hint == null) break;
-      if (hint.technique == 'Nishio' || hint.technique == 'Grouped AIC') {
+      if (hint.technique == 'Nishio' || hint.technique == '区块链') {
         break;
       }
       _apply(board, hint);
@@ -47,7 +47,7 @@ void main() {
     sw.stop();
 
     expect(hint, isNotNull);
-    expect(['Nishio', 'Grouped AIC'].contains(hint!.technique), isTrue);
+    expect(['Nishio', '区块链'].contains(hint!.technique), isTrue);
     expect(hint.isElimination, isTrue);
     expect(hint.eliminations, isNotEmpty);
     expect(hint.eliminations.every((e) => _elimIsFalse(solved, e)), isTrue);

@@ -75,9 +75,9 @@ void main() {
         AdvancedTechniques.findFinnedJellyfish);
   });
 
-  test('Franken 鱼教学盘面', () {
+  test('宫内鱼教学盘面', () {
     _expectFinder(
-        'franken_fish', 'Franken 鱼', AdvancedTechniques.findFrankenFish);
+        'franken_fish', '宫内鱼', AdvancedTechniques.findFrankenFish);
   });
 
   test('鱼类教学盘面标出定义行或列', () {
@@ -93,7 +93,7 @@ void main() {
         '带鳍 Jellyfish',
         AdvancedTechniques.findFinnedJellyfish
       ),
-      ('franken_fish', 'Franken 鱼', AdvancedTechniques.findFrankenFish),
+      ('franken_fish', '宫内鱼', AdvancedTechniques.findFrankenFish),
       ('jellyfish', 'Jellyfish', AdvancedTechniques.findJellyfish),
     ];
     for (final item in cases) {
@@ -106,11 +106,11 @@ void main() {
 
   test('X-Wing 教学图淡亮定义行', () {
     final markup = _tech('xwing').exampleMarkup;
-    expect(markup.cellColors[BoardMarkup.cellKey(2, 0)], isNotNull);
+    expect(markup.cellColors[BoardMarkup.cellKey(1, 0)], isNotNull);
     expect(markup.cellColors[BoardMarkup.cellKey(6, 1)], isNotNull);
     expect(
-      markup.cellColors[BoardMarkup.cellKey(2, 4)],
-      isNot(markup.cellColors[BoardMarkup.cellKey(2, 0)]),
+      markup.cellColors[BoardMarkup.cellKey(1, 2)],
+      isNot(markup.cellColors[BoardMarkup.cellKey(1, 0)]),
     );
   });
 
@@ -145,10 +145,10 @@ void main() {
     _expectFinder('wxyz_wing', 'WXYZ-Wing', AdvancedTechniques.findWxyzWing);
   });
 
-  test('BUG+1 教学盘面填入奇数次候选', () {
+  test('全双值坟墓+1教学盘面填入奇数次候选', () {
     final hint = AdvancedTechniques.findBugPlusOne(_board('bug1'));
     expect(hint, isNotNull);
-    expect(hint!.technique, 'BUG+1');
+    expect(hint!.technique, '全双值坟墓+1');
     expect(hint.isElimination, isFalse);
     expect(hint.row, 3);
     expect(hint.col, 7);
@@ -181,58 +181,58 @@ void main() {
       '唯一矩形 Type 1',
       '不完整唯一矩形',
       '唯一矩形 Type 2',
-      'BUG+1',
+      '全双值坟墓+1',
       '可规避矩形',
       '带鳍 Swordfish',
       '唯一矩形 Type 4',
       '隐性唯一矩形',
-      'BUG Type 2',
+      '全双值坟墓 Type 2',
       '扩展矩形 Type 1',
       'XYZ-Wing',
       '带鳍 Jellyfish',
       '扩展矩形 Type 2',
       '唯一矩形 Type 3',
-      'BUG Type 4',
+      '全双值坟墓 Type 4',
       '扩展矩形 Type 4',
       '扩展矩形 Type 3',
       '唯一环 Type 1',
-      'BUG Type 3',
+      '全双值坟墓 Type 3',
       '唯一环 Type 2',
-      'Franken 鱼',
+      '宫内鱼',
       '唯一环 Type 4',
-      'Simple Coloring',
+      '染色法',
       '唯一环 Type 3',
       '探长致命结构',
       '淑芬致命结构',
       'W-Wing',
       'XY-Chain',
       'WXYZ-Wing',
-      'AIC 开链',
-      'Sue de Coq',
+      '强弱交替链',
+      '融合式待定数组',
       'Nice Loop / AIC 环',
-      'Grouped AIC',
+      '区块链',
       '死环',
       '待定唯一矩形',
       'ALS-XZ',
       'DDS',
       '待定扩展矩形',
       '待定唯一环',
-      '待定 BUG',
-      'Death Blossom',
-      'WALS',
+      '待定全双值坟墓',
+      '死亡绽放',
+      '弱待定数组',
       'Kraken Fish',
       // 毛刺数组「毛刺为真」那一种情况推到推不动为止，力度同强制链，所以和
       // Kraken 同档而排在它后面。按原先估的 9.4 排到 ALS-XZ 之前时，
       // 它会把这三种深技巧该出面的局面全抢走。
       '毛刺数组',
       '飞鱼导弹',
-      'Forcing Chain',
+      '分类强制链',
       '强制唯一矩形',
       '强制扩展矩形',
       '强制唯一环',
       'ALS-XY-Wing',
       'Nishio',
-      'Forcing Net',
+      '分类强制网',
     ];
 
     for (final name in expected) {
@@ -245,8 +245,8 @@ void main() {
     _expectFinder('xy_chain', 'XY-Chain', AdvancedTechniques.findXyChain);
   });
 
-  test('AIC 开链教学盘面', () {
-    _expectFinder('aic', 'AIC 开链', AdvancedTechniques.findAic);
+  test('强弱交替链教学盘面', () {
+    _expectFinder('aic', '强弱交替链', AdvancedTechniques.findAic);
   });
 
   test('Nice Loop 教学盘面', () {
@@ -254,10 +254,10 @@ void main() {
         'nice_loop', 'Nice Loop / AIC 环', AdvancedTechniques.findNiceLoop);
   });
 
-  test('XY-Chain / AIC 开链 / Nice Loop 标出整条强弱链', () {
+  test('XY-Chain / 强弱交替链 / Nice Loop 标出整条强弱链', () {
     final cases = <(String, String, SudokuHint? Function(SudokuBoard))>[
       ('xy_chain', 'XY-Chain', AdvancedTechniques.findXyChain),
-      ('aic', 'AIC 开链', AdvancedTechniques.findAic),
+      ('aic', '强弱交替链', AdvancedTechniques.findAic),
       ('nice_loop', 'Nice Loop / AIC 环', AdvancedTechniques.findNiceLoop),
     ];
     for (final (id, name, find) in cases) {
@@ -307,7 +307,7 @@ void main() {
     }
   });
 
-  test('Sue de Coq 标出交接格和两堆锁定集的候选', () {
+  test('融合式待定数组标出交接格和两堆锁定集的候选', () {
     final hint = AdvancedTechniques.findSueDeCoq(_board('sue_de_coq'));
     expect(hint, isNotNull);
     expect(
@@ -317,7 +317,7 @@ void main() {
     );
   });
 
-  test('Death Blossom 标出花心到花瓣的箭头', () {
+  test('死亡绽放标出花心到花瓣的箭头', () {
     final hint = AdvancedTechniques.findDeathBlossom(_board('death_blossom'));
     expect(hint, isNotNull);
     expect(hint!.links, isNotEmpty);
@@ -327,48 +327,40 @@ void main() {
     );
   });
 
-  test('Sue de Coq 教学盘面', () {
-    _expectFinder('sue_de_coq', 'Sue de Coq', AdvancedTechniques.findSueDeCoq);
+  test('融合式待定数组教学盘面', () {
+    _expectFinder('sue_de_coq', '融合式待定数组', AdvancedTechniques.findSueDeCoq);
   });
 
-  test('Death Blossom 教学盘面', () {
+  test('死亡绽放教学盘面', () {
     _expectFinder(
-        'death_blossom', 'Death Blossom', AdvancedTechniques.findDeathBlossom);
+        'death_blossom', '死亡绽放', AdvancedTechniques.findDeathBlossom);
   });
 
   test('Kraken Fish 教学盘面', () {
     _expectFinder('kraken', 'Kraken Fish', AdvancedTechniques.findKrakenFish);
   });
 
-  test('Kraken 标出假设推导链上的候选和箭头', () {
-    const puzzle =
-        '024610007006070402003824560000200800301060024002001000069002100240130600130006240';
-    final board = SudokuBoard.fromString(puzzle);
-    SudokuHint? hint;
-    for (var i = 0; i < 80; i++) {
-      hint = SudokuSolver.getHint(board);
-      if (hint == null) break;
-      if (hint.technique == 'Kraken Fish') break;
-      if (hint.isElimination) {
-        for (final e in hint.eliminations) {
-          board.eliminateCandidate(e.row, e.col, e.num);
-        }
-      } else {
-        board.set(hint.row, hint.col, hint.value);
-      }
-    }
+  test('Kraken 标出鳍、基线和推导链', () {
+    final hint = AdvancedTechniques.findKrakenFish(_board('kraken'));
     expect(hint, isNotNull);
     expect(hint!.technique, 'Kraken Fish');
+    _expectFishHouse(hint);
+    expect(
+      hint.patternCells.where((c) => c.role == HintRole.extra),
+      isNotEmpty,
+      reason: '必须标出鳍',
+    );
     expect(
       hint.patternCandidates.where((c) => c.role == HintRole.link),
       isNotEmpty,
-      reason: '推导过程应标在候选上，不能只洗格子',
+      reason: '鳍上的唯余应标在候选上，不能只洗格子',
     );
     expect(
       hint.links.where((a) => a.kind == ArrowKind.weak),
       isNotEmpty,
-      reason: '假设推出的每一步应有箭头',
+      reason: '鳍出发的每一步应有箭头',
     );
+    expect(hint.explanation, contains('鳍'));
     expect(hint.explanation, contains('→'));
   });
 
@@ -382,10 +374,10 @@ void main() {
     expect(hint.links, isNotEmpty);
   });
 
-  test('Forcing Chain 教学盘面推出公共填数', () {
+  test('分类强制链教学盘面推出公共填数', () {
     final hint = AdvancedTechniques.findForcingChain(_board('forcing_chain'));
     expect(hint, isNotNull);
-    expect(hint!.technique, 'Forcing Chain');
+    expect(hint!.technique, '分类强制链');
     expect(hint.isElimination, isFalse);
     expect(hint.value, inInclusiveRange(1, 9));
     expect(
@@ -395,10 +387,10 @@ void main() {
     expect(hint.links, isNotEmpty);
   });
 
-  test('Forcing Net 教学盘面推出公共填数', () {
+  test('分类强制网教学盘面推出公共填数', () {
     final hint = AdvancedTechniques.findForcingNet(_board('forcing_net'));
     expect(hint, isNotNull);
-    expect(hint!.technique, 'Forcing Net');
+    expect(hint!.technique, '分类强制网');
     expect(hint.row, 4);
     expect(hint.col, 2);
     expect(hint.value, 1);
@@ -409,14 +401,14 @@ void main() {
     expect(hint.links, isNotEmpty);
   });
 
-  test('有 XY-Chain 时 getHint 不先报 Grouped AIC / ALS', () {
+  test('有 XY-Chain 时 getHint 不先报 区块链 / ALS', () {
     final board = _board('xy_chain');
     final hint = AdvancedTechniques.findXyChain(board);
     expect(hint, isNotNull);
     final fromHint = SudokuSolver.getHint(board);
     expect(fromHint, isNotNull);
     expect(
-      const {'Grouped AIC', 'ALS-XZ', 'ALS-XY-Wing', 'Nishio'}
+      const {'区块链', 'ALS-XZ', 'ALS-XY-Wing', 'Nishio'}
           .contains(fromHint!.technique),
       isFalse,
       reason: '已有更浅的链/基础技巧时不该先甩重器，实际是 ${fromHint.technique}',

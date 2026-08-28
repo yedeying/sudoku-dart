@@ -181,14 +181,14 @@ List<String> linkHouseViolations(String puzzle, BoardMarkup markup) {
   return out;
 }
 
-/// 拿掉 [extras] 之后，盘面是不是一个真正的双值死盘（BUG）。
+/// 拿掉 [extras] 之后，盘面是不是一个真正的双值死盘（全双值坟墓）。
 ///
 /// 死盘的完整条件有两条，缺一不可：
 /// 1. 每个空格恰好剩两个候选；
 /// 2. 每个房屋里，每个还没填的数字恰好出现两次。
 ///
 /// 只满足第一条的盘面不是死盘——奇偶条件才是「解的个数为偶数」这个结论的来源，
-/// 也是 BUG+n「多出来的候选不能同时为假」的依据。
+/// 也是全双值坟墓+n「多出来的候选不能同时为假」的依据。
 List<String> bugParityViolations(
   String puzzle,
   Iterable<CandidateRef> extras,
@@ -1779,7 +1779,7 @@ int _keyCell(String key) {
 
 int _keyDigit(String key) => int.parse(key.split(',')[2]);
 
-/// rank 0 集合（DDS / MSLS）共用的那套核对。
+/// rank 0 集合（DDS / 网）共用的那套核对。
 ///
 /// 道理：每个结构格都要填一个数，而它填的那个数必须落在某条声明的链接上；
 /// 两个不同的格子不可能用同一条链接（同房屋同数字只能有一个）。
@@ -1896,7 +1896,7 @@ List<String> rankZeroViolations(
   if (sectors.length < 3) {
     out.add('$tag 只用到 ${sectors.map(houseName).toList()} '
         '这 ${sectors.length} 个区域，够不上「多区域」，'
-        '一两个区域的情形已经有显性/隐性数组和 Sue de Coq 讲过了');
+        '一两个区域的情形已经有显性/隐性数组和融合式待定数组讲过了');
   }
 
   final computed = <String>{};
@@ -1917,7 +1917,7 @@ List<String> rankZeroViolations(
 ///
 /// 一是每条链接只占一条房屋——于是「N 格锁 N 个数字」，这是 DDS 的招牌；
 /// 二是那些房屋换不成两条：只要存在两个房屋能把每个数字的结构格都装下，
-/// 这个图形骨子里就是 Sue de Coq（宫线交叉那一档），不该按「分布到三个以上区域」讲。
+/// 这个图形骨子里就是融合式待定数组（宫线交叉那一档），不该按「分布到三个以上区域」讲。
 List<String> ddsViolations(String puzzle, TeachingStructure s) {
   final out = rankZeroViolations(puzzle, s, tag: '分布式互斥数组');
   if (out.isNotEmpty) return out;
@@ -1925,7 +1925,7 @@ List<String> ddsViolations(String puzzle, TeachingStructure s) {
   for (final l in s.sectorLinks) {
     if (l.houses.length != 1) {
       out.add('数字 ${l.digit} 占了 ${l.houses.map(houseName).toList()} 两条房屋，'
-          'DDS 要求每个数字各占一条——占两条的是 MSLS');
+          'DDS 要求每个数字各占一条——占两条的是网');
     }
   }
   final digits = {for (final l in s.sectorLinks) l.digit};
@@ -1959,7 +1959,7 @@ List<String> ddsViolations(String puzzle, TeachingStructure s) {
       );
       if (fits) {
         out.add('${pair.map(houseName).toList()} 这两个房屋就能装下每个数字的结构格，'
-            '这不是分布到三个以上区域的 DDS，而是 Sue de Coq 那一档');
+            '这不是分布到三个以上区域的 DDS，而是融合式待定数组那一档');
         return out;
       }
     }
@@ -1967,27 +1967,27 @@ List<String> ddsViolations(String puzzle, TeachingStructure s) {
   return out;
 }
 
-/// 多区域锁定集（MSLS）就是 rank 0 的一般形。
+/// 网（MSLS）就是 rank 0 的一般形。
 ///
 /// 这一页要讲的正是「一个数字可以吃掉两条房屋」——那是 DDS 做不到的事。
 /// 所以每条链接都只占一条房屋时要报出来：那种图形应该按 DDS 讲，
-/// 拿它当 MSLS 的例子等于举了个反例。
+/// 拿它当网的例子等于举了个反例。
 List<String> mslsViolations(String puzzle, TeachingStructure s) {
   final out = rankZeroViolations(puzzle, s, tag: '多区域锁定集');
   if (out.isNotEmpty) return out;
   if (s.sectorLinks.every((l) => l.houses.length == 1)) {
     out.add('每个数字都只占一条房屋，这正好是 DDS，'
-        '当不了「一个数字吃两条房屋」的 MSLS 例子');
+        '当不了「一个数字吃两条房屋」的网例子');
   }
   final digits = {for (final l in s.sectorLinks) l.digit};
   if (digits.length >= s.cells.length) {
     out.add('${s.cells.length} 格对 ${digits.length} 个数字，'
-        'MSLS 的看点是数字个数少于格数、靠多占房屋补平');
+        '网的看点是数字个数少于格数、靠多占房屋补平');
   }
   return out;
 }
 
-/// 弱待定数组（AHS，隐性一侧的待定数组）。
+///弱待定数组（AHS，隐性一侧的待定数组）。
 ///
 /// 一个房屋里 N 个数字的落点合起来恰好 N+1 格，于是分成两种情况：
 /// * 那多出来的一格填的是这 N 个数字之一 → 它上面别的候选都得让位；

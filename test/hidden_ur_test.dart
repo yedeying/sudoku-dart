@@ -94,7 +94,7 @@ void main() {
     expect(order.indexOf('隐性唯一矩形'), lessThan(order.indexOf('XYZ-Wing')));
     expect(
       order.indexOf('隐性唯一矩形'),
-      lessThan(order.indexOf('Simple Coloring')),
+      lessThan(order.indexOf('染色法')),
     );
     expect(DifficultyAnalyzer.techniqueScores, containsPair('隐性唯一矩形', 58));
     expect(

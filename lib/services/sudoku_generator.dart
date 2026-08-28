@@ -26,13 +26,13 @@ class SudokuGenerator {
     // 根据空格数量粗略判断难度
     String difficulty;
     if (emptyCells <= 40) {
-      difficulty = 'easy';
+      difficulty = 'beginner';
     } else if (emptyCells <= 50) {
-      difficulty = 'medium';
+      difficulty = 'normal';
     } else if (emptyCells <= 55) {
-      difficulty = 'hard';
+      difficulty = 'advanced';
     } else {
-      difficulty = 'expert';
+      difficulty = 'professional';
     }
 
     return generate(difficulty);

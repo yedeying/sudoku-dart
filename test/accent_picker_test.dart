@@ -9,8 +9,11 @@ import 'package:sudoku_app/theme/theme_controller.dart';
 
 Future<void> _pumpHome(WidgetTester tester, ThemeController theme) async {
   await tester.pumpWidget(
-    ChangeNotifierProvider<ThemeController>.value(
-      value: theme,
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => GameState()),
+        ChangeNotifierProvider<ThemeController>.value(value: theme),
+      ],
       child: MaterialApp(
         theme: theme.light,
         home: const HomeScreen(),

@@ -15,8 +15,8 @@ final _houseFinders = <String, SudokuHint? Function(SudokuBoard)>{
   '扩展矩形 Type 4': AdvancedTechniques.findExtendedRectType4,
   '唯一环 Type 3': AdvancedTechniques.findUniqueLoopType3,
   '唯一环 Type 4': AdvancedTechniques.findUniqueLoopType4,
-  'BUG Type 3': AdvancedTechniques.findBugType3,
-  'BUG Type 4': AdvancedTechniques.findBugType4,
+  '全双值坟墓 Type 3': AdvancedTechniques.findBugType3,
+  '全双值坟墓 Type 4': AdvancedTechniques.findBugType4,
   '唯一矩形 Type 3': AdvancedTechniques.findUniqueRectangleType3,
   '唯一矩形 Type 4': AdvancedTechniques.findUniqueRectangleType4,
 };
@@ -52,7 +52,7 @@ void main() {
   test('虚拟格数组和底数锁定这一族，关键房屋一定标得出来', () {
     final seen = <String>{};
     final boxCases = <String>[];
-    for (final name in ['easy', 'medium', 'hard', 'expert']) {
+    for (final name in PuzzleBank.difficulties) {
       for (final puzzle in _bank(name)) {
         final board = SudokuBoard.fromString(puzzle);
         for (var step = 0; step < 200; step++) {

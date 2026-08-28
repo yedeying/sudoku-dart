@@ -101,16 +101,16 @@ void main() {
         }
         if (hint.technique == 'ALS-XZ' ||
             hint.technique == 'ALS-XY-Wing' ||
-            hint.technique == 'Grouped AIC' ||
+            hint.technique == '区块链' ||
             hint.technique == 'Nishio' ||
             hint.technique == 'XY-Chain' ||
-            hint.technique == 'AIC 开链' ||
+            hint.technique == '强弱交替链' ||
             hint.technique == 'Nice Loop / AIC 环' ||
-            hint.technique == 'Sue de Coq' ||
-            hint.technique == 'Death Blossom' ||
+            hint.technique == '融合式待定数组' ||
+            hint.technique == '死亡绽放' ||
             hint.technique == 'Kraken Fish' ||
-            hint.technique == 'Forcing Chain' ||
-            hint.technique == 'Forcing Net') {
+            hint.technique == '分类强制链' ||
+            hint.technique == '分类强制网') {
           break;
         }
         _apply(stalled, hint);
@@ -130,16 +130,16 @@ void main() {
         [
           'ALS-XZ',
           'ALS-XY-Wing',
-          'Grouped AIC',
+          '区块链',
           'Nishio',
           'XY-Chain',
-          'AIC 开链',
+          '强弱交替链',
           'Nice Loop / AIC 环',
-          'Sue de Coq',
-          'Death Blossom',
+          '融合式待定数组',
+          '死亡绽放',
           'Kraken Fish',
-          'Forcing Chain',
-          'Forcing Net',
+          '分类强制链',
+          '分类强制网',
         ].contains(hint!.technique),
         isTrue,
         reason: '应先报已接入的命名技巧',

@@ -1,3 +1,4 @@
+import '../models/puzzle_grade.dart';
 import '../models/sudoku_board.dart';
 import 'sudoku_solver.dart';
 
@@ -24,7 +25,7 @@ class DifficultyAnalyzer {
     '刺身鱼': 46,
     '带鳍 Swordfish': 55,
     '带鳍 Jellyfish': 62,
-    'Franken 鱼': 68,
+    '宫内鱼': 68,
     'XY-Wing': 50,
     'XYZ-Wing': 60,
     '唯一矩形 Type 1': 50,
@@ -33,13 +34,13 @@ class DifficultyAnalyzer {
     '唯一矩形 Type 3': 62,
     '唯一矩形 Type 4': 56,
     '隐性唯一矩形': 58,
-    'Simple Coloring': 70,
+    '染色法': 70,
     'W-Wing': 90,
     'WXYZ-Wing': 92,
-    'BUG+1': 54,
-    'BUG Type 2': 60,
-    'BUG Type 3': 66,
-    'BUG Type 4': 62,
+    '全双值坟墓+1': 54,
+    '全双值坟墓 Type 2': 60,
+    '全双值坟墓 Type 3': 66,
+    '全双值坟墓 Type 4': 62,
     '扩展矩形 Type 1': 60,
     '扩展矩形 Type 2': 62,
     '扩展矩形 Type 4': 63,
@@ -55,80 +56,57 @@ class DifficultyAnalyzer {
     '双线风筝': 36,
     '空矩形': 48,
     'XY-Chain': 91,
-    'AIC 开链': 92,
+    '强弱交替链': 92,
     'Nice Loop / AIC 环': 93,
-    'Sue de Coq': 92,
-    'Grouped AIC': 94,
+    '融合式待定数组': 92,
+    '区块链': 94,
     '死环': 94,
     '待定唯一矩形': 94,
     'ALS-XZ': 95,
     'DDS': 95,
     '待定扩展矩形': 95,
     '待定唯一环': 95,
-    '待定 BUG': 95,
+    '待定全双值坟墓': 95,
     'ALS-XY-Wing': 98,
-    'Death Blossom': 96,
-    'WALS': 96,
+    '死亡绽放': 96,
+    '弱待定数组': 96,
     'Kraken Fish': 97,
     // 「毛刺为真」那一种情况推到推不动为止，读起来是强制链的力度，不是数组的
     // 认形，所以和 Kraken 同档而排在它后面，不占 9.4。
     '毛刺数组': 97,
     '飞鱼导弹': 97,
     'Nishio': 99,
-    'Forcing Chain': 98,
+    '分类强制链': 98,
     '强制唯一矩形': 98,
     '强制扩展矩形': 98,
     '强制唯一环': 98,
-    'Forcing Net': 99,
+    '分类强制网': 99,
     '高级技巧': 100,
   };
 
-  /// 难度等级定义
-  static const Map<String, DifficultyLevel> difficultyLevels = {
-    'easy': DifficultyLevel(
-      name: '简单',
-      minScore: 0,
-      maxScore: 80,
-      requiredTechniques: ['唯余法'],
-      forbiddenTechniques: [
-        'X-Wing',
-        'Swordfish',
-        'XY-Wing',
-        'XYZ-Wing',
-        '高级技巧'
-      ],
-    ),
-    'medium': DifficultyLevel(
-      name: '中等',
-      minScore: 60,
-      maxScore: 200,
-      requiredTechniques: [], // 中等难度可以只用基础技巧但较多步骤
-      forbiddenTechniques: [
-        'X-Wing',
-        'Swordfish',
-        'XY-Wing',
-        'XYZ-Wing',
-        '高级技巧'
-      ],
-    ),
-    'hard': DifficultyLevel(
-      name: '困难',
-      minScore: 150,
-      maxScore: 400,
-      requiredTechniques: [], // 允许使用各种技巧
-      forbiddenTechniques: ['高级技巧'], // 但不能用回溯
-    ),
-    'expert': DifficultyLevel(
-      name: '专家',
-      minScore: 300,
-      maxScore: 10000,
-      requiredTechniques: [], // 专家级可以用任何技巧
-      forbiddenTechniques: [],
-    ),
+  /// 难度等级定义。分级只看路径上最高的那条技巧，不再用总分。
+  static final Map<String, DifficultyLevel> difficultyLevels = {
+    for (final g in PuzzleGrades.all)
+      g.id: DifficultyLevel(
+        name: g.title,
+        minScore: 0,
+        maxScore: 10000,
+        requiredTechniques: const [],
+        forbiddenTechniques: const [],
+      ),
   };
 
   /// 分析题目难度
   static DifficultyResult analyzeDifficulty(SudokuBoard board) {
+    if (SudokuSolver.countSolutions(board, limit: 2) != 1) {
+      return DifficultyResult(
+        score: 0,
+        level: 'invalid',
+        usedTechniques: {},
+        stepCount: 0,
+        maxTechniqueScore: 0,
+      );
+    }
     final trace = SudokuSolver.getLogicalSolveTrace(board);
     final steps = trace.steps;
 
@@ -159,9 +137,8 @@ class DifficultyAnalyzer {
       }
     }
 
-    // 根据分数判断难度等级
     String level = trace.completed
-        ? _determineLevel(totalScore, usedTechniques)
+        ? PuzzleGrades.gradeForTechniques(usedTechniques.keys).name
         : 'unsupported';
 
     return DifficultyResult(
@@ -173,55 +150,13 @@ class DifficultyAnalyzer {
     );
   }
 
-  /// 根据分数和使用的技巧判断难度等级
-  static String _determineLevel(int score, Map<String, int> usedTechniques) {
-    // 如果使用了回溯（高级技巧），至少是专家级
-    if (_hasAnyTechnique(usedTechniques, ['高级技巧'])) {
-      return 'expert';
+  /// 题目是否正好落在这一档：最高技巧属于该档，且逻辑技巧能解完。
+  static bool matchesGrade(DifficultyResult result, String targetDifficulty) {
+    if (targetDifficulty == 'custom') return true;
+    if (result.level == 'unsupported' || result.level == 'invalid') {
+      return false;
     }
-
-    // 检查是否使用了专家级技巧
-    if (_hasAnyTechnique(
-        usedTechniques, ['XY-Wing', 'XYZ-Wing', 'Swordfish'])) {
-      return 'expert';
-    }
-
-    // 检查是否使用了 X-Wing（困难级标志）
-    if (_hasAnyTechnique(usedTechniques, ['X-Wing'])) {
-      return 'hard';
-    }
-
-    // 检查是否使用了中级技巧
-    if (_hasAnyTechnique(
-      usedTechniques,
-      ['数对', '三数组', '四数组', '区块'],
-    )) {
-      return 'medium';
-    }
-
-    // 根据分数和步骤数判断
-    if (score >= 300) return 'expert';
-    if (score >= 150) return 'hard';
-    if (score >= 80) return 'medium';
-    return 'easy';
-  }
-
-  /// 检查是否使用了任何指定的技巧
-  static bool _hasAnyTechnique(
-      Map<String, int> usedTechniques, List<String> techniques) {
-    for (var technique in techniques) {
-      if (usedTechniques.containsKey(technique) &&
-          usedTechniques[technique]! > 0) {
-        return true;
-      }
-      // 也检查包含关键字的技巧
-      for (var key in usedTechniques.keys) {
-        if (key.contains(technique)) {
-          return true;
-        }
-      }
-    }
-    return false;
+    return result.level == targetDifficulty;
   }
 
   /// 验证题目是否符合指定难度
@@ -233,29 +168,7 @@ class DifficultyAnalyzer {
       return false;
     }
 
-    var level = difficultyLevels[targetDifficulty];
-    if (level == null) return false;
-
-    // 检查分数范围
-    if (result.score < level.minScore || result.score > level.maxScore) {
-      return false;
-    }
-
-    // 检查是否使用了要求的技巧
-    for (var requiredTech in level.requiredTechniques) {
-      if (!_hasAnyTechnique(result.usedTechniques, [requiredTech])) {
-        return false;
-      }
-    }
-
-    // 检查是否使用了禁止的技巧
-    for (var forbiddenTech in level.forbiddenTechniques) {
-      if (_hasAnyTechnique(result.usedTechniques, [forbiddenTech])) {
-        return false;
-      }
-    }
-
-    return true;
+    return matchesGrade(result, targetDifficulty);
   }
 
   /// 获取题目的详细报告
@@ -280,20 +193,9 @@ class DifficultyAnalyzer {
   }
 
   static String _getLevelName(String level) {
-    switch (level) {
-      case 'easy':
-        return '简单';
-      case 'medium':
-        return '中等';
-      case 'hard':
-        return '困难';
-      case 'expert':
-        return '专家';
-      case 'unsupported':
-        return '超出当前逻辑技巧';
-      default:
-        return '未知';
-    }
+    if (level == 'unsupported') return '超出当前逻辑技巧';
+    if (level == 'invalid') return '无效';
+    return PuzzleGrades.titleOf(level);
   }
 }
 

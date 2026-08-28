@@ -15,7 +15,7 @@ void _apply(SudokuBoard board, SudokuHint hint) {
 }
 
 void main() {
-  test('Grouped AIC 教学结构删除同时看见组和单格的候选', () {
+  test('区块链 教学结构删除同时看见组和单格的候选', () {
     final board = SudokuBoard.fromString(List.filled(81, '0').join());
     final keep = {
       for (final cell in [
@@ -40,7 +40,7 @@ void main() {
     final hint = AdvancedTechniques.findGroupedAic(board);
 
     expect(hint, isNotNull);
-    expect(hint!.technique, 'Grouped AIC');
+    expect(hint!.technique, '区块链');
     expect(hint.eliminations, isNotEmpty);
     expect(hint.eliminations.every((e) => e.num == 2), isTrue);
     expect(
@@ -49,7 +49,7 @@ void main() {
     );
   });
 
-  test('024610007 卡点下一步是 Grouped AIC 而不是 Nishio', () {
+  test('024610007 卡点下一步是 区块链 而不是 Nishio', () {
     const puzzle =
         '024610007006070402003824560000200800301060024002001000069002100240130600130006240';
     final solved = SudokuBoard.fromString(puzzle);
@@ -58,7 +58,7 @@ void main() {
     for (var i = 0; i < 80; i++) {
       final hint = SudokuSolver.getHint(board);
       if (hint == null) break;
-      if (hint.technique == 'Grouped AIC' || hint.technique == 'Nishio') {
+      if (hint.technique == '区块链' || hint.technique == 'Nishio') {
         break;
       }
       _apply(board, hint);
@@ -67,7 +67,7 @@ void main() {
     final hint = SudokuSolver.getHint(board);
     sw.stop();
     expect(hint, isNotNull);
-    expect(hint!.technique, 'Grouped AIC');
+    expect(hint!.technique, '区块链');
     expect(
       hint.eliminations.every((e) => solved.get(e.row, e.col) != e.num),
       isTrue,
@@ -75,9 +75,9 @@ void main() {
     expect(sw.elapsedMilliseconds, lessThan(2000));
   });
 
-  test('Grouped AIC 技巧名在难度表里', () {
+  test('区块链 技巧名在难度表里', () {
     expect(
-      DifficultyAnalyzer.techniqueScores.containsKey('Grouped AIC'),
+      DifficultyAnalyzer.techniqueScores.containsKey('区块链'),
       isTrue,
     );
   });

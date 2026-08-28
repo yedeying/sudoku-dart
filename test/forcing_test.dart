@@ -23,7 +23,7 @@ void _sweep(
   SudokuHint? Function(SudokuBoard) find,
 ) {
   var emissions = 0;
-  for (final name in ['easy', 'medium', 'hard', 'expert']) {
+  for (final name in PuzzleBank.difficulties) {
     final puzzles = PuzzleBank.parse(
       File('assets/puzzles/$name.txt').readAsStringSync(),
     );
@@ -42,8 +42,8 @@ void _sweep(
         final hint = SudokuSolver.getHint(board);
         if (hint == null ||
             hint.technique == 'Nishio' ||
-            hint.technique == 'Forcing Chain' ||
-            hint.technique == 'Forcing Net') {
+            hint.technique == '分类强制链' ||
+            hint.technique == '分类强制网') {
           break;
         }
         if (hint.isElimination) {
@@ -96,11 +96,11 @@ void main() {
       _sweep('强制唯一矩形', AdvancedTechniques.findForcingUr);
     }, timeout: const Timeout(Duration(minutes: 5)));
 
-    test('按难度排在 Forcing Chain 之后、强制扩展矩形之前，并开放教学页', () {
+    test('按难度排在分类强制链之后、强制扩展矩形之前，并开放教学页', () {
       final order = SudokuSolver.hintSearchOrder;
       expect(order, contains('强制唯一矩形'));
       expect(
-        order.indexOf('Forcing Chain'),
+        order.indexOf('分类强制链'),
         lessThan(order.indexOf('强制唯一矩形')),
       );
       expect(order.indexOf('强制唯一矩形'), lessThan(order.indexOf('强制扩展矩形')));

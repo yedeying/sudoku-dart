@@ -3,7 +3,7 @@ import 'technique_catalog.dart';
 import 'technique_examples_teaching_support.dart';
 import 'technique_structure.dart';
 
-/// BUG Type 2/3/4 与 BUG+n 的教学盘面。
+/// 全双值坟墓 Type 2/3/4 与全双值坟墓+n的教学盘面。
 ///
 /// 双值死盘不是「每个空格都只剩两个候选」就算数，还要满足奇偶条件：
 /// 每个区域里每个未填数字恰好出现两次。只有两条同时成立，
@@ -11,15 +11,15 @@ import 'technique_structure.dart';
 /// 这个反证。四个盘面都是先构造再用 `bugParityViolations` 逐条验过的：
 /// 把结构声明里那几个多余候选拿掉之后，剩下的确实是一个完整的双值死盘。
 ///
-/// 引擎实现了 BUG+1 与 Type 2、Type 4；Type 3 和 BUG+n 还没有独立报法，
+/// 引擎实现了全双值坟墓+1与 Type 2、Type 4；Type 3 和全双值坟墓+n还没有独立报法，
 /// 那两条的示意图只标死盘、例外和结论涉及的格子，不画红色删除标记；
 /// 但每条写在正文里的删除都用盘面的唯一解核对过。
 List<TechniqueInfo> bugTechniqueExamples() => [
       TechniqueInfo(
         id: 'bug_type2',
-        name: 'BUG Type 2',
+        name: '全双值坟墓 Type 2',
         summary: '两个例外格多出同一个数字，删共同可见处。',
-        definition: 'BUG（Bivalue Universal Grave，双值死盘）指这样一个局面：每个空格恰好剩两个候选，'
+        definition: '全双值坟墓（Bivalue Universal Grave，双值死盘）指这样一个局面：每个空格恰好剩两个候选，'
             '并且每个区域里每个未填数字恰好出现两次。满足这两条的局面解的个数一定是偶数，'
             '和「题目保证唯一解」直接冲突。Type 2 说的是盘面差一点就是死盘：'
             '只有两个例外格比双值多出同一个数字 c。这两格不可能都把 c 去掉，'
@@ -87,9 +87,9 @@ List<TechniqueInfo> bugTechniqueExamples() => [
       ),
       TechniqueInfo(
         id: 'bug_type4',
-        name: 'BUG Type 4',
+        name: '全双值坟墓 Type 4',
         summary: '例外格所在区域底数成强链，删另一底数。',
-        definition: 'BUG Type 4 对应唯一矩形 Type 4（锁定型）：盘面差一点就是双值死盘，'
+        definition: '全双值坟墓 Type 4 对应唯一矩形 Type 4（锁定型）：盘面差一点就是双值死盘，'
             '两个例外格落在同一个区域里，而它们共有的某个底数在这个区域里只剩这两格，'
             '也就是形成了强链。这个底数一定落在两个例外格之一，'
             '而另一格就只能去填自己多出来的那个候选，'
@@ -161,9 +161,9 @@ List<TechniqueInfo> bugTechniqueExamples() => [
       ),
       TechniqueInfo(
         id: 'bug_type3',
-        name: 'BUG Type 3',
+        name: '全双值坟墓 Type 3',
         summary: '例外格的多余数字与同区域配数组，须走虚拟格。',
-        definition: 'BUG Type 3 对应唯一矩形 Type 3：盘面差一点就是双值死盘，'
+        definition: '全双值坟墓 Type 3 对应唯一矩形 Type 3：盘面差一点就是双值死盘，'
             '两个例外格落在同一个区域里，各自多出一个不同的额外候选。'
             '因为这两个额外候选至少有一个为真，可以把它们并成一个「虚拟格」，'
             '虚拟格的候选就是那两个额外数字；再拿虚拟格和同区域里候选正好是这两个数的格子'
@@ -242,20 +242,20 @@ List<TechniqueInfo> bugTechniqueExamples() => [
       ),
       TechniqueInfo(
         id: 'bug_plus_n',
-        name: 'BUG+n',
+        name: '全双值坟墓+n',
         summary: 'n 个例外撑开双值死盘，真数不能同时为假。',
-        definition: 'BUG+n 只数例外的个数，不规定怎么用：盘面差 n 个多余候选就满足双值死盘的'
+        definition: '全双值坟墓+n只数例外的个数，不规定怎么用：盘面差 n 个多余候选就满足双值死盘的'
             '全部条件——每个空格恰好两个候选、每个区域里每个未填数字恰好出现两次。'
             '因为死盘的解数是偶数、而题目保证唯一解，这 n 个多出来的候选不可能同时为假，'
             '至少有一个是真数。这本身只是一条约束，'
             '不过当这 n 个多余候选恰好是同一个数字时，它就退化成一个成组的强约束：'
-            '同时看得见这 n 格的位置上，那个数字可以删。BUG+1 是最简单的特例，'
+            '同时看得见这 n 格的位置上，那个数字可以删。全双值坟墓+1是最简单的特例，'
             '那时候唯一的多余候选直接就是答案。',
         howToSpot: '数全盘空格的候选个数，再按区域核对奇偶：'
             '绝大多数格子是两个候选、只有少数几个更多，把这些例外和多出来的候选一起圈出来。',
         walkthrough: '本例 19 个空格里有 16 个是双值格，例外是 r4c6（`{5,6,9}`）、r8c4（`{5,8,9}`）'
             '和 r9c6（`{5,6,9}`），三格的底数分别是 `{5,6}`、`{5,8}`、`{5,6}`，'
-            '多出来的都是 9，所以这是 BUG+3。把这三个 9 拿掉，'
+            '多出来的都是 9，所以这是全双值坟墓+3。把这三个 9 拿掉，'
             '剩下的盘面满足完整的死盘奇偶条件，于是 9r4c6、9r8c4、9r9c6 不可能同时为假。'
             '三格多出来的又都是 9，那么 9 至少落在这三格之一；'
             'r7c6 同时看得见这三格（和 r4c6、r9c6 共 c6，和 r8c4 共中下宫），所以 9r7c6 可以删。',

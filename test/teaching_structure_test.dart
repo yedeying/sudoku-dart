@@ -501,7 +501,7 @@ void main() {
         });
       });
 
-      group('待定 BUG', () {
+      group('待定全双值坟墓', () {
         final page = byId['pending_bug']!;
         final s = page.structure!;
 
@@ -1185,7 +1185,7 @@ void main() {
       });
     });
 
-    group('MSLS', () {
+    group('网', () {
       final msls = byId['msls']!;
       final s = msls.structure!;
 
@@ -1306,13 +1306,13 @@ void main() {
       });
 
       test('目标格落在基线上会被抓住', () {
-        // r5c3 和两个基格同在 r5，看得见它们，当不了目标格。
+        // r3c4 和两个基格同在 r3，看得见它们，当不了目标格。
         expect(
           check(
             exocet,
             like(
               s,
-              exocet: exocetWith(targets: const [CellRef(4, 2), CellRef(3, 6)]),
+              exocet: exocetWith(targets: const [CellRef(2, 3), CellRef(0, 6)]),
             ),
           ),
           isNotEmpty,

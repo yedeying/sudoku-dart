@@ -3,7 +3,7 @@ import 'technique_catalog.dart';
 import 'technique_examples_teaching_support.dart';
 import 'technique_structure.dart';
 
-/// 「待定」系列的教学盘面：待定唯一矩形、待定 BUG、待定扩展矩形、待定唯一环。
+/// 「待定」系列的教学盘面：待定唯一矩形、待定全双值坟墓、待定扩展矩形、待定唯一环。
 ///
 /// 待定的意思是结构还差一步才成立，多出来的那个候选不当场删或填，
 /// 而是当成交替推理链上的一个节点接进链里去用。四个盘面都是随机完整解挖出来的
@@ -83,14 +83,14 @@ List<TechniqueInfo> pendingTechniqueExamples() => [
       ),
       TechniqueInfo(
         id: 'pending_bug',
-        name: '待定 BUG',
+        name: '待定全双值坟墓',
         summary: '差一步成双值死盘，多余候选当链节点。',
-        definition: '待定 BUG（Almost Bivalue Universal Grave）和待定唯一矩形同一路数，'
+        definition: '待定全双值坟墓（Almost Bivalue Universal Grave）和待定唯一矩形同一路数，'
             '只是对象换成了整张盘：全盘空格差一点就都只剩两个候选，'
             '几个例外格多出来的候选正是挡住死盘的东西。'
             '因为纯双值死盘解不唯一，这些多余候选不可能同时为假，'
             '于是它们的「至少一个为真」可以当成一个链节点接进交替推理链，'
-            '而不是像 BUG+1 那样当场填数。',
+            '而不是像全双值坟墓+1那样当场填数。',
         howToSpot: '数全盘空格的候选个数，找出少数几个超过两个的例外格，'
             '把它们多出来的候选当成一组链节点往外接。',
         walkthrough: '本例 20 个空格里有 18 个是双值格，例外是 r7c1（`{2,3,7}`，底数 `{2,3}`，多出 7）'

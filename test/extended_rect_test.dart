@@ -290,7 +290,7 @@ void main() {
     expect(order.indexOf('扩展矩形 Type 2'), lessThan(order.indexOf('扩展矩形 Type 4')));
     expect(order.indexOf('扩展矩形 Type 4'), lessThan(order.indexOf('扩展矩形 Type 3')));
     expect(order.indexOf('唯一矩形 Type 3'), lessThan(order.indexOf('扩展矩形 Type 4')));
-    expect(order.indexOf('扩展矩形 Type 3'), lessThan(order.indexOf('Franken 鱼')));
+    expect(order.indexOf('扩展矩形 Type 3'), lessThan(order.indexOf('宫内鱼')));
 
     expect(DifficultyAnalyzer.techniqueScores, containsPair('扩展矩形 Type 1', 60));
     expect(DifficultyAnalyzer.techniqueScores, containsPair('扩展矩形 Type 2', 62));

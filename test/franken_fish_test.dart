@@ -6,7 +6,7 @@ import 'package:sudoku_app/services/sudoku_solver.dart';
 import 'support/finder_soundness.dart';
 
 /// 题库里的一张残局：数字 7 在 r3、r4、r6 上的候选，
-/// 合起来只落在 c8 和中带的两个宫里，是一条 Swordfish 规格的 Franken 鱼。
+/// 合起来只落在 c8 和中带的两个宫里，是一条 Swordfish 规格的宫内鱼。
 const _frankenPuzzle =
     '070000010000040000600208009860000091300106007002000300000070000050804030906305702';
 
@@ -27,7 +27,7 @@ SudokuBoard _lineCoverFirstBoard() {
 }
 
 void main() {
-  test('Franken 鱼能读出 Swordfish 规格：三条基线对 c8 加两个宫', () {
+  test('宫内鱼能读出 Swordfish 规格：三条基线对 c8 加两个宫', () {
     expect(
       SudokuSolver.countSolutions(
         SudokuBoard.fromString(_frankenPuzzle),
@@ -40,7 +40,7 @@ void main() {
     final hint = AdvancedTechniques.findFrankenFish(board);
 
     expect(hint, isNotNull);
-    expect(hint!.technique, 'Franken 鱼');
+    expect(hint!.technique, '宫内鱼');
     expect(elimKeys(hint), {'1,7,7'}, reason: '只删得掉 7r2c8');
     expectEliminationsPresent(board, hint);
     expectEliminationsSound(_frankenPuzzle, hint);
@@ -57,7 +57,7 @@ void main() {
     final hint = AdvancedTechniques.findFrankenFish(board);
 
     expect(hint, isNotNull, reason: '第一种覆盖不是 Franken，不代表这组基没有 Franken 读法');
-    expect(hint!.technique, 'Franken 鱼');
+    expect(hint!.technique, '宫内鱼');
     expect(hint.highlightRows, [0, 3, 4]);
     expect(
       elimKeys(hint),

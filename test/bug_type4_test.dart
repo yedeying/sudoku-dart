@@ -12,14 +12,14 @@ TechniqueInfo _tech(String id) =>
     TechniqueCatalog.all.firstWhere((t) => t.id == id);
 
 void main() {
-  test('BUG Type 4 教学盘：r4 上 8 成强链，两个例外格各删一个底数', () {
+  test('全双值坟墓 Type 4教学盘：r4 上 8 成强链，两个例外格各删一个底数', () {
     final puzzle = _tech('bug_type4').examplePuzzle;
     final board = SudokuBoard.fromString(puzzle);
 
     final hint = AdvancedTechniques.findBugType4(board);
 
     expect(hint, isNotNull);
-    expect(hint!.technique, 'BUG Type 4');
+    expect(hint!.technique, '全双值坟墓 Type 4');
     expect(elimKeys(hint), {'3,4,5', '3,5,2'});
     expectEliminationsPresent(board, hint);
     expectEliminationsSound(puzzle, hint);
@@ -47,7 +47,7 @@ void main() {
     final hint = AdvancedTechniques.findBugType4(board);
 
     expect(hint, isNotNull, reason: '多余候选相同不妨碍 Type 4 的锁定推理');
-    expect(hint!.technique, 'BUG Type 4');
+    expect(hint!.technique, '全双值坟墓 Type 4');
     expect(elimKeys(hint), {'1,4,4', '2,4,7'});
     expectEliminationsPresent(board, hint);
     expectEliminationsSound(puzzle, hint);
@@ -59,8 +59,8 @@ void main() {
     expect(type2, isNotNull);
     expect(elimKeys(type2!).intersection(elimKeys(hint)), isEmpty);
     expect(
-      SudokuSolver.hintSearchOrder.indexOf('BUG Type 2'),
-      lessThan(SudokuSolver.hintSearchOrder.indexOf('BUG Type 4')),
+      SudokuSolver.hintSearchOrder.indexOf('全双值坟墓 Type 2'),
+      lessThan(SudokuSolver.hintSearchOrder.indexOf('全双值坟墓 Type 4')),
     );
   });
 
@@ -71,17 +71,17 @@ void main() {
     expect(AdvancedTechniques.findBugType4(board), isNull);
   });
 
-  test('BUG Type 4 排在唯一矩形 Type 3 之后、Franken 鱼之前，难度分 6.2', () {
+  test('全双值坟墓 Type 4排在唯一矩形 Type 3 之后、宫内鱼之前，难度分 6.2', () {
     final order = SudokuSolver.hintSearchOrder;
-    expect(order, contains('BUG Type 4'));
-    expect(order.indexOf('BUG Type 2'), lessThan(order.indexOf('BUG Type 4')));
-    expect(order.indexOf('唯一矩形 Type 3'), lessThan(order.indexOf('BUG Type 4')));
-    expect(order.indexOf('BUG Type 4'), lessThan(order.indexOf('Franken 鱼')));
+    expect(order, contains('全双值坟墓 Type 4'));
+    expect(order.indexOf('全双值坟墓 Type 2'), lessThan(order.indexOf('全双值坟墓 Type 4')));
+    expect(order.indexOf('唯一矩形 Type 3'), lessThan(order.indexOf('全双值坟墓 Type 4')));
+    expect(order.indexOf('全双值坟墓 Type 4'), lessThan(order.indexOf('宫内鱼')));
     expect(
-      order.indexOf('BUG Type 4'),
-      lessThan(order.indexOf('Simple Coloring')),
+      order.indexOf('全双值坟墓 Type 4'),
+      lessThan(order.indexOf('染色法')),
     );
-    expect(DifficultyAnalyzer.techniqueScores, containsPair('BUG Type 4', 62));
+    expect(DifficultyAnalyzer.techniqueScores, containsPair('全双值坟墓 Type 4', 62));
     expect(_tech('bug_type4').teachingOnly, isFalse);
   });
 }

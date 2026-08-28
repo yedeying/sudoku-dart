@@ -21,8 +21,8 @@ void main() {
       final result = DifficultyAnalyzer.analyzeDifficulty(board);
 
       expect(result.level, 'unsupported');
-      expect(DifficultyAnalyzer.validateDifficulty(board, 'medium'), isFalse);
-      expect(DifficultyAnalyzer.validateDifficulty(board, 'expert'), isFalse);
+      expect(DifficultyAnalyzer.validateDifficulty(board, 'normal'), isFalse);
+      expect(DifficultyAnalyzer.validateDifficulty(board, 'hell'), isFalse);
     });
 
     test('四数组使用独立难度分值', () {
@@ -48,7 +48,7 @@ void main() {
 
       print(DifficultyAnalyzer.getDifficultyReport(result));
 
-      expect(result.level, 'easy');
+      expect(result.level, 'beginner');
       expect(result.usedTechniques.containsKey('唯余法'), true);
 
       // 简单题目不应使用高级技巧
@@ -164,12 +164,12 @@ void main() {
           '000080079');
 
       bool isValidEasy =
-          DifficultyAnalyzer.validateDifficulty(easyBoard, 'easy');
+          DifficultyAnalyzer.validateDifficulty(easyBoard, 'beginner');
       print('简单题目验证: ${isValidEasy ? "✓ 通过" : "✗ 未通过"}');
 
       // 用简单题目验证困难难度应该失败
       bool isValidHard =
-          DifficultyAnalyzer.validateDifficulty(easyBoard, 'hard');
+          DifficultyAnalyzer.validateDifficulty(easyBoard, 'advanced');
       print('简单题目验证为困难: ${!isValidHard ? "✓ 正确拒绝" : "✗ 错误通过"}');
 
       expect(isValidEasy, true);
@@ -181,7 +181,7 @@ void main() {
     test('批量测试预设题库', () {
       print('\n=== 批量测试预设题库 ===');
 
-      var difficulties = ['easy', 'medium', 'hard', 'expert'];
+      var difficulties = ['beginner', 'normal', 'advanced', 'professional'];
 
       for (var difficulty in difficulties) {
         print('\n--- 测试 $difficulty 难度 ---');

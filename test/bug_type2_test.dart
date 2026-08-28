@@ -11,14 +11,14 @@ TechniqueInfo _tech(String id) =>
     TechniqueCatalog.all.firstWhere((t) => t.id == id);
 
 void main() {
-  test('BUG Type 2 教学盘：两个例外格多出同一个 2，共同可见处删 2', () {
+  test('全双值坟墓 Type 2教学盘：两个例外格多出同一个 2，共同可见处删 2', () {
     final puzzle = _tech('bug_type2').examplePuzzle;
     final board = SudokuBoard.fromString(puzzle);
 
     final hint = AdvancedTechniques.findBugType2(board);
 
     expect(hint, isNotNull);
-    expect(hint!.technique, 'BUG Type 2');
+    expect(hint!.technique, '全双值坟墓 Type 2');
     expect(elimKeys(hint), {'1,3,2', '2,5,2', '5,4,2', '7,4,2'});
     expectEliminationsPresent(board, hint);
     expectEliminationsSound(puzzle, hint);
@@ -43,16 +43,16 @@ void main() {
     expect(AdvancedTechniques.findBugType2(board), isNull);
   });
 
-  test('BUG Type 2 排在隐性唯一矩形之后、XYZ-Wing 之前，难度分 6.0', () {
+  test('全双值坟墓 Type 2排在隐性唯一矩形之后、XYZ-Wing 之前，难度分 6.0', () {
     final order = SudokuSolver.hintSearchOrder;
-    expect(order, contains('BUG Type 2'));
-    expect(order.indexOf('BUG+1'), lessThan(order.indexOf('BUG Type 2')));
+    expect(order, contains('全双值坟墓 Type 2'));
+    expect(order.indexOf('全双值坟墓+1'), lessThan(order.indexOf('全双值坟墓 Type 2')));
     expect(
       order.indexOf('隐性唯一矩形'),
-      lessThan(order.indexOf('BUG Type 2')),
+      lessThan(order.indexOf('全双值坟墓 Type 2')),
     );
-    expect(order.indexOf('BUG Type 2'), lessThan(order.indexOf('XYZ-Wing')));
-    expect(DifficultyAnalyzer.techniqueScores, containsPair('BUG Type 2', 60));
+    expect(order.indexOf('全双值坟墓 Type 2'), lessThan(order.indexOf('XYZ-Wing')));
+    expect(DifficultyAnalyzer.techniqueScores, containsPair('全双值坟墓 Type 2', 60));
     expect(_tech('bug_type2').teachingOnly, isFalse);
   });
 }

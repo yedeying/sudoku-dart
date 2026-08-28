@@ -292,9 +292,9 @@ void main() {
     expect(order.indexOf('扩展矩形 Type 3'), lessThan(order.indexOf('唯一环 Type 1')));
     expect(order.indexOf('唯一环 Type 1'), lessThan(order.indexOf('唯一环 Type 2')));
     expect(order.indexOf('唯一环 Type 2'), lessThan(order.indexOf('唯一环 Type 4')));
-    // 唯一环 Type 3（7.2）比 Simple Coloring（7.0）还深，排在它后面才跟难度分同向。
+    // 唯一环 Type 3（7.2）比染色法（7.0）还深，排在它后面才跟难度分同向。
     expect(
-      order.indexOf('Simple Coloring'),
+      order.indexOf('染色法'),
       lessThan(order.indexOf('唯一环 Type 3')),
     );
 

@@ -23,7 +23,7 @@ void _sweep(
   SudokuHint? Function(SudokuBoard) find,
 ) {
   var emissions = 0;
-  for (final name in ['easy', 'medium', 'hard', 'expert']) {
+  for (final name in PuzzleBank.difficulties) {
     final puzzles = PuzzleBank.parse(
       File('assets/puzzles/$name.txt').readAsStringSync(),
     );
@@ -38,8 +38,8 @@ void _sweep(
         final hint = SudokuSolver.getHint(board);
         if (hint == null ||
             hint.technique == 'Nishio' ||
-            hint.technique == 'Forcing Chain' ||
-            hint.technique == 'Forcing Net') {
+            hint.technique == '分类强制链' ||
+            hint.technique == '分类强制网') {
           break;
         }
         if (hint.isElimination) {
@@ -184,24 +184,24 @@ void main() {
       _sweep('待定唯一环', AdvancedTechniques.findPendingUl);
     }, timeout: const Timeout(Duration(minutes: 5)));
 
-    test('按难度排在待定扩展矩形之后、待定 BUG 之前，并开放教学页', () {
+    test('按难度排在待定扩展矩形之后、待定全双值坟墓之前，并开放教学页', () {
       final order = SudokuSolver.hintSearchOrder;
       expect(order, contains('待定唯一环'));
       expect(order.indexOf('待定扩展矩形'), lessThan(order.indexOf('待定唯一环')));
-      expect(order.indexOf('待定唯一环'), lessThan(order.indexOf('待定 BUG')));
+      expect(order.indexOf('待定唯一环'), lessThan(order.indexOf('待定全双值坟墓')));
       expect(DifficultyAnalyzer.techniqueScores, containsPair('待定唯一环', 95));
       expect(_tech('pending_ul').teachingOnly, isFalse);
     });
   });
 
-  group('待定 BUG', () {
+  group('待定全双值坟墓', () {
     test('教学盘：7r7c1 与 2r9c4 作死盘节点，删 2r8c4', () {
       final puzzle = _tech('pending_bug').examplePuzzle;
       final board = SudokuBoard.fromString(puzzle);
       final hint = AdvancedTechniques.findPendingBug(board);
 
       expect(hint, isNotNull);
-      expect(hint!.technique, '待定 BUG');
+      expect(hint!.technique, '待定全双值坟墓');
       expect(hint.isElimination, isTrue);
       expect(elimKeys(hint), contains('7,3,2'));
       expectEliminationsPresent(board, hint);
@@ -228,15 +228,15 @@ void main() {
     });
 
     test('题库残局上的每一条删除都避开唯一解', () {
-      _sweep('待定 BUG', AdvancedTechniques.findPendingBug);
+      _sweep('待定全双值坟墓', AdvancedTechniques.findPendingBug);
     }, timeout: const Timeout(Duration(minutes: 5)));
 
-    test('按难度排在待定唯一环之后、Death Blossom 之前，并开放教学页', () {
+    test('按难度排在待定唯一环之后、死亡绽放之前，并开放教学页', () {
       final order = SudokuSolver.hintSearchOrder;
-      expect(order, contains('待定 BUG'));
-      expect(order.indexOf('待定唯一环'), lessThan(order.indexOf('待定 BUG')));
-      expect(order.indexOf('待定 BUG'), lessThan(order.indexOf('Death Blossom')));
-      expect(DifficultyAnalyzer.techniqueScores, containsPair('待定 BUG', 95));
+      expect(order, contains('待定全双值坟墓'));
+      expect(order.indexOf('待定唯一环'), lessThan(order.indexOf('待定全双值坟墓')));
+      expect(order.indexOf('待定全双值坟墓'), lessThan(order.indexOf('死亡绽放')));
+      expect(DifficultyAnalyzer.techniqueScores, containsPair('待定全双值坟墓', 95));
       expect(_tech('pending_bug').teachingOnly, isFalse);
     });
   });

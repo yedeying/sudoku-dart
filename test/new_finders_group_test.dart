@@ -13,10 +13,10 @@ final _finders = <String, SudokuHint? Function(SudokuBoard)>{
   '不完整唯一矩形': AdvancedTechniques.findIncompleteUniqueRectangle,
   '可规避矩形': AdvancedTechniques.findAvoidableRectangle,
   '隐性唯一矩形': AdvancedTechniques.findHiddenUniqueRectangle,
-  'BUG Type 2': AdvancedTechniques.findBugType2,
-  'BUG Type 3': AdvancedTechniques.findBugType3,
-  'BUG Type 4': AdvancedTechniques.findBugType4,
-  'Franken 鱼': AdvancedTechniques.findFrankenFish,
+  '全双值坟墓 Type 2': AdvancedTechniques.findBugType2,
+  '全双值坟墓 Type 3': AdvancedTechniques.findBugType3,
+  '全双值坟墓 Type 4': AdvancedTechniques.findBugType4,
+  '宫内鱼': AdvancedTechniques.findFrankenFish,
   '扩展矩形 Type 1': AdvancedTechniques.findExtendedRectType1,
   '扩展矩形 Type 2': AdvancedTechniques.findExtendedRectType2,
   '扩展矩形 Type 3': AdvancedTechniques.findExtendedRectType3,
@@ -30,19 +30,27 @@ final _finders = <String, SudokuHint? Function(SudokuBoard)>{
   '死环': AdvancedTechniques.findDeadLoop,
   '毛刺数组': AdvancedTechniques.findBurredSubset,
   'DDS': AdvancedTechniques.findDds,
-  'WALS': AdvancedTechniques.findWals,
+  '弱待定数组': AdvancedTechniques.findWals,
   '飞鱼导弹': AdvancedTechniques.findExocet,
   '待定唯一矩形': AdvancedTechniques.findPendingUr,
   '待定扩展矩形': AdvancedTechniques.findPendingEr,
   '待定唯一环': AdvancedTechniques.findPendingUl,
-  '待定 BUG': AdvancedTechniques.findPendingBug,
+  '待定全双值坟墓': AdvancedTechniques.findPendingBug,
   '强制唯一矩形': AdvancedTechniques.findForcingUr,
   '强制扩展矩形': AdvancedTechniques.findForcingEr,
   '强制唯一环': AdvancedTechniques.findForcingUl,
 };
 
-List<String> _expertBank() =>
-    PuzzleBank.parse(File('assets/puzzles/expert.txt').readAsStringSync());
+List<String> _expertBank() {
+  final out = <String>[];
+  for (final name in ['professional', 'master', 'hell']) {
+    final file = File('assets/puzzles/$name.txt');
+    if (file.existsSync()) {
+      out.addAll(PuzzleBank.parse(file.readAsStringSync()));
+    }
+  }
+  return out;
+}
 
 /// 把一张题走到浅层技巧再也推不动为止。
 SudokuBoard _stall(String puzzle) {
@@ -52,8 +60,8 @@ SudokuBoard _stall(String puzzle) {
     final hint = SudokuSolver.getHint(board);
     if (hint == null) break;
     if (hint.technique == 'Nishio' ||
-        hint.technique == 'Forcing Chain' ||
-        hint.technique == 'Forcing Net') {
+        hint.technique == '分类强制链' ||
+        hint.technique == '分类强制网') {
       break;
     }
     if (hint.isElimination) {

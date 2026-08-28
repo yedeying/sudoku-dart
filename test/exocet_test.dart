@@ -20,7 +20,7 @@ Set<String> _cellKeys(SudokuHint hint, HintRole role) => {
 
 void main() {
   group('飞鱼导弹', () {
-    test('教学盘：中带 JE，目标格删掉非基格数字 1、9 和 4', () {
+    test('教学盘：开局第一步就是飞鱼导弹，目标格删掉 5 和 6', () {
       final puzzle = _tech('exocet').examplePuzzle;
       final board = SudokuBoard.fromString(puzzle);
       final hint = AdvancedTechniques.findExocet(board);
@@ -28,14 +28,15 @@ void main() {
       expect(hint, isNotNull);
       expect(hint!.technique, '飞鱼导弹');
       expect(hint.isElimination, isTrue);
-      expect(elimKeys(hint), {'5,2,1', '5,2,9', '3,6,4'});
+      expect(elimKeys(hint), {'1,3,5', '0,6,6'});
       expectEliminationsPresent(board, hint);
       expectEliminationsSound(puzzle, hint);
       expectEvidenceBeyondTargets(hint);
-      expect(_cellKeys(hint, HintRole.pattern), {'4,3', '4,5'});
-      expect(_cellKeys(hint, HintRole.cover), {'5,2', '3,6'});
-      expect(hint.highlightRows, containsAll([3, 4, 5]));
-      expect(hint.highlightCols, containsAll([2, 4, 6]));
+      expect(_cellKeys(hint, HintRole.pattern), {'2,0', '2,1'});
+      expect(_cellKeys(hint, HintRole.cover), {'1,3', '0,6'});
+      expect(hint.highlightRows, containsAll([0, 1, 2]));
+      expect(hint.highlightCols, containsAll([2, 3, 6]));
+      expect(SudokuSolver.getHint(board)!.technique, '飞鱼导弹');
     });
 
     test('基格候选并集只有两个数字时不报', () {
@@ -60,10 +61,10 @@ void main() {
     });
 
     test('伴随格带着基格数字时整枚导弹不成立', () {
-      // 教学盘 r4c3=7 是伴随格。改成基格数字 2 之后，
+      // 教学盘 r1c4=7 是伴随格。改成基格数字 1 之后，
       // 这对对象格就能装两个基格数字，JE 不再成立。
       final raw = _tech('exocet').examplePuzzle;
-      final broken = '${raw.substring(0, 29)}2${raw.substring(30)}';
+      final broken = '${raw.substring(0, 3)}1${raw.substring(4)}';
       expect(AdvancedTechniques.findExocet(SudokuBoard.fromString(broken)),
           isNull);
     });
@@ -82,7 +83,7 @@ void main() {
 
     test('题库残局上的每一条删除都避开唯一解', () {
       var emissions = 0;
-      for (final name in ['easy', 'medium', 'hard', 'expert']) {
+      for (final name in PuzzleBank.difficulties) {
         final puzzles = PuzzleBank.parse(
           File('assets/puzzles/$name.txt').readAsStringSync(),
         );
@@ -97,8 +98,8 @@ void main() {
             final hint = SudokuSolver.getHint(board);
             if (hint == null ||
                 hint.technique == 'Nishio' ||
-                hint.technique == 'Forcing Chain' ||
-                hint.technique == 'Forcing Net') {
+                hint.technique == '分类强制链' ||
+                hint.technique == '分类强制网') {
               break;
             }
             if (hint.isElimination) {
@@ -115,14 +116,14 @@ void main() {
       print('飞鱼导弹 题库触发次数：$emissions');
     }, timeout: const Timeout(Duration(minutes: 5)));
 
-    test('按难度排在毛刺数组之后、Forcing Chain 之前，并开放教学页', () {
+    test('按难度排在毛刺数组之后、分类强制链之前，并开放教学页', () {
       final order = SudokuSolver.hintSearchOrder;
       expect(order, contains('飞鱼导弹'));
       expect(
         order.indexOf('毛刺数组'),
         lessThan(order.indexOf('飞鱼导弹')),
       );
-      expect(order.indexOf('飞鱼导弹'), lessThan(order.indexOf('Forcing Chain')));
+      expect(order.indexOf('飞鱼导弹'), lessThan(order.indexOf('分类强制链')));
       expect(DifficultyAnalyzer.techniqueScores, containsPair('飞鱼导弹', 97));
       expect(_tech('exocet').teachingOnly, isFalse);
     });

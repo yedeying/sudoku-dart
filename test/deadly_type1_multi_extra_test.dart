@@ -21,7 +21,7 @@ List<String> _bank(String name) =>
 void main() {
   test('唯一那一格多出好几个候选时，Type 1 删掉它身上的全部底数', () {
     final cases = <String>[];
-    for (final name in ['easy', 'medium', 'hard', 'expert']) {
+    for (final name in PuzzleBank.difficulties) {
       for (final puzzle in _bank(name)) {
         final solved = SudokuBoard.fromString(puzzle);
         expect(SudokuSolver.solve(solved), isTrue);

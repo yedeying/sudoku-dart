@@ -11,7 +11,7 @@ import 'package:sudoku_app/services/sudoku_solver.dart';
 final _type3 = <String, SudokuHint? Function(SudokuBoard)>{
   '扩展矩形 Type 3': AdvancedTechniques.findExtendedRectType3,
   '唯一环 Type 3': AdvancedTechniques.findUniqueLoopType3,
-  'BUG Type 3': AdvancedTechniques.findBugType3,
+  '全双值坟墓 Type 3': AdvancedTechniques.findBugType3,
 };
 
 List<String> _bank(String name) =>
@@ -30,7 +30,7 @@ Map<String, Set<int>> _extrasByCell(SudokuHint hint) {
 void main() {
   test('例外格多出好几个候选时，不画那条并不成立的强链', () {
     var multi = 0;
-    for (final name in ['easy', 'medium', 'hard', 'expert']) {
+    for (final name in PuzzleBank.difficulties) {
       for (final puzzle in _bank(name)) {
         final board = SudokuBoard.fromString(puzzle);
         for (var step = 0; step < 200; step++) {
@@ -76,7 +76,7 @@ void main() {
 
   test('例外格自己：虚拟格里的候选一个都不许删，虚拟格外的数组数字可以删', () {
     var ownerElims = 0;
-    for (final name in ['easy', 'medium', 'hard', 'expert']) {
+    for (final name in PuzzleBank.difficulties) {
       for (final puzzle in _bank(name)) {
         final solved = SudokuBoard.fromString(puzzle);
         expect(SudokuSolver.solve(solved), isTrue);

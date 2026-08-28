@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import '../models/game_state.dart';
 import '../models/sudoku_board.dart';
 import '../models/technique_catalog.dart';
 import '../widgets/sudoku_grid.dart';
+import 'game_screen.dart';
 
 class TechniqueDetailScreen extends StatelessWidget {
   final TechniqueInfo info;
@@ -22,6 +25,13 @@ class TechniqueDetailScreen extends StatelessWidget {
     );
   }
 
+  void _playBoard(BuildContext context) {
+    context.read<GameState>().loadTeachingBoard(info.examplePuzzle);
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const GameScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final board = SudokuBoard.fromString(info.examplePuzzle);
@@ -32,6 +42,11 @@ class TechniqueDetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(info.name),
         actions: [
+          IconButton(
+            tooltip: '用此盘对局',
+            icon: const Icon(Icons.play_circle_outline),
+            onPressed: () => _playBoard(context),
+          ),
           IconButton(
             tooltip: '复制例题',
             icon: const Icon(Icons.copy_outlined),
@@ -82,14 +97,6 @@ class TechniqueDetailScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      onPressed: () => _copyPuzzle(context),
-                      icon: const Icon(Icons.copy_outlined, size: 18),
-                      label: const Text('复制例题'),
-                    ),
-                  ),
                   Row(
                     children: [
                       Icon(
@@ -101,8 +108,8 @@ class TechniqueDetailScreen extends StatelessWidget {
                       Expanded(
                         child: Text(
                           info.copiesPracticeBoard
-                              ? '上图是结构示意。复制的是一张练习原题，比示意图更适合直接上手。'
-                              : '此页为固定示例，不对局、不自动推演。可复制盘面贴入对局。',
+                              ? '上图是结构示意。右上角复制的是一张练习原题；对局图标载入的是本页这张盘。'
+                              : '此页为固定示例。右上角可复制盘面，或用对局图标带着当前候选进入对局。',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: scheme.onSurfaceVariant,
                           ),

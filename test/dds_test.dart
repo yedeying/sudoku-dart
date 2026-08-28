@@ -67,7 +67,7 @@ void main() {
     test('两条房屋就装得下每个数字时不冒充三个以上区域', () {
       final board = SudokuBoard.fromString(_tech('sue_de_coq').examplePuzzle);
       final hint = AdvancedTechniques.findDds(board);
-      expect(hint, isNull, reason: 'Sue de Coq 教学盘不该被 DDS 抢走');
+      expect(hint, isNull, reason: '融合式待定数组教学盘不该被 DDS 抢走');
     });
 
     test('某个数字在结构里只落一格时不报', () {
@@ -110,7 +110,7 @@ void main() {
 
     test('题库残局上的每一条删除都避开唯一解', () {
       var emissions = 0;
-      for (final name in ['easy', 'medium', 'hard', 'expert']) {
+      for (final name in PuzzleBank.difficulties) {
         final puzzles = PuzzleBank.parse(
           File('assets/puzzles/$name.txt').readAsStringSync(),
         );
@@ -125,8 +125,8 @@ void main() {
             final hint = SudokuSolver.getHint(board);
             if (hint == null ||
                 hint.technique == 'Nishio' ||
-                hint.technique == 'Forcing Chain' ||
-                hint.technique == 'Forcing Net') {
+                hint.technique == '分类强制链' ||
+                hint.technique == '分类强制网') {
               break;
             }
             if (hint.isElimination) {
@@ -143,11 +143,11 @@ void main() {
       print('DDS 题库触发次数：$emissions');
     }, timeout: const Timeout(Duration(minutes: 5)));
 
-    test('按难度排在 ALS-XZ 之后、Death Blossom 之前，并开放教学页', () {
+    test('按难度排在 ALS-XZ 之后、死亡绽放之前，并开放教学页', () {
       final order = SudokuSolver.hintSearchOrder;
       expect(order, contains('DDS'));
       expect(order.indexOf('ALS-XZ'), lessThan(order.indexOf('DDS')));
-      expect(order.indexOf('DDS'), lessThan(order.indexOf('Death Blossom')));
+      expect(order.indexOf('DDS'), lessThan(order.indexOf('死亡绽放')));
       expect(DifficultyAnalyzer.techniqueScores, containsPair('DDS', 95));
       expect(_tech('dds').teachingOnly, isFalse);
     });

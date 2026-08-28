@@ -142,18 +142,24 @@ class SudokuGeneratorV2 {
     // 根据难度设置初始移除数量和策略
     int minRemove, maxRemove;
     switch (difficulty) {
+      case 'beginner':
       case 'easy':
         minRemove = 35;
         maxRemove = 45;
         break;
+      case 'normal':
       case 'medium':
         minRemove = 45;
         maxRemove = 52;
         break;
+      case 'advanced':
       case 'hard':
         minRemove = 50;
         maxRemove = 58;
         break;
+      case 'professional':
+      case 'master':
+      case 'hell':
       case 'expert':
         minRemove = 52;
         maxRemove = 60;
@@ -260,21 +266,27 @@ class SudokuGeneratorV2 {
   static SudokuBoard _getFallbackPuzzle(String difficulty) {
     String puzzle;
     switch (difficulty) {
+      case 'beginner':
       case 'easy':
         // 只需要 Naked Single 和 Hidden Single
         puzzle =
             '530070000600195000098000060800060003400803001700020006060000280000419005000080079';
         break;
+      case 'normal':
       case 'medium':
         // 需要 Naked Pair 和 Pointing Pair
         puzzle =
             '003020600900305001001806400008102900700000008006708200002609500800203009005010300';
         break;
+      case 'advanced':
       case 'hard':
         // 需要 X-Wing
         puzzle =
             '000000907000420180000705026100904000050000040000507009920108000034059000507000000';
         break;
+      case 'professional':
+      case 'master':
+      case 'hell':
       case 'expert':
         // 需要 XY-Wing 或更高级技巧
         puzzle =
@@ -312,24 +324,30 @@ class SudokuGeneratorV2 {
   /// 预设的高质量题库
   static List<String> _getPresetPuzzles(String difficulty) {
     switch (difficulty) {
+      case 'beginner':
       case 'easy':
         return [
           '530070000600195000098000060800060003400803001700020006060000280000419005000080079',
           '020608000580009700000040000370000500600000004008000013000030000009800036000507010',
           '100489006730000040000001295007120600500703008006095700914600000020000037800512004',
         ];
+      case 'normal':
       case 'medium':
         return [
           '003020600900305001001806400008102900700000008006708200002609500800203009005010300',
           '200080300060070084030500209000105408000000000402706000301007040720040060004010003',
           '000075400000000008080190000300001060000000034000068170204000603900000020530200000',
         ];
+      case 'advanced':
       case 'hard':
         return [
           '000000907000420180000705026100904000050000040000507009920108000034059000507000000',
           '030000000000195000008000060800060003400803001700020006060000280000419005000080079',
           '000000000904607000076804100309701080008000300050308702007503600000000000200000003',
         ];
+      case 'professional':
+      case 'master':
+      case 'hell':
       case 'expert':
         return [
           '800000000003600000070090200050007000000045700000100030001000068008500010090000400',

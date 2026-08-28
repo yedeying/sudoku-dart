@@ -166,7 +166,7 @@ void main() {
 
     test('题库残局上的每一条删除都避开唯一解', () {
       var emissions = 0;
-      for (final name in ['easy', 'medium', 'hard', 'expert']) {
+      for (final name in PuzzleBank.difficulties) {
         final puzzles = PuzzleBank.parse(
           File('assets/puzzles/$name.txt').readAsStringSync(),
         );
@@ -186,8 +186,8 @@ void main() {
             final hint = SudokuSolver.getHint(board);
             if (hint == null ||
                 hint.technique == 'Nishio' ||
-                hint.technique == 'Forcing Chain' ||
-                hint.technique == 'Forcing Net') {
+                hint.technique == '分类强制链' ||
+                hint.technique == '分类强制网') {
               break;
             }
             if (hint.isElimination) {

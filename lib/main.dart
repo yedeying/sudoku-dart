@@ -15,7 +15,11 @@ class SudokuApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => GameState()),
+        ChangeNotifierProvider(create: (_) {
+          final game = GameState();
+          game.restoreCurrent();
+          return game;
+        }),
         ChangeNotifierProvider(create: (_) {
           final c = ThemeController();
           c.load();

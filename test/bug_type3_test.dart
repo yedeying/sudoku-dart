@@ -22,14 +22,14 @@ Set<String> _candKeys(SudokuHint hint, HintRole role) => {
     };
 
 void main() {
-  test('BUG Type 3 教学盘：{2,3} 虚拟格和 r2c8 配成数对，c8 别处删 2、3', () {
+  test('全双值坟墓 Type 3教学盘：{2,3} 虚拟格和 r2c8 配成数对，c8 别处删 2、3', () {
     final puzzle = _tech('bug_type3').examplePuzzle;
     final board = SudokuBoard.fromString(puzzle);
 
     final hint = AdvancedTechniques.findBugType3(board);
 
     expect(hint, isNotNull);
-    expect(hint!.technique, 'BUG Type 3');
+    expect(hint!.technique, '全双值坟墓 Type 3');
     expect(elimKeys(hint), {'5,7,2', '6,7,3'});
     expectEliminationsPresent(board, hint);
     expectEliminationsSound(puzzle, hint);
@@ -82,24 +82,24 @@ void main() {
     expect(elimKeys(type4).intersection(elimKeys(type3)), isEmpty);
 
     final order = SudokuSolver.hintSearchOrder;
-    expect(order.indexOf('BUG Type 4'), lessThan(order.indexOf('BUG Type 3')));
+    expect(order.indexOf('全双值坟墓 Type 4'), lessThan(order.indexOf('全双值坟墓 Type 3')));
     // 这张盘上还有更浅的 X-Wing，唯一性技巧都排在它后面，所以整体报法先给 X-Wing。
     expect(SudokuSolver.getHint(board)!.technique, 'X-Wing');
-    expect(order.indexOf('X-Wing'), lessThan(order.indexOf('BUG Type 4')));
+    expect(order.indexOf('X-Wing'), lessThan(order.indexOf('全双值坟墓 Type 4')));
   });
 
-  test('BUG Type 3 排在唯一环 Type 1 之后、唯一环 Type 2 之前，难度分 6.6', () {
+  test('全双值坟墓 Type 3排在唯一环 Type 1 之后、唯一环 Type 2 之前，难度分 6.6', () {
     final order = SudokuSolver.hintSearchOrder;
-    expect(order, contains('BUG Type 3'));
-    expect(order.indexOf('唯一环 Type 1'), lessThan(order.indexOf('BUG Type 3')));
-    expect(order.indexOf('BUG Type 3'), lessThan(order.indexOf('唯一环 Type 2')));
-    expect(DifficultyAnalyzer.techniqueScores, containsPair('BUG Type 3', 66));
+    expect(order, contains('全双值坟墓 Type 3'));
+    expect(order.indexOf('唯一环 Type 1'), lessThan(order.indexOf('全双值坟墓 Type 3')));
+    expect(order.indexOf('全双值坟墓 Type 3'), lessThan(order.indexOf('唯一环 Type 2')));
+    expect(DifficultyAnalyzer.techniqueScores, containsPair('全双值坟墓 Type 3', 66));
     expect(_tech('bug_type3').teachingOnly, isFalse);
     expect(
       _tech('bug_plus_n').teachingOnly,
       isTrue,
-      reason: 'BUG+n 只是个计数，不给独立报法',
+      reason: '全双值坟墓+n只是个计数，不给独立报法',
     );
-    expect(order, isNot(contains('BUG+n')));
+    expect(order, isNot(contains('全双值坟墓+n')));
   });
 }

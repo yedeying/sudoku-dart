@@ -42,6 +42,14 @@ const _forcingLegend = [
   TechniqueLegendItem(color: TeachingColors.elimCand, label: '矛盾/删除'),
 ];
 
+const _krakenLegend = [
+  TechniqueLegendItem(color: TeachingColors.house, label: '基线与覆盖线'),
+  TechniqueLegendItem(color: TeachingColors.pattern, label: '鱼身'),
+  TechniqueLegendItem(color: TeachingColors.end, label: '鳍'),
+  TechniqueLegendItem(color: TeachingColors.node, label: '鳍上推出的唯余'),
+  TechniqueLegendItem(color: TeachingColors.elimCand, label: '删除'),
+];
+
 const _nishioLegend = [
   TechniqueLegendItem(color: TeachingColors.start, label: '假设'),
   TechniqueLegendItem(color: TeachingColors.node, label: '推导中继'),
@@ -51,6 +59,12 @@ const _nishioLegend = [
 
 /// 链类通用标记：起点涂 start（绿），终点涂 end（黄），中继格涂 node（蓝），
 /// 被删除候选所在格涂 elimCell（浅黄）、候选本身涂 elimCand（红）。
+Color _cellRole(List<int> start, List<int> end, int r, int c) {
+  if (r == start[0] && c == start[1]) return TeachingColors.start;
+  if (r == end[0] && c == end[1]) return TeachingColors.end;
+  return TeachingColors.node;
+}
+
 BoardMarkup _chainMarkup({
   required List<int> start,
   required List<int> end,
@@ -69,6 +83,8 @@ BoardMarkup _chainMarkup({
   return BoardMarkup(
     cellColors: cellColors,
     candidateColors: {
+      for (final a in arrows) a.from: TeachingColors.node,
+      for (final a in arrows) a.to: TeachingColors.node,
       for (final e in eliminated)
         _cr(e[0], e[1], e[2]): TeachingColors.elimCand,
     },
@@ -76,7 +92,7 @@ BoardMarkup _chainMarkup({
   );
 }
 
-/// Grouped AIC 专用：一端是单个格子（start，绿），另一端是一组格子（end，黄）。
+/// 区块链 专用：一端是单个格子（start，绿），另一端是一组格子（end，黄）。
 BoardMarkup _groupedMarkup({
   required List<int> single,
   required List<List<int>> group,
@@ -93,6 +109,8 @@ BoardMarkup _groupedMarkup({
   return BoardMarkup(
     cellColors: cellColors,
     candidateColors: {
+      for (final a in arrows) a.from: TeachingColors.node,
+      for (final a in arrows) a.to: TeachingColors.node,
       for (final e in eliminated)
         _cr(e[0], e[1], e[2]): TeachingColors.elimCand,
     },
@@ -120,6 +138,48 @@ BoardMarkup _alsMarkup({
   return BoardMarkup(
     cellColors: cellColors,
     candidateColors: {
+      for (final a in arrows) a.from: TeachingColors.node,
+      for (final a in arrows) a.to: TeachingColors.node,
+      for (final e in eliminated)
+        _cr(e[0], e[1], e[2]): TeachingColors.elimCand,
+    },
+    arrows: arrows,
+  );
+}
+
+/// Kraken 专用：基线/覆盖线淡亮，鱼身涂 pattern，鳍涂 end，
+/// 鳍上推出的唯余涂 node，删除涂 elimCand。
+BoardMarkup _krakenMarkup({
+  required int digit,
+  required List<int> rows,
+  required List<int> cols,
+  required List<List<int>> pattern,
+  required List<List<int>> fin,
+  List<MarkupArrow> arrows = const [],
+  List<List<int>> eliminated = const [],
+}) {
+  final cellColors = <int, Color>{
+    for (final r in rows)
+      for (var c = 0; c < 9; c++) _ck(r, c): TeachingColors.house,
+    for (final c in cols)
+      for (var r = 0; r < 9; r++) _ck(r, c): TeachingColors.house,
+  };
+  for (final c in pattern) {
+    cellColors[_ck(c[0], c[1])] = TeachingColors.pattern;
+  }
+  for (final c in fin) {
+    cellColors[_ck(c[0], c[1])] = TeachingColors.end;
+  }
+  for (final e in eliminated) {
+    cellColors[_ck(e[0], e[1])] = TeachingColors.elimCell;
+  }
+  return BoardMarkup(
+    cellColors: cellColors,
+    candidateColors: {
+      for (final a in arrows) a.from: TeachingColors.node,
+      for (final a in arrows) a.to: TeachingColors.node,
+      for (final c in pattern) _cr(c[0], c[1], digit): TeachingColors.node,
+      for (final c in fin) _cr(c[0], c[1], digit): TeachingColors.end,
       for (final e in eliminated)
         _cr(e[0], e[1], e[2]): TeachingColors.elimCand,
     },
@@ -154,6 +214,8 @@ BoardMarkup _forcingMarkup({
   return BoardMarkup(
     cellColors: cellColors,
     candidateColors: {
+      for (final a in arrows) a.from: TeachingColors.node,
+      for (final a in arrows) a.to: TeachingColors.node,
       for (final e in eliminated)
         _cr(e[0], e[1], e[2]): TeachingColors.elimCand,
     },
@@ -163,14 +225,14 @@ BoardMarkup _forcingMarkup({
 
 /// 链、ALS 与强制类技巧的十二个教学盘面。
 ///
-/// XY-Chain、AIC、Nice Loop、Grouped AIC、ALS-XZ、ALS-XY-Wing 都是用脚本在
+/// XY-Chain、AIC、Nice Loop、区块链、ALS-XZ、ALS-XY-Wing 都是用脚本在
 /// 候选图上做强弱交替深搜，从真实题库（expert/hard/medium/easy）里挖出的
 /// 真实链条，逐格核对候选、强弱链归属单元（同格 / 同行 / 同列 / 同宫）与
-/// 删除目标的可见关系。Sue de Coq、Death Blossom、Kraken Fish 同样用脚本在
-/// 真实题库的候选表里找到满足结构定义的交集/花瓣/带缺口的鱼，并逐条验证
-/// 强链、ALS、限制公共数的可见关系。Nishio、Forcing Chain、Forcing Net 用
+/// 删除目标的可见关系。融合式待定数组、死亡绽放、Kraken Fish 同样用脚本在
+/// 真实题库的候选表里找到满足结构定义的交集/花瓣/带鳍鱼接链，并逐条验证
+/// 强链、ALS、限制公共数的可见关系。Nishio、分类强制链、分类强制网用
 /// 单数排除的传播引擎在真实题库上跑出假设后的连锁填数，Nishio 一路推到
-/// 某格无候选可填的矛盾，Forcing Chain/Net 则确认同一格的两三条出路都推出
+/// 某格无候选可填的矛盾，分类强制链/Net 则确认同一格的两三条出路都推出
 /// 同一个结论——每个盘面都经过脚本重新验证候选与推导链，不是手造的示意图。
 List<TechniqueInfo> chainTechniqueExamples() => [
       TechniqueInfo(
@@ -220,7 +282,7 @@ List<TechniqueInfo> chainTechniqueExamples() => [
       ),
       TechniqueInfo(
         id: 'aic',
-        name: 'AIC 开链',
+        name: '强弱交替链',
         summary: '候选点之间强弱交替连成一条开链，两端同一数字，删同时看到两端的候选。',
         definition: 'AIC（交替推理链，Alternating Inference Chain）不要求链上每一格都是'
             '双值格，只要求相邻候选点之间的连接是强链或弱链，并且严格交替：强、弱、'
@@ -273,42 +335,45 @@ List<TechniqueInfo> chainTechniqueExamples() => [
         howToSpot: '找到强弱交替的链后，看它是否绕回了出发点附近的候选点，'
             '再从环上挑一段以强链起、以强链止的子链，检查是否有格子同时看到这段'
             '子链的两端。',
-        walkthrough: '本例中数字 2 在r7c6与r2c6因c6只剩这两格'
-            '能填 2 构成强链，r2c6再与r2c4因同一行还有别的候选 2 '
-            '构成弱链，r2c4又与r9c4因c4只剩这两格能填 2 构成'
-            '强链，r9c4最终再通过同宫的弱链绕回r7c6，形成一个环。'
-            '取「强-弱-强」这一段子链，两端r7c6与r9c4至少有一个'
-            '是 2，因此同时看到这两端的 r9c5 不可能是 2，删除该处候选 2。\n'
-            '2r7c6 = 2r2c6 - 2r2c4 = 2r9c4 - 2r7c6',
+        walkthrough: '本例中 8r1c5 与 8r5c5 经强弱交替绕成一圈。'
+            '取「以强链开头、以强链结尾」的这一段，两端的 8 至少有一处为真，'
+            '同时看见两端的 8r3c5 可删。\n'
+            '8r1c5 = 8r1c3 - 6r1c3 = 6r2c3 - 6r2c5 = 4r2c5 - 4r5c5 = 8r5c5 - 8r1c5',
         caveats: '环上每一条连接都要单独核实是强链还是弱链，不能想当然认为绕回去'
-            '就一定成立；用来删除的子链两端仍必须都由强链连入，弱链收尾不能直接删。',
+            '就一定成立；用来删除的子链两端仍必须都由强链连入，弱链收尾不能直接删。'
+            '这一盘更浅的技巧会先出面，连点提示随后报到这一手。',
         rank: 604,
         examplePuzzle:
-            '020900000048000031000063020009407003003080200400105600030570000250000180000006050',
+            '500007000200900850000000460020710605000506000650239740087000004065071289002800076',
         exampleMarkup: _chainMarkup(
-          start: [6, 5],
-          end: [8, 3],
+          start: [0, 4],
+          end: [4, 4],
           nodes: [
-            [1, 5],
-            [1, 3],
+            [0, 2],
+            [1, 2],
+            [1, 4],
           ],
           arrows: [
-            _arrow(6, 5, 2, 1, 5, 2, ArrowKind.strong),
-            _arrow(1, 5, 2, 1, 3, 2, ArrowKind.weak),
-            _arrow(1, 3, 2, 8, 3, 2, ArrowKind.strong),
-            _arrow(8, 3, 2, 6, 5, 2, ArrowKind.weak),
+            _arrow(0, 4, 8, 0, 2, 8, ArrowKind.strong),
+            _arrow(0, 2, 8, 0, 2, 6, ArrowKind.weak),
+            _arrow(0, 2, 6, 1, 2, 6, ArrowKind.strong),
+            _arrow(1, 2, 6, 1, 4, 6, ArrowKind.weak),
+            _arrow(1, 4, 6, 1, 4, 4, ArrowKind.strong),
+            _arrow(1, 4, 4, 4, 4, 4, ArrowKind.weak),
+            _arrow(4, 4, 4, 4, 4, 8, ArrowKind.strong),
+            _arrow(4, 4, 8, 0, 4, 8, ArrowKind.weak),
           ],
           eliminated: [
-            [8, 4, 2],
+            [2, 4, 8],
           ],
         ),
         legend: _chainLegend,
       ),
       TechniqueInfo(
         id: 'grouped_aic',
-        name: 'Grouped AIC',
+        name: '区块链',
         summary: '链的一个节点可以是同宫里的一组格子，配合另一端单格构成强链再删除。',
-        definition: 'Grouped AIC 里链上的节点不必是单独一格，可以是同一个宫、同一行或'
+        definition: '区块链 里链上的节点不必是单独一格，可以是同一个宫、同一行或'
             '同一列里的一组格子——只要这组格子恰好都在同一个宫内，就可以把它们当成'
             '一个整体节点参与强链。例如某个数字在一列上只剩三格能填，其中两格恰好同'
             '在一个宫内，就可以把这两格捆成一个组，和列上第三格构成强链：组和第三格'
@@ -317,32 +382,33 @@ List<TechniqueInfo> chainTechniqueExamples() => [
         howToSpot: '先找一个数字在某条线上恰好剩三格的候选，看是否有两格恰好同宫，'
             '把这两格捆成一组，再看是否有格子同时能看到这个组所在的宫和线上剩下的'
             '那一格。',
-        walkthrough: '本例中数字 2 在c2上只剩r7,r8,r9c2能填，其中r8'
-            'c2与r9c2同在左下宫，捆成一组；r7c2则单独构成'
-            '另一个节点。列上只剩这三格能填 2，所以「这一组」和「r7c2」'
-            '至少有一个是 2。左下宫里r7,r8,r9c1都能同时看到这个组（同宫）'
-            '和 r7c2（r7c1 还同行），因此这三格都不可能是 2，'
-            '删除这三处候选 2。\n'
-            '{2r8c2, 2r9c2} = 2r7c2',
+        walkthrough: '本例中数字 7 在 r2 上，右上宫的 {7r2c7, 7r2c8, 7r2c9} '
+            '捆成一组，与 7r2c5 经强弱交替相连。两端的 7 至少有一处为真，'
+            '同时看见两端的 7r2c4 可删。\n'
+            '{7r2c7, 7r2c8, 7r2c9} = 7r2c4 - 7r1c5 = 7r2c5',
         caveats: '组内的格子必须真的同在一个宫里，不能跨宫勉强拼凑；删除目标要能同时'
-            '看到组的整体（同宫即可，不必看到组内每一格分别所在的行列）和单独节点。',
+            '看到组的整体（同宫即可，不必看到组内每一格分别所在的行列）和单独节点。'
+            '这一盘更浅的技巧会先出面，连点提示随后报到这一手。',
         rank: 701,
         examplePuzzle:
-            '302090000080000000407056000030007069040601050670400030000360501000000090000010706',
+            '100605009000008000753219846000951000001062000502080600607100905315897462009506100',
         exampleMarkup: _groupedMarkup(
-          single: [6, 1],
+          single: [1, 4],
           group: [
-            [7, 1],
-            [8, 1],
+            [1, 6],
+            [1, 7],
+            [1, 8],
           ],
           arrows: [
-            _arrow(6, 1, 2, 7, 1, 2, ArrowKind.strong),
-            _arrow(6, 1, 2, 8, 1, 2, ArrowKind.strong),
+            _arrow(1, 6, 7, 1, 3, 7, ArrowKind.strong),
+            _arrow(1, 7, 7, 1, 3, 7, ArrowKind.strong),
+            _arrow(1, 8, 7, 1, 3, 7, ArrowKind.strong),
+            _arrow(1, 3, 7, 0, 4, 7, ArrowKind.weak),
+            _arrow(1, 4, 7, 0, 4, 7, ArrowKind.weak),
+            _arrow(0, 4, 7, 1, 4, 7, ArrowKind.strong),
           ],
           eliminated: [
-            [6, 0, 2],
-            [7, 0, 2],
-            [8, 0, 2],
+            [1, 3, 7],
           ],
         ),
         legend: _groupedLegend,
@@ -361,34 +427,31 @@ List<TechniqueInfo> chainTechniqueExamples() => [
         howToSpot: '先在两个不重叠的区域各找一个几乎锁定集，看它们是否共享两个数字：'
             '一个作限制公共候选 X（两边的 X 格必须互相可见），另一个作 Z，'
             '再看谁能同时看到两个 ALS 里所有的 Z。',
-        walkthrough: '本例中 r4c2, r4c3 组成候选 {1, 7, 9} 的 ALS A，r5c1、'
-            'r5c2 与 r6c2 组成候选 {1, 6, 7, 8} 的 ALS B。两者共享候选 7 与 1：'
-            'A 里唯一的候选 7 落在 r4c2，B 里唯一的候选 7 落在 r5c2，'
-            '两格同列，互相可见，7 可以作限制公共候选 X。无论 7 最终填在 A 还是'
-            'B，另一边都会成为真正的锁定集，候选 1 必然落在其中。因此同时看到 A、'
-            'B 里所有候选 1 的r6c3不可能是 1，删除该处候选 1。',
+        walkthrough: '本例中 r1c4 单独构成候选 {3, 8} 的 ALS A，'
+            'r2c4、r3c4、r5c4、r7c4 构成 ALS B。两边以 8 为限制公共候选：'
+            '无论 8 落在哪一侧，Z=3 都会出现在某个 ALS 里，'
+            '因此同时看见两边所有 3 的 3r2c5 可删。',
         caveats: '两个 ALS 的格子不能重叠；限制公共候选 X 要求两边所有含 X 的格子'
-            '互相可见，只是共享数字不满足这一条时不能当作 X，只能退回普通候选重合。',
+            '互相可见，只是共享数字不满足这一条时不能当作 X，只能退回普通候选重合。'
+            '这一盘更浅的技巧会先出面，连点提示随后报到这一手。',
         rank: 652,
         examplePuzzle:
-            '703008000020570003090003070300806504005040000200000789040000067002050008907000300',
+            '076049210901000004243005896030591002102084300400203001300000007000907008010408020',
         exampleMarkup: _alsMarkup(
           alsA: [
-            [3, 1],
-            [3, 2],
+            [0, 3],
           ],
           alsB: [
-            [4, 0],
-            [4, 1],
-            [5, 1],
+            [1, 3],
+            [2, 3],
+            [4, 3],
+            [6, 3],
           ],
           arrows: [
-            _arrow(3, 1, 7, 4, 1, 7, ArrowKind.strong),
-            _arrow(3, 2, 1, 5, 2, 1, ArrowKind.weak),
-            _arrow(5, 1, 1, 5, 2, 1, ArrowKind.weak),
+            _arrow(0, 3, 8, 1, 3, 8, ArrowKind.strong),
           ],
           eliminated: [
-            [5, 2, 1],
+            [1, 4, 3],
           ],
         ),
         legend: _alsLegend,
@@ -444,9 +507,9 @@ List<TechniqueInfo> chainTechniqueExamples() => [
       ),
       TechniqueInfo(
         id: 'sue_de_coq',
-        name: 'Sue de Coq',
+        name: '融合式待定数组',
         summary: '宫与一行（或列）交接处的格子把数字拆成两堆，分别配给宫、行各自消化。',
-        definition: 'Sue de Coq 发生在一个宫和一条线（行或列）的交叉处：交叉处有几个'
+        definition: '融合式待定数组发生在一个宫和一条线（行或列）的交叉处：交叉处有几个'
             '空格，候选数字总数比格数多至少 2 个。如果能把这些候选拆成两堆，'
             '一堆能在宫内（交叉处以外的宫内格子）找到一个几乎锁定集正好覆盖，'
             '另一堆能在线上（交叉处以外的线上格子）找到另一个几乎锁定集正好覆盖，'
@@ -457,43 +520,41 @@ List<TechniqueInfo> chainTechniqueExamples() => [
         howToSpot: '先找一个宫与一行（或列）的交叉处，数一数交叉格候选总数是否比'
             '格数多 2 个以上，再看能不能把候选拆成两堆，分别在宫内、线上找到正好'
             '覆盖的几乎锁定集。',
-        walkthrough: '本例中r2c6与r3c6是中上宫与c6的交叉格，'
-            '候选合起来是 {1, 2, 4, 9}。把 {2, 4} 分给宫：r2c4候选正好是 '
-            '{2, 4}，覆盖这一堆；把 {1, 9} 分给列：r4c6候选正好是 {1, 9}，'
-            '覆盖另一堆。因此候选 2、4 不会再出现在这个宫的其它格子里，r3c4 '
-            '的候选 2、4 都要删除；候选 1、9 也不会再出现在 c6 的其它格子里，'
-            'r5c6的候选 9、r8c6的候选 1 都要删除。',
+        walkthrough: '本例中 r1c8、r1c9 是右上宫与 r1 的交叉格，'
+            '把候选拆成 1、2 与 4、9。宫内 r2c9 消化 1、2，线上 r1c2 消化 4、9。'
+            '因此宫内别处的 2（2r2c7、2r3c7）和线上别处的 9、4（9r1c1、4r1c3）都可删。',
         caveats: '两堆候选必须不重叠、合起来正好等于交叉格的全部候选；宫内、线上'
             '找到的几乎锁定集也不能占用交叉格本身，覆盖的候选要恰好和分到的那一堆'
-            '完全一致。',
+            '完全一致。'
+            '这一盘更浅的技巧会先出面，连点提示随后报到这一手。',
         rank: 603,
         examplePuzzle:
-            '970306042805000109000050000207000304010020080400738001000905000000000000100847003',
+            '000003500036405070150900063610389040080241000429756138070000009060504380008100000',
         exampleMarkup: _alsMarkup(
           alsA: [
-            [1, 3],
+            [1, 8],
           ],
           alsB: [
-            [3, 5],
+            [0, 1],
           ],
           pivot: [
-            [1, 5],
-            [2, 5],
+            [0, 7],
+            [0, 8],
           ],
           eliminated: [
-            [2, 3, 2],
-            [2, 3, 4],
-            [4, 5, 9],
-            [7, 5, 1],
+            [1, 6, 2],
+            [2, 6, 2],
+            [0, 0, 9],
+            [0, 2, 4],
           ],
         ),
         legend: _alsLegend,
       ),
       TechniqueInfo(
         id: 'death_blossom',
-        name: 'Death Blossom',
+        name: '死亡绽放',
         summary: '一个格子的每个候选都各连到一个几乎锁定集，几个花瓣汇出同一个删除。',
-        definition: 'Death Blossom（死亡花蕾）以一个「花心」格子出发：花心有几个候选'
+        definition: '死亡绽放以一个「花心」格子出发：花心有几个候选'
             '数字，为其中每一个候选各找一个几乎锁定集（花瓣），要求花心能看到花瓣里'
             '所有含这个候选的格子。花心最终会填某一个候选，对应的花瓣就必须去掉这个候选'
             '排除掉，转而用完剩下的候选——如果所有花瓣（对应花心的每一个候选）在'
@@ -537,45 +598,55 @@ List<TechniqueInfo> chainTechniqueExamples() => [
       TechniqueInfo(
         id: 'kraken',
         name: 'Kraken Fish',
-        summary: '一条带缺口的鱼（强链），缺口那一端接一条推导链，两端汇到同一个删除。',
-        definition: 'Kraken Fish 是鱼类技巧和链的结合：某个数字在一行（或列）上只剩'
-            '两格能填，构成一条强链。强链的一端能直接看到删除目标，另一端不能直接'
-            '看到，但假设它成立之后，靠单元格排除、唯一余数一路推导下去，'
-            '最终也能推出删除目标不能是这个数字。因为强链两端至少有一个为真，'
-            '两条路径（一条直接看到、一条靠链推导）都指向同一个结论，所以这个'
-            '结论必然成立，可以删除。',
-        howToSpot: '先找一个数字在某条线上只剩两格能填的强链，看删除目标能不能被'
-            '其中一端直接看到；如果只有一端能直接看到，就从另一端出发用唯一余数'
-            '往下推，看是否也能推到同一个删除目标。',
-        walkthrough: '本例中数字 2 在r7只剩c4和c9能填，构成强链。'
-            '若r7c4是 2，它与r4c4同列，直接让r4c4'
-            '不能是 2；若r7c9是 2，则r2c8成为r2剩下候选 2 '
-            '的唯一格、必须是 2，接着r2c6成为剩下候选 9 的唯一格、必须是 '
-            '9，最终r4c4成为r4剩下候选 6 的唯一格、必须是 6。两条路径'
-            '都推出 r4c4 不能是 2，因此删除该处候选 2。',
-        caveats: '强链必须是真正的强链（该数字恰好只剩两格）；靠链推导的一端每一步'
-            '都要写清楚依据哪条唯一余数或哪个区域，不能跳步，否则结论不可靠。',
+        summary: '带鳍鱼删不掉的覆盖候选，每一枚鳍再接一条短唯余链，两种情形都指向同一处删除。',
+        definition: 'Kraken Fish 从一条几乎成形的鱼出发，常见是带鳍 X-Wing 或'
+            ' Swordfish。鳍全为假时鱼成立，覆盖线上鱼身以外的同名候选没位置可待。'
+            '普通带鳍鱼还要求删除目标看得见全部鳍；目标看不到某枚鳍时，这一手就停住了。'
+            'Kraken 补上另一支：假设那枚鳍为真，用唯一余数往下推，若也能把同一个'
+            '候选拿掉，两种情形就汇到同一处删除。',
+        howToSpot: '先找差一两个鳍才成的 X-Wing 或 Swordfish，看覆盖线上有没有'
+            '看不到全部鳍的同名候选。对每一枚它看不见的鳍，假设该格填这个数字，'
+            '只用唯一余数推几步，看这个候选会不会消失。',
+        walkthrough: '本例中数字 1 在 r1、r2 上几乎构成 X-Wing，覆盖列是 c1 和 c6，'
+            '多出来的鳍是 r1c4 与 r2c7。覆盖列上的 1r7c6 看不到这两枚鳍，'
+            '普通带鳍鱼删不掉它。若两枚鳍都为假，X-Wing 成立，c1、c6 上鱼身以外的 1 '
+            '都没位置。若 1r1c4 为真，唯一余数依次推出 2r9c4、6r9c1、1r9c6，'
+            '1r7c6 也被排除。若 1r2c7 为真，则推出 1r3c1、1r7c8、2r8c8，'
+            '同样去掉 1r7c6。无论鳍真假，这个候选都要删除。',
+        caveats: '看得见全部鳍的删除是普通带鳍鱼，不要改叫 Kraken。'
+            '鳍上的推导必须是真实的唯一余数，不能跳步；链太长就不是认形，而是把整盘推完。'
+            '这一盘更浅的技巧会先出面，连点提示随后报到这一手。',
         rank: 751,
         examplePuzzle:
-            '083020090000800100029300008000098700070000060006740000300006980002005000010030540',
-        exampleMarkup: _forcingMarkup(
-          assumption: [6, 8],
-          path: [
-            [6, 3],
-            [1, 7],
+            '502070430030400052004325700401502073020010504975643281048050000010004005059030847',
+        exampleMarkup: _krakenMarkup(
+          digit: 1,
+          rows: [0, 1],
+          cols: [0, 5],
+          pattern: [
+            [0, 5],
+            [1, 0],
             [1, 5],
           ],
+          fin: [
+            [0, 3],
+            [1, 6],
+          ],
           arrows: [
-            _arrow(6, 3, 2, 3, 3, 2, ArrowKind.strong),
-            _arrow(6, 8, 2, 1, 7, 2, ArrowKind.weak),
-            _arrow(1, 7, 2, 1, 5, 9, ArrowKind.weak),
-            _arrow(1, 5, 9, 3, 3, 6, ArrowKind.weak),
+            _arrow(0, 3, 1, 8, 3, 2, ArrowKind.weak),
+            _arrow(8, 3, 2, 8, 0, 6, ArrowKind.weak),
+            _arrow(8, 0, 6, 8, 5, 1, ArrowKind.weak),
+            _arrow(8, 5, 1, 6, 5, 1, ArrowKind.weak),
+            _arrow(1, 6, 1, 2, 0, 1, ArrowKind.weak),
+            _arrow(2, 0, 1, 6, 7, 1, ArrowKind.weak),
+            _arrow(6, 7, 1, 7, 7, 2, ArrowKind.weak),
+            _arrow(7, 7, 2, 6, 5, 1, ArrowKind.weak),
           ],
           eliminated: [
-            [3, 3, 2],
+            [6, 5, 1],
           ],
         ),
-        legend: _forcingLegend,
+        legend: _krakenLegend,
       ),
       TechniqueInfo(
         id: 'nishio',
@@ -588,42 +659,87 @@ List<TechniqueInfo> chainTechniqueExamples() => [
             '只要能推出「某格无解」这一个矛盾就足够了。',
         howToSpot: '挑一个候选不多的格子，任选其中一个候选先假设成立，'
             '按基础方法一路推导填数，留意每一步是否让某个格子的候选被排除干净。',
-        walkthrough: '本例中r3c4候选 {3, 8}，假设它是 3。3 从c4排除后，'
-            '陆续用唯一余数推出 r3c1 是 5、r7c8 是 6、r8c3 '
-            '是 2，接着 r3c9 是 6、r7c9 是 7、r8c8 是 9，'
-            '再推出r8c1是 1。这时r8已经填了 1、9，r8c3又'
-            '填了 2，加上假设本身占掉列上的 3，r8c4原本候选 {1, 2, 3} 被'
-            '连续排除后一个不剩，出现矛盾。因此最初的假设错误，r3c4的'
-            '候选 3 必须删除，只能填 8。',
+        walkthrough: '本例中假设 2r5c5 为真。唯一余数依次推出 '
+            '6r5c4、2r3c6、8r9c6、6r1c6、4r7c4、8r6c4、4r6c5，'
+            '再往下走到 3r7c2 时，r7c9 候选被排空，出现矛盾。'
+            '因此最初的假设不成立，删除 2r5c5。',
         caveats: '每一步推导都要依据真实的基础规则（唯一余数、区块排除等），'
             '不能凭空跳步；矛盾必须是「某格候选被排空」，只是推出一个不喜欢的结果'
-            '不算矛盾。',
+            '不算矛盾。'
+            '这一盘更浅的技巧会先出面，连点提示随后报到这一手。',
         rank: 553,
         examplePuzzle:
-            '000600309306700010001004720900500000010000070000006001053900100070005804809007000',
+            '300790002020104000090300700643519287875003914219007635002001000000905020900030006',
         exampleMarkup: _forcingMarkup(
-          assumption: [2, 3],
+          assumption: [4, 4],
           path: [
+            [4, 3],
+            [2, 5],
+            [8, 5],
+            [0, 5],
+            [6, 3],
+            [5, 3],
+            [5, 4],
+            [8, 1],
+            [0, 1],
+            [6, 0],
+            [1, 0],
+            [1, 4],
+            [1, 6],
+            [1, 8],
+            [1, 7],
+            [1, 2],
+            [2, 4],
+            [2, 7],
+            [0, 7],
+            [0, 6],
+            [0, 2],
             [2, 0],
-            [6, 7],
-            [7, 2],
+            [2, 2],
             [2, 8],
-            [6, 8],
-            [7, 7],
-            [7, 0],
+            [6, 4],
+            [6, 1],
           ],
-          contradiction: [7, 3],
+          arrows: [
+            _arrow(4, 4, 2, 4, 3, 6, ArrowKind.weak),
+            _arrow(4, 3, 6, 2, 5, 2, ArrowKind.weak),
+            _arrow(2, 5, 2, 8, 5, 8, ArrowKind.weak),
+            _arrow(8, 5, 8, 0, 5, 6, ArrowKind.weak),
+            _arrow(0, 5, 6, 6, 3, 4, ArrowKind.weak),
+            _arrow(6, 3, 4, 5, 3, 8, ArrowKind.weak),
+            _arrow(5, 3, 8, 5, 4, 4, ArrowKind.weak),
+            _arrow(5, 4, 4, 8, 1, 5, ArrowKind.weak),
+            _arrow(8, 1, 5, 0, 1, 8, ArrowKind.weak),
+            _arrow(0, 1, 8, 6, 0, 7, ArrowKind.weak),
+            _arrow(6, 0, 7, 1, 0, 5, ArrowKind.weak),
+            _arrow(1, 0, 5, 1, 4, 8, ArrowKind.weak),
+            _arrow(1, 4, 8, 1, 6, 3, ArrowKind.weak),
+            _arrow(1, 6, 3, 1, 8, 9, ArrowKind.weak),
+            _arrow(1, 8, 9, 1, 7, 6, ArrowKind.weak),
+            _arrow(1, 7, 6, 1, 2, 7, ArrowKind.weak),
+            _arrow(1, 2, 7, 2, 4, 5, ArrowKind.weak),
+            _arrow(2, 4, 5, 2, 7, 4, ArrowKind.weak),
+            _arrow(2, 7, 4, 0, 7, 5, ArrowKind.weak),
+            _arrow(0, 7, 5, 0, 6, 1, ArrowKind.weak),
+            _arrow(0, 6, 1, 0, 2, 4, ArrowKind.weak),
+            _arrow(0, 2, 4, 2, 0, 1, ArrowKind.weak),
+            _arrow(2, 0, 1, 2, 2, 6, ArrowKind.weak),
+            _arrow(2, 2, 6, 2, 8, 8, ArrowKind.weak),
+            _arrow(2, 8, 8, 6, 4, 6, ArrowKind.weak),
+            _arrow(6, 4, 6, 6, 1, 3, ArrowKind.weak),
+          ],
+          contradiction: [6, 8],
           eliminated: [
-            [2, 3, 3],
+            [4, 4, 2],
           ],
         ),
         legend: _nishioLegend,
       ),
       TechniqueInfo(
         id: 'forcing_chain',
-        name: 'Forcing Chain',
+        name: '分类强制链',
         summary: '某格的每一个候选出发都能一路推出同一个结论，这个结论就必然成立。',
-        definition: 'Forcing Chain 从某个格子的每一个候选分别出发，各自照常用唯一'
+        definition: '分类强制链从某个格子的每一个候选分别出发，各自照常用唯一'
             '余数、区块排除往下推导，形成多条独立的推导路径。如果每一条路径'
             '（对应这个格子的每一个候选）最终都推出同一个格子填同一个数字，'
             '那么不管这个格子实际填的是哪个候选，这个共同的结论都会成立——'
@@ -671,9 +787,9 @@ List<TechniqueInfo> chainTechniqueExamples() => [
       ),
       TechniqueInfo(
         id: 'forcing_net',
-        name: 'Forcing Net',
+        name: '分类强制网',
         summary: '某格三条（或更多）出路组成一张网，一起传播后仍推出同一个结论。',
-        definition: 'Forcing Net 是 Forcing Chain 的加强版：某个格子有三个（或更多）'
+        definition: '分类强制网是分类强制链的加强版：某个格子有三个（或更多）'
             '候选，为每一个候选分别展开推导网络，网络内部可以有多步唯一余数、区块'
             '排除交织。只要每一张网最终都汇出同一个格子填同一个数字，'
             '这个结论就和候选数目无关、必然成立，可以直接确定这个填数，'
@@ -691,7 +807,7 @@ List<TechniqueInfo> chainTechniqueExamples() => [
             '因此直接填 1，候选 5、7、8 都要删除。',
         caveats: '每一张网都要各自独立推导，中间步骤多也没关系，但不能跳过依据；'
             '必须所有候选对应的网络都汇出同一个结论，只要有一条网络推出不同结果，'
-            '整条 Forcing Net 就不成立。',
+            '整条分类强制网就不成立。',
         rank: 801,
         examplePuzzle:
             '024610007006070402003824560000200800300060024002001000069002100240130600130006240',

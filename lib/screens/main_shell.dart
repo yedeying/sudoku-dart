@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../models/game_state.dart';
 import 'home_screen.dart';
 import 'technique_list_screen.dart';
 
@@ -14,6 +16,14 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
+    final request = context.watch<GameState>().requestedShellIndex;
+    if (request != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        context.read<GameState>().clearShellRequest();
+        setState(() => _index = request);
+      });
+    }
     return Scaffold(
       body: IndexedStack(
         index: _index,

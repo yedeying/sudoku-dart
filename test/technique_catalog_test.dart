@@ -47,7 +47,7 @@ const _reviewTableNames = <String>[
   '双生鱼',
   '不完整唯一矩形',
   '唯一矩形 Type 2',
-  'BUG+1',
+  '全双值坟墓+1',
   '可规避矩形',
   '带鳍 Swordfish',
   '自噬',
@@ -55,31 +55,31 @@ const _reviewTableNames = <String>[
   '隐性唯一矩形',
   'XYZ-Wing',
   '扩展矩形 Type 1',
-  'BUG Type 2',
+  '全双值坟墓 Type 2',
   '扩展矩形 Type 2',
   '带鳍 Jellyfish',
   '唯一矩形 Type 3',
-  'BUG Type 4',
+  '全双值坟墓 Type 4',
   '扩展矩形 Type 4',
   '扩展矩形 Type 3',
   '唯一环 Type 1',
-  'BUG Type 3',
+  '全双值坟墓 Type 3',
   '唯一环 Type 2',
-  'BUG+n',
+  '全双值坟墓+n',
   '唯一环 Type 4',
   '唯一环 Type 3',
-  'Franken 鱼',
-  'Simple Coloring',
+  '宫内鱼',
+  '染色法',
   '探长致命结构',
   'Mutant 鱼',
   '淑芬致命结构',
   'W-Wing',
   'XY-Chain',
   'WXYZ-Wing',
-  'AIC 开链',
-  'Sue de Coq',
+  '强弱交替链',
+  '融合式待定数组',
   'Nice Loop',
-  'Grouped AIC',
+  '区块链',
   '死环',
   '毛刺数组',
   '待定唯一矩形',
@@ -87,20 +87,20 @@ const _reviewTableNames = <String>[
   'DDS',
   '待定扩展矩形',
   '待定唯一环',
-  '待定 BUG',
-  'Death Blossom',
-  'WALS',
-  'MSLS',
+  '待定全双值坟墓',
+  '死亡绽放',
+  '弱待定数组',
+  '网',
   'Kraken Fish',
   '动态 AIC',
   '飞鱼导弹',
   'ALS-XY-Wing',
-  'Forcing Chain',
+  '分类强制链',
   '强制唯一矩形',
   '强制扩展矩形',
   '强制唯一环',
   'Nishio',
-  'Forcing Net',
+  '分类强制网',
 ];
 
 /// 只做教学、还没有独立报法的条目，取自production的
@@ -284,15 +284,15 @@ void main() {
     }
   });
 
-  test('保留 Simple Coloring，不含独立 3D Medusa', () {
+  test('保留染色法，不含独立 3D Medusa', () {
     final names = TechniqueCatalog.all.map((t) => t.name).toList();
-    expect(names, contains('Simple Coloring'));
+    expect(names, contains('染色法'));
     expect(
         names.any((n) => n.contains('Medusa') || n.contains('Multi-Coloring')),
         isFalse);
   });
 
-  test('含 AIC 与 Forcing Net', () {
+  test('含 AIC 与分类强制网', () {
     final ids = TechniqueCatalog.all.map((t) => t.id).toSet();
     expect(ids, containsAll(['aic', 'nice_loop', 'forcing_net', 'naked_quad']));
   });
@@ -302,7 +302,7 @@ void main() {
     expect(
       names,
       containsAll([
-        'Franken 鱼',
+        '宫内鱼',
         '唯一矩形 Type 1',
         '唯一矩形 Type 2',
         '唯一矩形 Type 3',
@@ -345,11 +345,11 @@ void main() {
     );
     expect(
       DifficultyAnalyzer.techniqueScores,
-      containsPair('BUG+1', 54),
+      containsPair('全双值坟墓+1', 54),
     );
     expect(
       DifficultyAnalyzer.techniqueScores,
-      containsPair('Franken 鱼', 68),
+      containsPair('宫内鱼', 68),
     );
     expect(
       DifficultyAnalyzer.techniqueScores,
@@ -439,7 +439,7 @@ void main() {
     }
   });
 
-  test('鱼类与带鳍/Franken 鱼盘面都有实质标记', () {
+  test('鱼类与带鳍/宫内鱼盘面都有实质标记', () {
     const ids = [
       'xwing',
       'swordfish',
@@ -475,13 +475,13 @@ void main() {
     }
   });
 
-  test('唯一矩形与 BUG+1 盘面标出四个模式格', () {
+  test('唯一矩形与全双值坟墓+1盘面标出四个模式格', () {
     const rectLikeIds = ['ur1', 'ur2', 'ur3', 'ur4', 'bug1'];
     final map = {for (final t in TechniqueCatalog.all) t.id: t};
     for (final id in rectLikeIds) {
       final t = map[id]!;
       expect(t.exampleMarkup.cellColors.length, greaterThanOrEqualTo(4),
-          reason: '$id 应标出矩形/BUG 四个格子');
+          reason: '$id 应标出矩形/全双值坟墓 四个格子');
     }
   });
 
@@ -570,8 +570,6 @@ void main() {
         'finned_swordfish',
         'finned_jellyfish',
         'als_xy',
-        // 强制致命结构 9.8 比 Nishio 9.9 浅，练习原题上先报了就把 Nishio 拆掉。
-        'nishio',
       };
       final checked = {...TechniqueCatalog.practicePuzzles.keys, 'bug1'}
         ..removeAll(knownUnreachable);

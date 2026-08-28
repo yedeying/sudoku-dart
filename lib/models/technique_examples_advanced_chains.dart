@@ -31,7 +31,7 @@ const _dynamicLegend = [
 /// `teaching_structure_test` 拿盘面独立重算后逐条对齐：死环核对奇数圈几何、
 /// 守卫穷尽与删除；动态 AIC 则要先证明那条强链静态时不存在，
 /// 再复核假设之后它确实收成两格、两端各自矛盾。
-/// 动态 AIC 的可行性仍是「否」——完整做出来就是 Forcing Net，
+/// 动态 AIC 的可行性仍是「否」——完整做出来就是分类强制网，
 /// 这里只作教学，不进提示搜索顺序。
 List<TechniqueInfo> advancedChainTechniqueExamples() => [
       TechniqueInfo(
@@ -144,7 +144,7 @@ List<TechniqueInfo> advancedChainTechniqueExamples() => [
             '动态 AIC 允许先假设某个候选成立，把这个假设的后果填进去，'
             '再用「填进去之后新长出来的」强弱关系继续接链。'
             '好处是链能走得更远，坏处是每往前一步都要重算一遍盘面，'
-            '而且没法穷尽。完整做出来其实就是 Forcing Net，'
+            '而且没法穷尽。完整做出来其实就是分类强制网，'
             '因此只作教学说明，不纳入提示。',
         howToSpot: '普通 AIC 走到断头时，把手上那个候选先当真填进去，'
             '顺着唯余摒除推几格，再看有没有哪个区域里某个数字刚好收成了两个落点——'
@@ -172,7 +172,7 @@ List<TechniqueInfo> advancedChainTechniqueExamples() => [
             '不先把唯余摒除推到底确认它静态时不成立，'
             '整页就只是给一条普通强链换了个说法。'
             '每假设一步都要重算盘面，链越长越容易记错状态；'
-            '而且分支一多就没法穷尽——完整做出来其实就是 Forcing Net，'
+            '而且分支一多就没法穷尽——完整做出来其实就是分类强制网，'
             '所以可行性判成「否」，只作教学，不进提示搜索顺序。',
         rank: 851,
         examplePuzzle:

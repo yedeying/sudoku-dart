@@ -203,7 +203,7 @@ void main() {
     test('按难度排进提示顺序，有难度分，教学页不再是教学专属', () {
       final order = SudokuSolver.hintSearchOrder;
       expect(order, contains('死环'));
-      expect(order.indexOf('Grouped AIC'), lessThan(order.indexOf('死环')));
+      expect(order.indexOf('区块链'), lessThan(order.indexOf('死环')));
       expect(order.indexOf('死环'), lessThan(order.indexOf('ALS-XZ')));
       expect(DifficultyAnalyzer.techniqueScores, containsPair('死环', 94));
       expect(_tech('dead_loop').teachingOnly, isFalse);

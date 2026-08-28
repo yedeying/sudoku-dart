@@ -3,17 +3,16 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sudoku_app/models/sudoku_board.dart';
 import 'package:sudoku_app/services/difficulty_analyzer.dart';
+import 'package:sudoku_app/services/puzzle_bank.dart';
 import 'package:sudoku_app/services/sudoku_solver.dart';
 
 /// 直接读随包题库，覆盖面比手写几道题大得多。
 List<String> _bank() {
   final out = <String>[];
-  for (final name in ['easy', 'medium', 'hard', 'expert']) {
-    final lines = File('assets/puzzles/$name.txt').readAsLinesSync();
-    for (final line in lines) {
-      final t = line.trim();
-      if (RegExp(r'^[0-9]{81}$').hasMatch(t)) out.add(t);
-    }
+  for (final name in PuzzleBank.difficulties) {
+    out.addAll(
+      PuzzleBank.parse(File('assets/puzzles/$name.txt').readAsStringSync()),
+    );
   }
   return out;
 }

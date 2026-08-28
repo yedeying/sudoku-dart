@@ -38,6 +38,7 @@ const _coloringLegend = [
 
 const _urLegend = [
   TechniqueLegendItem(color: TeachingColors.pattern, label: '矩形四格'),
+  TechniqueLegendItem(color: TeachingColors.node, label: '矩形数字'),
   TechniqueLegendItem(color: TeachingColors.end, label: '额外数字'),
   TechniqueLegendItem(color: TeachingColors.elimCand, label: '删除'),
 ];
@@ -51,12 +52,19 @@ const _bugLegend = [
 /// 链/翼类技巧的标记：起点涂 start（绿），终点涂 end（黄），
 /// 中间的中继格涂 node（蓝），被删掉的候选所在格涂 elimCell（浅黄）、
 /// 候选本身涂 elimCand（红）。强链箭头实线、弱链箭头虚线由 [ArrowKind] 驱动。
+Color _cellRole(List<int> start, List<int> end, int r, int c) {
+  if (r == start[0] && c == start[1]) return TeachingColors.start;
+  if (r == end[0] && c == end[1]) return TeachingColors.end;
+  return TeachingColors.node;
+}
+
 BoardMarkup _chainMarkup({
   required List<int> start,
   required List<int> end,
   List<List<int>> nodes = const [],
   required List<MarkupArrow> arrows,
   required List<List<int>> eliminated,
+  List<List<int>> keys = const [],
 }) {
   final cellColors = <int, Color>{
     _ck(start[0], start[1]): TeachingColors.start,
@@ -66,17 +74,21 @@ BoardMarkup _chainMarkup({
   for (final e in eliminated) {
     cellColors[_ck(e[0], e[1])] = TeachingColors.elimCell;
   }
+  final candidateColors = <CandidateRef, Color>{
+    for (final a in arrows) a.from: TeachingColors.node,
+    for (final a in arrows) a.to: TeachingColors.node,
+    for (final k in keys) _cr(k[0], k[1], k[2]): TeachingColors.node,
+    for (final e in eliminated)
+      _cr(e[0], e[1], e[2]): TeachingColors.elimCand,
+  };
   return BoardMarkup(
     cellColors: cellColors,
-    candidateColors: {
-      for (final e in eliminated)
-        _cr(e[0], e[1], e[2]): TeachingColors.elimCand,
-    },
+    candidateColors: candidateColors,
     arrows: arrows,
   );
 }
 
-/// Simple Coloring 专用：不分起终点方向，只分两种着色，
+/// 染色法专用：不分起终点方向，只分两种着色，
 /// 分别借用 start/end 两个颜色表示「同一条强链链条上的两种奇偶」。
 BoardMarkup _coloringMarkup({
   required List<List<int>> colorA,
@@ -91,24 +103,29 @@ BoardMarkup _coloringMarkup({
   for (final e in eliminated) {
     cellColors[_ck(e[0], e[1])] = TeachingColors.elimCell;
   }
+  final candidateColors = <CandidateRef, Color>{
+    for (final a in arrows) a.from: TeachingColors.node,
+    for (final a in arrows) a.to: TeachingColors.node,
+    for (final e in eliminated)
+      _cr(e[0], e[1], e[2]): TeachingColors.elimCand,
+  };
   return BoardMarkup(
     cellColors: cellColors,
-    candidateColors: {
-      for (final e in eliminated)
-        _cr(e[0], e[1], e[2]): TeachingColors.elimCand,
-    },
+    candidateColors: candidateColors,
     arrows: arrows,
   );
 }
 
-/// 唯一矩形/BUG+1 专用：矩形（或 BUG 的四个关键格）涂 pattern（浅蓝），
+/// 唯一矩形/全双值坟墓+1 专用：矩形（或全双值坟墓的四个关键格）涂 pattern（浅蓝），
 /// 额外数字的候选涂 end（金黄），真正被删除的候选涂 elimCand（红），
 /// 删除目标所在格顺带涂 elimCell。
 BoardMarkup _urMarkup({
   required List<List<int>> rectangle,
+  Set<int> pair = const {},
   List<List<int>> extraCandidates = const [],
   List<List<int>> eliminated = const [],
   List<MarkupArrow> arrows = const [],
+  Color extraColor = TeachingColors.end,
 }) {
   final cellColors = <int, Color>{
     for (final c in rectangle) _ck(c[0], c[1]): TeachingColors.pattern,
@@ -119,8 +136,12 @@ BoardMarkup _urMarkup({
   return BoardMarkup(
     cellColors: cellColors,
     candidateColors: {
-      for (final e in extraCandidates)
-        _cr(e[0], e[1], e[2]): TeachingColors.end,
+      for (final c in rectangle)
+        for (final d in pair)
+          _cr(c[0], c[1], d): TeachingColors.node,
+      for (final e in extraCandidates) _cr(e[0], e[1], e[2]): extraColor,
+      for (final a in arrows) a.from: TeachingColors.node,
+      for (final a in arrows) a.to: TeachingColors.node,
       for (final e in eliminated)
         _cr(e[0], e[1], e[2]): TeachingColors.elimCand,
     },
@@ -128,13 +149,13 @@ BoardMarkup _urMarkup({
   );
 }
 
-/// 翼类、唯一矩形与 Simple Coloring 的十三个教学盘面。
+/// 翼类、唯一矩形与染色法的十三个教学盘面。
 ///
-/// 摩天楼、双线风筝、空矩形、XY-Wing、XYZ-Wing、W-Wing、Simple Coloring、
-/// 唯一矩形 Type 2/3、Simple Coloring 与唯一矩形 Type 4 都是从随机生成的
+/// 摩天楼、双线风筝、空矩形、XY-Wing、XYZ-Wing、W-Wing、染色法、
+/// 唯一矩形 Type 2/3、染色法与唯一矩形 Type 4 都是从随机生成的
 /// 完整解里挖出题目后，用 [AdvancedTechniques] 对应的 finder 在一块全新的
 /// 快照上重新求解，确认能推出同样的技巧名字、同样的删除/填入结果，
-/// 才把这一刻的 81 位盘面和候选写成常量。WXYZ-Wing 与 BUG+1 在本引擎里
+/// 才把这一刻的 81 位盘面和候选写成常量。WXYZ-Wing 与全双值坟墓+1在本引擎里
 /// 还没有对应的 finder，改用「从完整解出发挖空」的办法：先取一个真实的
 /// 完整解，按目标形态挖空支点/翼格/矩形四格涉及的格子，再逐一核对挖空后的
 /// 候选形状与题目唯一解都成立——盘面依然是真实解的子集，只是形态本身没有
@@ -288,6 +309,14 @@ List<TechniqueInfo> wingTechniqueExamples() => [
             _arrow(6, 1, 5, 8, 2, 5, ArrowKind.weak),
             _arrow(8, 2, 7, 8, 5, 7, ArrowKind.weak),
           ],
+          keys: [
+            [6, 1, 4],
+            [6, 1, 5],
+            [8, 2, 5],
+            [8, 2, 7],
+            [8, 5, 4],
+            [8, 5, 7],
+          ],
           eliminated: [
             [6, 5, 4],
           ],
@@ -323,6 +352,13 @@ List<TechniqueInfo> wingTechniqueExamples() => [
           arrows: [
             _arrow(7, 3, 4, 7, 7, 4, ArrowKind.weak),
             _arrow(7, 3, 4, 8, 4, 4, ArrowKind.weak),
+          ],
+          keys: [
+            [7, 3, 1],
+            [7, 3, 4],
+            [7, 3, 5],
+            [7, 7, 4],
+            [8, 4, 4],
           ],
           eliminated: [
             [7, 5, 4],
@@ -361,6 +397,12 @@ List<TechniqueInfo> wingTechniqueExamples() => [
             _arrow(4, 5, 7, 5, 5, 7, ArrowKind.weak),
             _arrow(5, 5, 7, 5, 8, 7, ArrowKind.strong),
             _arrow(5, 8, 7, 3, 6, 7, ArrowKind.weak),
+          ],
+          keys: [
+            [4, 5, 4],
+            [4, 5, 7],
+            [3, 6, 4],
+            [3, 6, 7],
           ],
           eliminated: [
             [3, 3, 4],
@@ -411,9 +453,9 @@ List<TechniqueInfo> wingTechniqueExamples() => [
       ),
       TechniqueInfo(
         id: 'simple_coloring',
-        name: 'Simple Coloring',
+        name: '染色法',
         summary: '单数字沿强链把格子涂成两种颜色，同色互见或一格看见两色时都能删。',
-        definition: 'Simple Coloring 是把一个数字所有的强链串起来染色：任选一格涂颜色 A，'
+        definition: '染色法是把一个数字所有的强链串起来染色：任选一格涂颜色 A，'
             '沿着强链走到的下一格必须涂颜色 B（强链两端一真一假），再往下交替，'
             '直到整条链上的格子都染上 A 或 B 两种颜色中的一种。这两种颜色代表这个数字'
             '的两种互斥可能：如果某个未染色的候选格能同时看到颜色 A 和颜色 B 的格子，'
@@ -472,25 +514,27 @@ List<TechniqueInfo> wingTechniqueExamples() => [
             '因此第四格只能填那个多出来的数字。',
         howToSpot: '先找一个横跨两行两列、落在两个不同宫里的矩形，'
             '看是否有三格候选恰好都是同样两个数字，第四格是否只多了一个候选。',
-        walkthrough: '本例中r1c1、r1c4、r2c1的候选都是 '
-            '{1, 7}，r2c4的候选是 {1, 5, 7}。如果r2c4填 1 或 7，'
+        walkthrough: '把浅层技巧走完之后，r5c3、r5c9、r6c3的候选都是 '
+            '{2, 7}，r6c9的候选是 {2, 3, 7}。如果r6c9填 2 或 7，'
             '这四格就能在两组解之间互相对调，题目就不再唯一，与前提矛盾，'
-            '因此r2c4只能填 5。',
+            '因此r6c9只能填 3。',
         caveats: '矩形必须横跨两个不同的宫，如果四格全部落在同一个宫里就不成立；'
             '判断前要确认题目本身确实只有一个解，这是整个推理的前提。',
         rank: 254,
         examplePuzzle:
-            '049086253028043609653902874385471962274659138916238547462395781897064325531827496',
+            '246938751085074609079000080614720805930485160850610040520807000708340500400002078',
         exampleMarkup: _urMarkup(
           rectangle: [
-            [0, 0],
-            [0, 3],
-            [1, 0],
-            [1, 3],
+            [4, 2],
+            [4, 8],
+            [5, 2],
+            [5, 8],
           ],
+          pair: const {2, 7},
           extraCandidates: [
-            [1, 3, 5],
+            [5, 8, 3],
           ],
+          extraColor: TeachingColors.start,
         ),
         legend: _urLegend,
       ),
@@ -520,6 +564,7 @@ List<TechniqueInfo> wingTechniqueExamples() => [
             [8, 1],
             [8, 3],
           ],
+          pair: const {6, 9},
           extraCandidates: [
             [6, 3, 3],
             [8, 3, 3],
@@ -557,6 +602,7 @@ List<TechniqueInfo> wingTechniqueExamples() => [
             [6, 3],
             [6, 4],
           ],
+          pair: const {4, 8},
           extraCandidates: [
             [6, 3, 6],
             [6, 3, 7],
@@ -597,6 +643,7 @@ List<TechniqueInfo> wingTechniqueExamples() => [
             [4, 2],
             [4, 8],
           ],
+          pair: const {4, 5},
           extraCandidates: [
             [3, 8, 5],
             [4, 8, 5],
@@ -613,12 +660,12 @@ List<TechniqueInfo> wingTechniqueExamples() => [
       ),
       TechniqueInfo(
         id: 'bug1',
-        name: 'BUG+1',
+        name: '全双值坟墓+1',
         summary: '题目保证唯一解：除一格外将构成多解双值盘，那一格必须填多出来的候选。',
-        definition: 'BUG+1（Bivalue Universal Grave + 1）指整块盘面除了一个格子以外，'
+        definition: '全双值坟墓+1（Bivalue Universal Grave + 1）指整块盘面除了一个格子以外，'
             '所有空格的候选都恰好是两个数字（双值格），只有一个格子例外，'
             '候选比别的格子多一个。如果这个例外格填了它候选中「在所在行、列、宫里都'
-            '出现偶数次」的那个数字，整块盘面就会退化成经典的双值墓地（BUG），'
+            '出现偶数次」的那个数字，整块盘面就会退化成经典的双值墓地（全双值坟墓），'
             '出现可以互相对调、题目多解的死局，与唯一解前提矛盾。因此这个例外格'
             '必须填那个「在所在行、列、宫里出现奇数次」的候选，其余候选都要删除。',
         howToSpot: '先扫一遍所有空格的候选数，如果只有一个格子的候选数比其它双值格'
@@ -629,7 +676,7 @@ List<TechniqueInfo> wingTechniqueExamples() => [
             '盘面就会退化成可以对调的双值墓地、题目多解，因此r4c8必须填 5，'
             '候选 2 和 6 都要删除。',
         caveats: '一定要先确认「只有一个格子例外、其余全是双值格」这个前提成立，'
-            '再去数候选出现次数；只要还有第二个非双值格，BUG+1 的结论就不成立。',
+            '再去数候选出现次数；只要还有第二个非双值格，全双值坟墓+1的结论就不成立。',
         rank: 255,
         examplePuzzle:
             '483716295125938647796542381004800109018200704600104803861359472030487516547621938',

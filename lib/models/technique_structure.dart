@@ -32,7 +32,7 @@ enum TeachingFamily {
   qiu,
 
   /// 鱼：一个数字、若干基线、若干覆盖线，鳍必须和基线同宫。
-  /// 普通鱼、带鳍鱼、刺身鱼、Franken 鱼、Mutant 鱼共用这一族。
+  /// 普通鱼、带鳍鱼、刺身鱼、宫内鱼、Mutant 鱼共用这一族。
   fish,
 
   /// 双生鱼：两条共用鱼身的鱼叠在一张图上，各自算出一套删除。
@@ -59,7 +59,7 @@ enum TeachingFamily {
   /// 而且这些房屋至少三条、谁也换不成两条。
   distributedDisjointSubset,
 
-  /// 多区域锁定集（MSLS）：rank 0 的一般形，一个数字可以占用两条房屋，
+  /// 网（MSLS）：rank 0 的一般形，一个数字可以占用两条房屋，
   /// 所以格数等于「链接条数」而不是「数字个数」。
   multiSectorLockedSet,
 
@@ -155,7 +155,7 @@ enum HouseKind { row, col, box }
 
 /// 鱼的一条线：种类加 0 基编号。
 ///
-/// 普通鱼（行基线 × 列覆盖）、Franken 鱼（一侧掺宫）、Mutant 鱼（同一侧混行与列）
+/// 普通鱼（行基线 × 列覆盖）、宫内鱼（一侧掺宫）、Mutant 鱼（同一侧混行与列）
 /// 用的是同一套声明，所以判定也能共用同一段代码，不必按名字分岔。
 class FishHouse {
   final HouseKind kind;
@@ -257,7 +257,7 @@ class FishSpec {
 ///
 /// rank 0 的道理就是数链接：每个结构格必须填一个数，每条链接最多消化一个格子，
 /// 所以「链接条数 = 格数」时，这些房屋里结构外的同名候选统统没地方待。
-/// 一个数字允许占两条房屋（那时它算两条链接），这正是 MSLS 比 DDS 一般的地方。
+/// 一个数字允许占两条房屋（那时它算两条链接），这正是网比 DDS 一般的地方。
 class SectorLink {
   final int digit;
 
@@ -397,7 +397,7 @@ class TeachingStructure {
   /// 鱼或同数字链盯的数字。
   final int? fishDigit;
 
-  /// 这一页画的鱼。普通/带鳍/刺身/Franken/Mutant 各一条，双生鱼两条。
+  /// 这一页画的鱼。普通/带鳍/刺身/宫内/Mutant 各一条，双生鱼两条。
   final List<FishSpec> fishes;
 
   /// 同数字短链的分段，依次强-弱-强。
@@ -426,7 +426,7 @@ class TeachingStructure {
   /// 教学页明确说「这个候选可以删」的结论，同样要和唯一解对得上。
   final List<CandidateRef> conclusionFalse;
 
-  /// rank 0 集合（DDS / MSLS）的全部链接，一条不漏。
+  /// rank 0 集合（DDS / 网）的全部链接，一条不漏。
   final List<SectorLink> sectorLinks;
 
   /// 毛刺数组多出来的那一枚候选。

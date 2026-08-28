@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/game_state.dart';
+import '../models/puzzle_grade.dart';
 import '../models/board_markup.dart';
 import '../models/notation.dart';
 import '../models/technique_catalog.dart';
@@ -221,7 +222,7 @@ class _GameScreenState extends State<GameScreen> {
           _buildInfoItem(
             icon: Icons.signal_cellular_alt,
             label: '难度',
-            value: _getDifficultyName(gameState.difficulty),
+            value: _getDifficultyName(gameState),
           ),
           _buildInfoItem(
             icon: Icons.help_outline,
@@ -539,19 +540,8 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  String _getDifficultyName(String difficulty) {
-    switch (difficulty) {
-      case 'easy':
-        return '简单';
-      case 'medium':
-        return '中等';
-      case 'hard':
-        return '困难';
-      case 'expert':
-        return '专家';
-      default:
-        return '自定义';
-    }
+  String _getDifficultyName(GameState gameState) {
+    return PuzzleGrades.titleOf(gameState.difficulty);
   }
 
   /// 当前是否有可直接应用的提示（用于把「提示」键切成「应用」）。
@@ -662,10 +652,17 @@ class _GameScreenState extends State<GameScreen> {
 
   void _applySimpleFills(BuildContext context) {
     final gameState = context.read<GameState>();
-    final n = gameState.applySimpleFills(includeHiddenSingle: true);
+    final result = gameState.applySimpleFills(includeHiddenSingle: true);
+    final extended = PuzzleGrades.extendsQuickFill(gameState.difficulty);
+    final message = result.filled == 0 && result.eliminated == 0
+        ? (extended ? '没有可填或可删的基础技巧' : '没有可填的唯余或摒除')
+        : extended
+            ? '已填写 ${result.filled} 格'
+                '${result.eliminated == 0 ? '' : '，删除 ${result.eliminated} 处'}'
+            : '已用唯余/摒除填写 ${result.filled} 格';
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(n == 0 ? '没有可填的唯余或摒除' : '已用唯余/摒除填写 $n 格'),
+        content: Text(message),
         duration: const Duration(seconds: 2),
       ),
     );

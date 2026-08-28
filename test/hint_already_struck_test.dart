@@ -18,7 +18,7 @@ SudokuHint _firstElimination(SudokuBoard board) {
 void main() {
   test('目标候选已经被手划掉之后，不再报同一手删除', () {
     final puzzle = PuzzleBank.parse(
-      File('assets/puzzles/medium.txt').readAsStringSync(),
+      File('assets/puzzles/normal.txt').readAsStringSync(),
     ).first;
     final board = SudokuBoard.fromString(puzzle);
     final first = _firstElimination(board);

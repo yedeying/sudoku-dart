@@ -10,6 +10,7 @@ CandidateRef _cr(int r, int c, int n) => CandidateRef(r, c, n);
 const _fishLegend = [
   TechniqueLegendItem(color: TeachingColors.house, label: '基线'),
   TechniqueLegendItem(color: TeachingColors.pattern, label: '鱼身'),
+  TechniqueLegendItem(color: TeachingColors.node, label: '鱼身候选'),
   TechniqueLegendItem(color: TeachingColors.cover, label: '覆盖单位'),
   TechniqueLegendItem(color: TeachingColors.elimCand, label: '删除'),
 ];
@@ -17,6 +18,7 @@ const _fishLegend = [
 const _finnedFishLegend = [
   TechniqueLegendItem(color: TeachingColors.house, label: '基线'),
   TechniqueLegendItem(color: TeachingColors.pattern, label: '鱼身'),
+  TechniqueLegendItem(color: TeachingColors.node, label: '鱼身候选'),
   TechniqueLegendItem(color: TeachingColors.cover, label: '覆盖单位'),
   TechniqueLegendItem(color: TeachingColors.elimCand, label: '删除'),
   TechniqueLegendItem(color: TeachingColors.end, label: '鳍'),
@@ -52,19 +54,23 @@ BoardMarkup _fishMarkup({
   return BoardMarkup(
     cellColors: cellColors,
     candidateColors: {
+      for (final c in pattern)
+        _cr(c[0], c[1], digit): TeachingColors.node,
+      for (final c in fin) _cr(c[0], c[1], digit): TeachingColors.end,
       for (final e in eliminated)
         _cr(e[0], e[1], digit): TeachingColors.elimCand,
     },
   );
 }
 
-/// 鱼类与带鳍/Franken 鱼的七个教学盘面。
+/// 鱼类与带鳍/宫内鱼的七个教学盘面。
 ///
 /// Swordfish 的盘面和标记位置是从题库里的困难/专家题逐步用
 /// [SudokuSolver.getHint] 推演出来的：一步步应用求解器给出的提示，记录下它
 /// 第一次报出该鱼类技巧时的棋盘快照，再把那一刻的候选、鱼身格、删除目标写成
-/// 常量（求解器已经确认过这些候选和删除关系都真实存在）。X-Wing 和
-/// Franken 鱼是直接在题库真实谜题的原始候选上扫描出来的天然鱼型，用独立
+/// 常量（求解器已经确认过这些候选和删除关系都真实存在）。X-Wing 也改成
+/// 同一做法：练习原题连点提示第一次报到 X-Wing 时的残局。宫内鱼仍是
+/// 在题库真实谜题的原始候选上扫描出来的天然鱼型，用独立
 /// 脚本核验过候选分布、删除关系和唯一解。Jellyfish 和带鳍三例在本引擎里
 /// 还没有对应的 finder，因此改用「从完整解出发挖空」的办法：先取一个真实的
 /// 完整解，挖空鱼身、鳍和删除目标涉及的格子，再逐一核对挖空后的候选确实
@@ -81,34 +87,29 @@ List<TechniqueInfo> fishTechniqueExamples() => [
             '数字，可以直接删除。反过来以两列找两行也是同样的道理。',
         howToSpot: '选定一个数字，找两行（或两列）候选数刚好都只剩两格，'
             '且这两格所在的列（或行）完全相同，就是 X-Wing。',
-        walkthrough: '本例中数字 6 在r3和r7都只能出现在c5和c8，'
-            '这两行、两列组成一个 X-Wing：无论 6 具体落在哪一种对角组合上，'
-            'c5和c8的 6 都必然被这两行占用，因此可以把这两列其它行的候选 6 '
-            '删除。本例删掉的是r1c5、r1c8、r9c5、'
-            'r9c8的候选 6。',
+        walkthrough: '把浅层技巧走完之后，数字 7 在r2和r7都只能出现在c3和c5，'
+            '这两行、两列组成一个 X-Wing：无论 7 具体落在哪一种对角组合上，'
+            'c3和c5的 7 都必然被这两行占用，因此可以把这两列其它行的候选 7 '
+            '删除。本例删掉的是r3c5的候选 7。',
         caveats: '两行的候选列必须完全一致，只差一列或多一列都不成立，'
             '不要把普通数对误认成 X-Wing。',
         rank: 252,
         examplePuzzle:
-            '400000007006030200005702900850473026000806000004020300003209800068000590000000000',
+            '083520097500809123029300058200698700070053060006740000300006982002085371018030546',
         exampleMarkup: _fishMarkup(
-          digit: 6,
-          rows: [2, 6],
+          digit: 7,
+          rows: [1, 6],
           pattern: [
-            [2, 4],
-            [2, 7],
+            [1, 2],
+            [1, 4],
+            [6, 2],
             [6, 4],
-            [6, 7],
           ],
           cover: [
-            [0, 4],
-            [0, 7],
+            [2, 4],
           ],
           eliminated: [
-            [0, 4],
-            [0, 7],
-            [8, 4],
-            [8, 7],
+            [2, 4],
           ],
         ),
         legend: _fishLegend,
@@ -346,20 +347,20 @@ List<TechniqueInfo> fishTechniqueExamples() => [
       ),
       TechniqueInfo(
         id: 'franken_fish',
-        name: 'Franken 鱼',
+        name: '宫内鱼',
         summary: '鱼的覆盖单位不限于纯行对纯列，宫也可以当一条线。',
-        definition: 'Franken 鱼把普通鱼的基本单位从纯粹的行/列换成了宫：只要某个数字'
+        definition: '宫内鱼把普通鱼的基本单位从纯粹的行/列换成了宫：只要某个数字'
             '在一行和一个不相交的宫里的候选合起来恰好只落在两条列上，这一行和这个宫'
             '就能当成两个基本单位——一行必须给这个数字留一个位置，一个宫也必须给它'
             '留一个位置，两个位置刚好落在这两列里，这两列上其它地方的候选就可以删除。',
         howToSpot: '先看某个数字在一行的候选是否只剩两列，再看是否有一个不相交的宫，'
-            '其候选恰好也落在同样两列里，两者合起来就是 Franken 鱼。',
+            '其候选恰好也落在同样两列里，两者合起来就是宫内鱼。',
         walkthrough: '本例中数字 2 在r8只能出现在c4和c5；中心宫'
             '（r4–r6, c4–c6）里，这个数字的候选恰好也只落在 c4'
             '（r4）和c5（r4,r5）这两处。r8和这个宫合起来'
             '正好把数字 2 锁在 c4、c5 里，因此可以删除 r1c4, r1c5、'
             'r3c4, r3c5、r7c5 的候选 2。',
-        caveats: 'Franken 鱼要求行（或列）与宫之间不能有重叠的候选格，'
+        caveats: '宫内鱼要求行（或列）与宫之间不能有重叠的候选格，'
             '否则同一个候选会被同时算进两个基本单位，逻辑就不成立了。',
         rank: 650,
         examplePuzzle:

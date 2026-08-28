@@ -19,14 +19,14 @@ Set<String> _cellKeys(SudokuHint hint, HintRole role) => {
     };
 
 void main() {
-  group('WALS', () {
+  group('弱待定数组', () {
     test('教学盘：c7 上 1、5 占三格，两支都删 3/6 r3c7 和 3/8 r8c7', () {
       final puzzle = _tech('wals').examplePuzzle;
       final board = SudokuBoard.fromString(puzzle);
       final hint = AdvancedTechniques.findWals(board);
 
       expect(hint, isNotNull);
-      expect(hint!.technique, 'WALS');
+      expect(hint!.technique, '弱待定数组');
       expect(hint.isElimination, isTrue);
       expect(elimKeys(hint), {'2,6,3', '2,6,6', '7,6,3', '7,6,8'});
       expectEliminationsPresent(board, hint);
@@ -36,7 +36,7 @@ void main() {
       expect(hint.highlightCols, contains(6));
     });
 
-    test('已经是隐性数对时不报 WALS', () {
+    test('已经是隐性数对时不报弱待定数组', () {
       final board = SudokuBoard.empty();
       var fill = 3;
       for (var r = 0; r < 9; r++) {
@@ -96,7 +96,7 @@ void main() {
 
     test('题库残局上的每一条删除都避开唯一解', () {
       var emissions = 0;
-      for (final name in ['easy', 'medium', 'hard', 'expert']) {
+      for (final name in PuzzleBank.difficulties) {
         final puzzles = PuzzleBank.parse(
           File('assets/puzzles/$name.txt').readAsStringSync(),
         );
@@ -111,8 +111,8 @@ void main() {
             final hint = SudokuSolver.getHint(board);
             if (hint == null ||
                 hint.technique == 'Nishio' ||
-                hint.technique == 'Forcing Chain' ||
-                hint.technique == 'Forcing Net') {
+                hint.technique == '分类强制链' ||
+                hint.technique == '分类强制网') {
               break;
             }
             if (hint.isElimination) {
@@ -126,18 +126,18 @@ void main() {
         }
       }
       // ignore: avoid_print
-      print('WALS 题库触发次数：$emissions');
+      print('弱待定数组题库触发次数：$emissions');
     }, timeout: const Timeout(Duration(minutes: 5)));
 
-    test('按难度排在 Death Blossom 之后、Kraken 之前，并开放教学页', () {
+    test('按难度排在死亡绽放之后、Kraken 之前，并开放教学页', () {
       final order = SudokuSolver.hintSearchOrder;
-      expect(order, contains('WALS'));
+      expect(order, contains('弱待定数组'));
       expect(
-        order.indexOf('Death Blossom'),
-        lessThan(order.indexOf('WALS')),
+        order.indexOf('死亡绽放'),
+        lessThan(order.indexOf('弱待定数组')),
       );
-      expect(order.indexOf('WALS'), lessThan(order.indexOf('Kraken Fish')));
-      expect(DifficultyAnalyzer.techniqueScores, containsPair('WALS', 96));
+      expect(order.indexOf('弱待定数组'), lessThan(order.indexOf('Kraken Fish')));
+      expect(DifficultyAnalyzer.techniqueScores, containsPair('弱待定数组', 96));
       expect(_tech('wals').teachingOnly, isFalse);
     });
   });

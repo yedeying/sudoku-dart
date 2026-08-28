@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/game_state.dart';
+import '../models/puzzle_grade.dart';
 import '../theme/app_theme.dart';
 import '../widgets/accent_picker.dart';
 import 'game_screen.dart';
@@ -9,26 +10,27 @@ import 'input_screen.dart';
 class _Difficulty {
   final String id;
   final String title;
-  final String subtitle;
   final IconData icon;
 
-  const _Difficulty(this.id, this.title, this.subtitle, this.icon);
+  const _Difficulty(this.id, this.title, this.icon);
 }
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   static const List<_Difficulty> _levels = [
-    _Difficulty('easy', '简单', '只需基础技巧，适合新手', Icons.spa_outlined),
-    _Difficulty('medium', '中等', '需要中级技巧，挑战思维', Icons.timeline_outlined),
-    _Difficulty('hard', '困难', '需要 X-Wing 等高级技巧', Icons.bolt_outlined),
-    _Difficulty(
-        'expert', '专家', '需要 XY-Wing 等专家技巧', Icons.workspace_premium_outlined),
+    _Difficulty('beginner', '入门', Icons.spa_outlined),
+    _Difficulty('normal', '普通', Icons.timeline_outlined),
+    _Difficulty('advanced', '进阶', Icons.bolt_outlined),
+    _Difficulty('professional', '专业', Icons.workspace_premium_outlined),
+    _Difficulty('master', '大师', Icons.military_tech_outlined),
+    _Difficulty('hell', '地狱', Icons.local_fire_department_outlined),
   ];
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final game = context.watch<GameState>();
 
     return Scaffold(
       body: DecoratedBox(
@@ -51,6 +53,10 @@ class HomeScreen extends StatelessWidget {
                 children: [
                   _buildHeader(context),
                   const SizedBox(height: 28),
+                  if (game.hasResumableGame) ...[
+                    _ContinueTile(game: game),
+                    const SizedBox(height: 12),
+                  ],
                   for (final level in _levels) ...[
                     _DifficultyTile(level: level),
                     const SizedBox(height: 12),
@@ -117,6 +123,72 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
+class _ContinueTile extends StatelessWidget {
+  final GameState game;
+
+  const _ContinueTile({required this.game});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final title = PuzzleGrades.titleOf(game.difficulty);
+    final id = game.puzzleId;
+    final subtitle = id == null || id == 'custom' ? '自定义' : '$title · $id';
+
+    return Card(
+      color: scheme.primaryContainer,
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const GameScreen()),
+          );
+        },
+        borderRadius: BorderRadius.circular(AppTheme.radius),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: scheme.primary,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  Icons.play_arrow_rounded,
+                  size: 26,
+                  color: scheme.onPrimary,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('继续题目', style: theme.textTheme.titleMedium),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.onPrimaryContainer,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: scheme.onPrimaryContainer,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _DifficultyTile extends StatelessWidget {
   final _Difficulty level;
 
@@ -159,19 +231,7 @@ class _DifficultyTile extends StatelessWidget {
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(level.title, style: theme.textTheme.titleMedium),
-                    const SizedBox(height: 2),
-                    Text(
-                      level.subtitle,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
+                child: Text(level.title, style: theme.textTheme.titleMedium),
               ),
               Icon(
                 Icons.chevron_right,
