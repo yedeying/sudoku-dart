@@ -68,10 +68,7 @@ class GameState extends ChangeNotifier {
   String get difficulty => _difficulty;
   String? get puzzleId => _puzzleId;
   bool get hasResumableGame =>
-      _board != null &&
-      _isPlaying &&
-      !_justCompleted &&
-      !_board!.isComplete();
+      _board != null && _isPlaying && !_justCompleted && !_board!.isComplete();
   int get elapsedSeconds => _elapsedSeconds;
   int get hintsUsed => _hintsUsed;
   bool get isPlaying => _isPlaying;
@@ -222,6 +219,91 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clearSelection() {
+    if (_selectedRow == null && _selectedCol == null) return;
+    _selectedRow = null;
+    _selectedCol = null;
+    notifyListeners();
+  }
+
+  /// 高亮格沿行列移动，到边后绕回。无选中时不做事。
+  bool moveSelection(int dRow, int dCol) {
+    if (_selectedRow == null || _selectedCol == null) return false;
+    _selectedRow = (_selectedRow! + dRow + 9) % 9;
+    _selectedCol = (_selectedCol! + dCol + 9) % 9;
+    notifyListeners();
+    return true;
+  }
+
+  /// 键盘数字：玩法下空格 toggle 候选，Shift 填成数；标记态走数字区同一套路由。
+  bool handleDigitKey(int number, {required bool shift}) {
+    if (_board == null || hintActive) return false;
+    if (number < 1 || number > 9) return false;
+
+    switch (markupMode) {
+      case MarkupMode.off:
+        if (_selectedRow == null || _selectedCol == null) return false;
+        if (_board!.isInitial(_selectedRow!, _selectedCol!)) return false;
+        if (_board!.get(_selectedRow!, _selectedCol!) != 0) return false;
+        final wasNotes = _candidateMode;
+        _candidateMode = !shift;
+        placeNumber(number);
+        _candidateMode = wasNotes;
+        return true;
+      case MarkupMode.candidateColor:
+        if (_selectedRow == null) {
+          toggleGlobalCandidateColor(number);
+          return true;
+        }
+        onNumberPad(number);
+        return true;
+      case MarkupMode.strong:
+      case MarkupMode.weak:
+        if (_selectedRow == null || _selectedCol == null) return false;
+        onNumberPad(number);
+        return true;
+      case MarkupMode.autoStrong:
+        onNumberPad(number);
+        return true;
+      case MarkupMode.cellColor:
+        return false;
+    }
+  }
+
+  /// 删掉手填成数并重算候选。题目已知数不动。
+  bool handleBackspace() {
+    if (_board == null || hintActive) return false;
+    if (markupMode != MarkupMode.off) return false;
+    if (_selectedRow == null || _selectedCol == null) return false;
+    if (_board!.isInitial(_selectedRow!, _selectedCol!)) return false;
+    if (_board!.get(_selectedRow!, _selectedCol!) == 0) return false;
+    clearSelected();
+    return true;
+  }
+
+  /// 无选中时：该数字已有候选色则全部去掉，否则给盘上所有该数字候选涂当前色。
+  void toggleGlobalCandidateColor(int digit) {
+    if (_board == null) return;
+    final existing = [
+      for (final e in userMarkup.candidateColors.entries)
+        if (e.key.num == digit) e.key,
+    ];
+    if (existing.isNotEmpty) {
+      for (final ref in existing) {
+        userMarkup.candidateColors.remove(ref);
+      }
+    } else {
+      for (var r = 0; r < 9; r++) {
+        for (var c = 0; c < 9; c++) {
+          if (_board!.visibleCandidates(r, c).contains(digit)) {
+            userMarkup.candidateColors[CandidateRef(r, c, digit)] = markupColor;
+          }
+        }
+      }
+    }
+    notifyListeners();
+  }
+
   /// 在选中的格子填入数字
   void placeNumber(int number) {
     if (_board == null || _selectedRow == null || _selectedCol == null) {
@@ -293,6 +375,7 @@ class GameState extends ChangeNotifier {
     ));
 
     _board!.clear(_selectedRow!, _selectedCol!);
+    _showCandidates = true;
     notifyListeners();
     _persistCurrent();
   }
@@ -632,7 +715,11 @@ class GameState extends ChangeNotifier {
       case MarkupMode.cellColor:
         return;
       case MarkupMode.candidateColor:
-        _toggleSelectedCandidateColor(number);
+        if (_selectedRow == null) {
+          toggleGlobalCandidateColor(number);
+        } else {
+          _toggleSelectedCandidateColor(number);
+        }
         return;
       case MarkupMode.strong:
       case MarkupMode.weak:
@@ -659,6 +746,11 @@ class GameState extends ChangeNotifier {
       case MarkupMode.cellColor:
         return false;
       case MarkupMode.candidateColor:
+        if (_selectedRow == null || _selectedCol == null) return true;
+        final cr = _selectedRow!;
+        final cc = _selectedCol!;
+        if (_board!.get(cr, cc) != 0) return false;
+        return _board!.visibleCandidates(cr, cc).contains(number);
       case MarkupMode.strong:
       case MarkupMode.weak:
         if (_selectedRow == null || _selectedCol == null) return false;
@@ -1051,7 +1143,8 @@ class GameState extends ChangeNotifier {
   Future<void> persistForTest() => _persistCurrent();
 
   Future<void> _persistCurrent() {
-    _persistQueue = _persistQueue.then((_) => _writeCurrent()).catchError((_) {});
+    _persistQueue =
+        _persistQueue.then((_) => _writeCurrent()).catchError((_) {});
     return _persistQueue;
   }
 
