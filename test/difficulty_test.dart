@@ -5,7 +5,9 @@ import 'package:sudoku_app/services/sudoku_generator_v2.dart';
 
 void main() {
   group('难度分级测试', () {
-    test('逻辑技巧未解完的题目不会被误判为可接受难度', () {
+    test('无解盘不会被误判为可接受难度', () {
+      // 这张盘一个解都没有；以前逻辑推不完会落到 unsupported，
+      // 现在先数解的个数，0 或 2+ 都记 invalid。
       final board = SudokuBoard.fromString(
         '020608000'
         '580009700'
@@ -20,7 +22,7 @@ void main() {
 
       final result = DifficultyAnalyzer.analyzeDifficulty(board);
 
-      expect(result.level, 'unsupported');
+      expect(result.level, 'invalid');
       expect(DifficultyAnalyzer.validateDifficulty(board, 'normal'), isFalse);
       expect(DifficultyAnalyzer.validateDifficulty(board, 'hell'), isFalse);
     });
