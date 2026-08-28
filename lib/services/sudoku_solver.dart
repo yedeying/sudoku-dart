@@ -223,12 +223,14 @@ class SudokuSolver {
   static List<String> get hintSearchOrder =>
       List.unmodifiable(_hintFinders.map((entry) => entry.$1));
 
-  static SudokuHint? getHint(SudokuBoard board) {
+  static SudokuHint? getHint(SudokuBoard board, {String? until}) {
     for (final entry in _hintFinders) {
       final hint = entry.$2(board);
-      if (hint == null) continue;
-      final usable = _visibleEffect(board, hint);
-      if (usable != null) return usable;
+      if (hint != null) {
+        final usable = _visibleEffect(board, hint);
+        if (usable != null) return usable;
+      }
+      if (until != null && entry.$1 == until) break;
     }
     return null;
   }

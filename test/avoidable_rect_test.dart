@@ -1,13 +1,11 @@
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sudoku_app/models/sudoku_board.dart';
 import 'package:sudoku_app/models/technique_catalog.dart';
 import 'package:sudoku_app/services/advanced_techniques.dart';
 import 'package:sudoku_app/services/difficulty_analyzer.dart';
-import 'package:sudoku_app/services/puzzle_bank.dart';
 import 'package:sudoku_app/services/sudoku_solver.dart';
 
+import 'support/bank_sweep.dart';
 import 'support/finder_soundness.dart';
 
 SudokuBoard _blank() => SudokuBoard.fromString(List.filled(81, '0').join());
@@ -16,16 +14,6 @@ String _puzzleWith(Map<int, int> givens) {
   final cells = List.filled(81, '0');
   givens.forEach((index, digit) => cells[index] = '$digit');
   return cells.join();
-}
-
-List<String> _bank() {
-  final puzzles = <String>[];
-  for (final level in PuzzleBank.difficulties) {
-    puzzles.addAll(
-      PuzzleBank.parse(File('assets/puzzles/$level.txt').readAsStringSync()),
-    );
-  }
-  return puzzles;
 }
 
 void main() {
@@ -79,9 +67,8 @@ void main() {
   });
 
   test('题库残局里报出的可规避矩形都站得住', () {
-    final puzzles = _bank();
     var hits = 0;
-    for (final puzzle in puzzles) {
+    for (final puzzle in loadBank()) {
       final solved = SudokuBoard.fromString(puzzle);
       if (!SudokuSolver.solve(solved)) continue;
       final board = SudokuBoard.fromString(puzzle);
@@ -112,15 +99,9 @@ void main() {
           }
           break;
         }
-        final hint = SudokuSolver.getHint(board);
+        final hint = SudokuSolver.getHint(board, until: '唯一环 Type 3');
         if (hint == null) break;
-        if (hint.isElimination) {
-          for (final e in hint.eliminations) {
-            board.eliminateCandidate(e.row, e.col, e.num);
-          }
-        } else {
-          board.set(hint.row, hint.col, hint.value);
-        }
+        applyHint(board, hint);
       }
     }
     expect(hits, greaterThan(10), reason: '题库里应该常常走到可规避矩形');

@@ -1,12 +1,11 @@
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sudoku_app/models/board_markup.dart';
 import 'package:sudoku_app/models/game_state.dart';
 import 'package:sudoku_app/models/sudoku_board.dart';
 import 'package:sudoku_app/services/advanced_techniques.dart';
-import 'package:sudoku_app/services/puzzle_bank.dart';
 import 'package:sudoku_app/services/sudoku_solver.dart';
+
+import 'support/bank_sweep.dart';
 
 /// 关键房屋是一条具体房屋的技巧：虚拟格数组配在哪条房屋里、底数锁在哪条房屋里。
 /// 这一族的提示必须把那条房屋标出来，不管它是行、是列还是宫。
@@ -20,9 +19,6 @@ final _houseFinders = <String, SudokuHint? Function(SudokuBoard)>{
   '唯一矩形 Type 3': AdvancedTechniques.findUniqueRectangleType3,
   '唯一矩形 Type 4': AdvancedTechniques.findUniqueRectangleType4,
 };
-
-List<String> _bank(String name) =>
-    PuzzleBank.parse(File('assets/puzzles/$name.txt').readAsStringSync());
 
 bool _houseHolds(String house, int row, int col) {
   final kind = house[0];
@@ -52,51 +48,43 @@ void main() {
   test('虚拟格数组和底数锁定这一族，关键房屋一定标得出来', () {
     final seen = <String>{};
     final boxCases = <String>[];
-    for (final name in PuzzleBank.difficulties) {
-      for (final puzzle in _bank(name)) {
-        final board = SudokuBoard.fromString(puzzle);
-        for (var step = 0; step < 200; step++) {
-          if (board.isComplete()) break;
-          _houseFinders.forEach((technique, find) {
-            final hint = find(board);
-            if (hint == null) return;
-            seen.add(technique);
-            final houses = _houses(hint);
-            expect(
-              houses,
-              isNotEmpty,
-              reason: '$technique 没标出关键房屋',
-            );
-            final inHouse = _inHouse(hint);
-            expect(
-              inHouse,
-              isNotEmpty,
-              reason: '$technique 一个参与房屋推理的格子都没标，这条房屋就成了空话',
-            );
-            for (final house in houses) {
-              for (final cell in inHouse) {
-                expect(
-                  _houseHolds(house, cell[0], cell[1]),
-                  isTrue,
-                  reason: '$technique 淡亮的 $house 没罩住 '
-                      'r${cell[0] + 1}c${cell[1] + 1}',
-                );
-              }
+    for (final puzzle in loadBank()) {
+      final board = SudokuBoard.fromString(puzzle);
+      for (var step = 0; step < 200; step++) {
+        if (board.isComplete()) break;
+        _houseFinders.forEach((technique, find) {
+          final hint = find(board);
+          if (hint == null) return;
+          seen.add(technique);
+          final houses = _houses(hint);
+          expect(
+            houses,
+            isNotEmpty,
+            reason: '$technique 没标出关键房屋',
+          );
+          final inHouse = _inHouse(hint);
+          expect(
+            inHouse,
+            isNotEmpty,
+            reason: '$technique 一个参与房屋推理的格子都没标，这条房屋就成了空话',
+          );
+          for (final house in houses) {
+            for (final cell in inHouse) {
+              expect(
+                _houseHolds(house, cell[0], cell[1]),
+                isTrue,
+                reason: '$technique 淡亮的 $house 没罩住 '
+                    'r${cell[0] + 1}c${cell[1] + 1}',
+              );
             }
-            if (hint.highlightBoxes.isNotEmpty) {
-              boxCases.add('$technique @ ${hint.highlightBoxes}');
-            }
-          });
-          final hint = SudokuSolver.getHint(board);
-          if (hint == null) break;
-          if (hint.isElimination) {
-            for (final e in hint.eliminations) {
-              board.eliminateCandidate(e.row, e.col, e.num);
-            }
-          } else {
-            board.set(hint.row, hint.col, hint.value);
           }
-        }
+          if (hint.highlightBoxes.isNotEmpty) {
+            boxCases.add('$technique @ ${hint.highlightBoxes}');
+          }
+        });
+        final next = SudokuSolver.getHint(board, until: '唯一环 Type 3');
+        if (next == null) break;
+        applyHint(board, next);
       }
     }
     expect(seen, isNotEmpty, reason: '题库里一条都没走到，这个测试就白写了');
@@ -112,14 +100,13 @@ void main() {
       isNotEmpty,
       reason: '宫作为关键房屋的那一种情况一次都没走到，highlightBoxes 就成了死代码',
     );
-  }, timeout: const Timeout(Duration(minutes: 3)));
+  }, timeout: const Timeout(Duration(minutes: 2)));
 
   test('关键房屋是宫时，提示标的是宫，图上也照着涂', () {
     // 这张盘顺着扩展矩形 Type 3 自己的删除往下走，第 27 步上虚拟格的数组
     // 只在 b5 里配得起来（r5、c6 上都配不成），于是关键房屋是一个宫。
     // 题库默认轨迹上碰不到这一种情况，所以单独钉一张盘。
-    const puzzle =
-        '236000591010050070008000400849000237000000000000428000'
+    const puzzle = '236000591010050070008000400849000237000000000000428000'
         '097000140000306000580070026';
     final board = SudokuBoard.fromString(puzzle);
     final solved = SudokuBoard.fromString(puzzle);

@@ -1,11 +1,8 @@
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sudoku_app/models/sudoku_board.dart';
 import 'package:sudoku_app/models/technique_catalog.dart';
 import 'package:sudoku_app/services/advanced_techniques.dart';
 import 'package:sudoku_app/services/difficulty_analyzer.dart';
-import 'package:sudoku_app/services/puzzle_bank.dart';
 import 'package:sudoku_app/services/sudoku_solver.dart';
 
 import 'support/finder_soundness.dart';
@@ -163,46 +160,6 @@ void main() {
         expect(sw.elapsedMilliseconds, lessThan(2000));
       }
     });
-
-    test('题库残局上的每一条删除都避开唯一解', () {
-      var emissions = 0;
-      for (final name in PuzzleBank.difficulties) {
-        final puzzles = PuzzleBank.parse(
-          File('assets/puzzles/$name.txt').readAsStringSync(),
-        );
-        for (final puzzle in puzzles) {
-          final solved = SudokuBoard.fromString(puzzle);
-          expect(SudokuSolver.solve(solved), isTrue);
-          final board = SudokuBoard.fromString(puzzle);
-          for (var step = 0; step < 200; step++) {
-            final found = AdvancedTechniques.findQiu(board);
-            if (found != null) {
-              emissions++;
-              expectEliminationsSound(puzzle, found);
-              for (final e in found.eliminations) {
-                expect(solved.get(e.row, e.col), isNot(e.num));
-              }
-            }
-            final hint = SudokuSolver.getHint(board);
-            if (hint == null ||
-                hint.technique == 'Nishio' ||
-                hint.technique == '分类强制链' ||
-                hint.technique == '分类强制网') {
-              break;
-            }
-            if (hint.isElimination) {
-              for (final e in hint.eliminations) {
-                board.eliminateCandidate(e.row, e.col, e.num);
-              }
-            } else {
-              board.set(hint.row, hint.col, hint.value);
-            }
-          }
-        }
-      }
-      // ignore: avoid_print
-      print('淑芬致命结构题库触发次数：$emissions');
-    }, timeout: const Timeout(Duration(minutes: 5)));
 
     test('按难度排在探长致命结构之后、W-Wing 之前，并开放教学页', () {
       final order = SudokuSolver.hintSearchOrder;

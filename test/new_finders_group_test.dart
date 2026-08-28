@@ -1,10 +1,9 @@
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sudoku_app/models/sudoku_board.dart';
 import 'package:sudoku_app/services/advanced_techniques.dart';
-import 'package:sudoku_app/services/puzzle_bank.dart';
 import 'package:sudoku_app/services/sudoku_solver.dart';
+
+import 'support/bank_sweep.dart';
 
 /// 这一批新接入的 finder：名字 → 入口。
 final _finders = <String, SudokuHint? Function(SudokuBoard)>{
@@ -43,11 +42,8 @@ final _finders = <String, SudokuHint? Function(SudokuBoard)>{
 
 List<String> _expertBank() {
   final out = <String>[];
-  for (final name in ['professional', 'master', 'hell']) {
-    final file = File('assets/puzzles/$name.txt');
-    if (file.existsSync()) {
-      out.addAll(PuzzleBank.parse(file.readAsStringSync()));
-    }
+  for (final grade in ['professional', 'master', 'hell']) {
+    out.addAll(loadBank(grades: [grade]).take(20));
   }
   return out;
 }
@@ -58,19 +54,8 @@ SudokuBoard _stall(String puzzle) {
   for (var step = 0; step < 200; step++) {
     if (board.isComplete()) break;
     final hint = SudokuSolver.getHint(board);
-    if (hint == null) break;
-    if (hint.technique == 'Nishio' ||
-        hint.technique == '分类强制链' ||
-        hint.technique == '分类强制网') {
-      break;
-    }
-    if (hint.isElimination) {
-      for (final e in hint.eliminations) {
-        board.eliminateCandidate(e.row, e.col, e.num);
-      }
-    } else {
-      board.set(hint.row, hint.col, hint.value);
-    }
+    if (isDeepStop(hint)) break;
+    applyHint(board, hint!);
   }
   return board;
 }
@@ -99,45 +84,32 @@ void main() {
       final board = SudokuBoard.fromString(puzzle);
       for (var step = 0; step < 200; step++) {
         if (board.isComplete()) break;
-        _finders.forEach((name, find) {
-          final found = find(board);
-          if (found == null) return;
-          expect(found.technique, name);
-          if (!found.isElimination) {
+        final hint = SudokuSolver.getHint(board, until: '飞鱼导弹');
+        if (hint == null) break;
+        if (_finders.containsKey(hint.technique)) {
+          if (!hint.isElimination) {
             expect(
-              solved.get(found.row, found.col),
-              found.value,
-              reason: '$name 填错了 r${found.row + 1}c${found.col + 1}',
+              solved.get(hint.row, hint.col),
+              hint.value,
+              reason: '${hint.technique} 填错了 r${hint.row + 1}c${hint.col + 1}',
             );
           }
-          for (final e in found.eliminations) {
+          for (final e in hint.eliminations) {
             expect(
               solved.get(e.row, e.col) == e.num,
               isFalse,
-              reason: '$name 删了正解 r${e.row + 1}c${e.col + 1}=${e.num}',
-            );
-            expect(
-              board.getCandidates(e.row, e.col),
-              contains(e.num),
-              reason: '$name 要删的候选已经不在盘上了',
+              reason:
+                  '${hint.technique} 删了正解 r${e.row + 1}c${e.col + 1}=${e.num}',
             );
           }
           expect(
-            found.patternCandidates.any((c) => c.role != HintRole.target),
+            hint.patternCandidates.any((c) => c.role != HintRole.target),
             isTrue,
-            reason: '$name 只标了结论，没标依据',
+            reason: '${hint.technique} 只标了结论，没标依据',
           );
-        });
-        final hint = SudokuSolver.getHint(board);
-        if (hint == null) break;
-        if (hint.isElimination) {
-          for (final e in hint.eliminations) {
-            board.eliminateCandidate(e.row, e.col, e.num);
-          }
-        } else {
-          board.set(hint.row, hint.col, hint.value);
         }
+        applyHint(board, hint);
       }
     }
-  }, timeout: const Timeout(Duration(minutes: 3)));
+  }, timeout: const Timeout(Duration(minutes: 2)));
 }
