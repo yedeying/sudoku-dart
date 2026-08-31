@@ -81,24 +81,41 @@ void main() {
     final bodyBottom = tester.getBottomLeft(find.byType(SafeArea).first).dy;
     expect(panelTop + 0.5, greaterThanOrEqualTo(boardBottom));
     expect(panelBottom, closeTo(bodyBottom, 1));
-    // 短提示按内容收紧，不要把棋盘下方整段空白撑进卡片里。
+    // 抽屉不得侵入棋盘；长文案在盘下区域内滚动，短文案由 HintPanel 自行收高。
     expect(
       tester.getSize(find.byType(HintPanel)).height,
-      lessThan(bodyBottom - boardBottom - 8),
+      lessThanOrEqualTo(bodyBottom - boardBottom + 0.5),
     );
   });
 
-  testWidgets('工具栏先功能后撤销，标记中收起撤销行', (tester) async {
+  testWidgets('工具栏两行：候选标记撤销重做 / 笔记填充提示清除', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final state = GameState()..loadCustomGame(_classic);
     await _pumpGame(tester, state);
 
-    expect(
-      tester.getTopLeft(find.text('标记')).dy,
-      lessThan(tester.getTopLeft(find.text('撤销')).dy),
-    );
+    final cand = tester.getCenter(find.text('显示候选'));
+    final mark = tester.getCenter(find.text('标记'));
+    final undo = tester.getCenter(find.text('撤销'));
+    final redo = tester.getCenter(find.text('重做'));
+    final note = tester.getCenter(find.text('笔记模式'));
+    final fill = tester.getCenter(find.text('快速填充'));
+    final hint = tester.getCenter(find.text('提示').last);
+    final clear = tester.getCenter(find.text('清除'));
+    expect(cand.dy, closeTo(mark.dy, 2));
+    expect(mark.dy, closeTo(undo.dy, 2));
+    expect(undo.dy, closeTo(redo.dy, 2));
+    expect(note.dy, closeTo(fill.dy, 2));
+    expect(fill.dy, closeTo(hint.dy, 2));
+    expect(hint.dy, closeTo(clear.dy, 2));
+    expect(cand.dx, lessThan(mark.dx));
+    expect(mark.dx, lessThan(undo.dx));
+    expect(undo.dx, lessThan(redo.dx));
+    expect(note.dx, lessThan(fill.dx));
+    expect(fill.dx, lessThan(hint.dx));
+    expect(hint.dx, lessThan(clear.dx));
+    expect(cand.dy, lessThan(note.dy));
     expect(find.text('关闭'), findsNothing);
     expect(
       tester.getTopLeft(find.byIcon(Icons.visibility_off)).dy -
@@ -110,13 +127,88 @@ void main() {
     await tester.pump();
 
     expect(find.text('标记中'), findsOneWidget);
-    expect(find.text('撤销'), findsNothing);
+    expect(find.text('撤销'), findsOneWidget);
+    expect(find.text('笔记模式'), findsNothing);
+    expect(find.text('快速填充'), findsNothing);
+    expect(find.text('清除'), findsNothing);
     expect(find.text('关闭'), findsNothing);
-    expect(find.text('格色'), findsOneWidget);
-    expect(find.text('清除标记'), findsOneWidget);
+    expect(find.text('格子'), findsOneWidget);
+    expect(find.byKey(const ValueKey('clear-markup')), findsOneWidget);
+    expect(find.text('x'), findsOneWidget);
     expect(
       tester.getTopLeft(find.byKey(const ValueKey('markup-color-row'))).dy,
-      greaterThan(tester.getBottomLeft(find.text('格色')).dy),
+      greaterThan(tester.getBottomLeft(find.text('格子')).dy),
     );
+
+    final gapMode = tester.getTopLeft(find.text('格子')).dy -
+        tester.getBottomLeft(find.text('标记中')).dy;
+    final gapColor = tester
+            .getTopLeft(find.byKey(const ValueKey('markup-color-row')))
+            .dy -
+        tester.getBottomLeft(find.text('格子')).dy;
+    expect(gapMode, lessThan(32));
+    expect(gapColor, lessThan(32));
+    final chip = tester.getRect(find.byType(FilterChip).first);
+    final label = tester.getRect(find.text('格子'));
+    expect(label.left - chip.left, closeTo(10, 3));
+    expect(chip.right - label.right, closeTo(10, 3));
+  });
+
+  testWidgets('矮屏标记工具栏一屏内显示数字区', (tester) async {
+    tester.view.physicalSize = const Size(375, 667);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final state = GameState()..loadCustomGame(_classic);
+    await _pumpGame(tester, state);
+    await tester.tap(find.text('标记'));
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('格子'), findsOneWidget);
+    final pad = tester.getRect(find.byKey(const ValueKey('number-pad')));
+    final bodyBottom = tester.getBottomLeft(find.byType(SafeArea).first).dy;
+    expect(pad.bottom, lessThanOrEqualTo(bodyBottom + 0.5));
+    expect(pad.top, greaterThan(tester.getRect(find.byType(SudokuGrid)).bottom));
+  });
+
+  testWidgets('标题、棋盘、工具栏与底边均分空隙，工具栏内部固定边距', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final state = GameState()..loadCustomGame(_classic);
+    await _pumpGame(tester, state);
+
+    final info = tester.getRect(find.byKey(const ValueKey('info-bar')));
+    final board = tester.getRect(find.byType(SudokuGrid));
+    final pad = tester.getRect(find.byKey(const ValueKey('number-pad')));
+    final tools = tester.getRect(find.byIcon(Icons.visibility_off));
+    final bodyBottom = tester.getBottomLeft(find.byType(SafeArea).first).dy;
+    final gapTitle = board.top - info.bottom;
+    final gapBoard = tools.top - board.bottom;
+    final gapBottom = bodyBottom - pad.bottom;
+    expect(pad.width, lessThanOrEqualTo(board.width + 8));
+    expect(gapTitle, closeTo(gapBoard, 20));
+    expect(gapBottom, closeTo(gapTitle, 20));
+    expect(gapBottom, greaterThan(24));
+    expect(pad.top - tester.getRect(find.text('清除')).bottom, lessThan(32));
+  });
+
+  testWidgets('宽屏也走竖屏手机栏，数字区在棋盘下方且同行', (tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final state = GameState()..loadCustomGame(_classic);
+    await _pumpGame(tester, state);
+
+    final board = tester.getRect(find.byType(SudokuGrid));
+    final pad = tester.getRect(find.byKey(const ValueKey('number-pad')));
+    expect(board.width, lessThanOrEqualTo(430));
+    expect(pad.width, lessThanOrEqualTo(board.width + 8));
+    expect(pad.top, greaterThan(board.bottom));
+
+    final n1 = tester.getCenter(find.byKey(const ValueKey('pad-1')));
+    final n9 = tester.getCenter(find.byKey(const ValueKey('pad-9')));
+    expect(n1.dy, closeTo(n9.dy, 1));
+    expect(n9.dx, greaterThan(n1.dx + 8));
   });
 }

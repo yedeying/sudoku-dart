@@ -4,6 +4,7 @@ import '../models/game_state.dart';
 import '../models/puzzle_grade.dart';
 import '../theme/app_theme.dart';
 import '../widgets/accent_picker.dart';
+import '../widgets/phone_frame.dart';
 import 'game_screen.dart';
 import 'input_screen.dart';
 
@@ -47,7 +48,7 @@ class HomeScreen extends StatelessWidget {
         child: SafeArea(
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 520),
+              constraints: const BoxConstraints(maxWidth: PhoneFrame.maxWidth),
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(20, 32, 20, 24),
                 children: [

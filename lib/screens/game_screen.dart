@@ -12,6 +12,7 @@ import '../services/sudoku_solver.dart';
 import '../widgets/accent_picker.dart';
 import '../widgets/sudoku_grid.dart';
 import '../widgets/hint_panel.dart';
+import '../widgets/phone_frame.dart';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
@@ -83,6 +84,14 @@ class _GameScreenState extends State<GameScreen> {
             k == LogicalKeyboardKey.shiftRight,
       );
 
+  bool _shortcutDown() => HardwareKeyboard.instance.logicalKeysPressed.any(
+        (k) =>
+            k == LogicalKeyboardKey.metaLeft ||
+            k == LogicalKeyboardKey.metaRight ||
+            k == LogicalKeyboardKey.controlLeft ||
+            k == LogicalKeyboardKey.controlRight,
+      );
+
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
       return KeyEventResult.ignored;
@@ -92,6 +101,18 @@ class _GameScreenState extends State<GameScreen> {
     if (gameState == null) return KeyEventResult.ignored;
 
     final key = event.logicalKey;
+    if (_shortcutDown()) {
+      if (key == LogicalKeyboardKey.keyZ) {
+        return gameState.handleUndoShortcut(redo: _shiftDown())
+            ? KeyEventResult.handled
+            : KeyEventResult.ignored;
+      }
+      if (key == LogicalKeyboardKey.keyY) {
+        return gameState.handleUndoShortcut(redo: true)
+            ? KeyEventResult.handled
+            : KeyEventResult.ignored;
+      }
+    }
     final digit = _digitKeys[key];
     if (digit != null) {
       return gameState.handleDigitKey(digit, shift: _shiftDown())
@@ -116,185 +137,79 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Focus(
-      focusNode: _focus,
-      autofocus: true,
-      onKeyEvent: _onKey,
-      child: Listener(
-        onPointerDown: (_) {
-          if (!_focus.hasFocus) _focus.requestFocus();
-        },
-        child: GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onTap: () => context.read<GameState>().clearSelection(),
-          child: Scaffold(
-            appBar: AppBar(
-              title: const Text('数独游戏'),
-              actions: [
-                IconButton(
-                  tooltip: '强调色',
-                  icon: const Icon(Icons.palette_outlined),
-                  onPressed: () => AccentPicker.open(context),
-                ),
-                PopupMenuButton<String>(
-                  tooltip: '更多',
-                  onSelected: (value) => _handleMenuAction(context, value),
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'copy',
-                      child: Text('一键复制'),
-                    ),
-                    const PopupMenuItem(
-                      value: 'reset',
-                      child: Text('重新开始'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            body: SafeArea(
-              child: Consumer<GameState>(
-                builder: (context, gameState, child) {
-                  if (gameState.board == null) {
-                    return const Center(child: Text('请先开始游戏'));
-                  }
-
-                  if (gameState.justCompleted) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (!mounted) return;
-                      gameState.consumeCompletionFlag();
-                      _showVictoryDialog(context, gameState);
-                    });
-                  }
-
-                  if (gameState.autoStrongNotice != null) {
-                    final notice = gameState.autoStrongNotice!;
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (!mounted) return;
-                      gameState.clearAutoStrongNotice();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(notice),
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    });
-                  }
-
-                  return Column(
-                    children: [
-                      _buildInfoBar(gameState),
-                      // 用 Expanded 把「信息条已经占掉的高度」让 LayoutBuilder
-                      // 直接量出来，棋盘按剩余宽高算尺寸，不再只看宽度——
-                      // 矮宽的横屏视口下才不会把控制区挤到溢出。
-                      Expanded(
-                        child: LayoutBuilder(
-                          builder: (context, boardArea) {
-                            const topPadding = 8.0;
-                            final side = math
-                                .min(
-                                  math.min(boardArea.maxWidth - 32, 560.0),
-                                  boardArea.maxHeight - topPadding,
-                                )
-                                .clamp(0.0, double.infinity);
-                            // 提示抽屉最高只能到棋盘下沿，避免盖住盘面。
-                            final belowBoard =
-                                (boardArea.maxHeight - topPadding - side)
-                                    .clamp(0.0, double.infinity);
-                            return Stack(
-                              children: [
-                                Column(
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.fromLTRB(
-                                          16, topPadding, 16, 0),
-                                      child: SizedBox(
-                                        width: side,
-                                        height: side,
-                                        child: SudokuGrid(
-                                          board: gameState.board!,
-                                          selectedRow:
-                                              gameState.displaySelectedRow,
-                                          selectedCol:
-                                              gameState.displaySelectedCol,
-                                          showCandidates:
-                                              gameState.showCandidates,
-                                          conflictCells:
-                                              gameState.getConflictCells(),
-                                          conflictCandidates: gameState
-                                              .candidateColorConflictRefs(),
-                                          markup: gameState.displayMarkup,
-                                          sameDigitCells: gameState
-                                              .sameDigitHighlightCells(),
-                                          sameDigitCandidates: gameState
-                                              .sameDigitHighlightCandidates(),
-                                          arrowAnchor: gameState.arrowAnchor,
-                                          onCellTap: (row, col) {
-                                            gameState.onCellTap(row, col);
-                                          },
-                                          onCandidateTap:
-                                              gameState.markupEnabled
-                                                  ? gameState.onCandidateTap
-                                                  : null,
-                                        ),
-                                      ),
-                                    ),
-                                    Flexible(
-                                      child: LayoutBuilder(
-                                        builder: (context, controlsArea) {
-                                          return SingleChildScrollView(
-                                            child: ConstrainedBox(
-                                              constraints: BoxConstraints(
-                                                minHeight:
-                                                    controlsArea.maxHeight,
-                                              ),
-                                              child: IntrinsicHeight(
-                                                child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                    top: 16,
-                                                    bottom: 16,
-                                                  ),
-                                                  child: Column(
-                                                    children: [
-                                                      _buildControlButtons(
-                                                          gameState),
-                                                      const Spacer(),
-                                                      _buildNumberPad(
-                                                          gameState),
-                                                      const Spacer(),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                if (_hintPanelVisible(gameState))
-                                  Positioned(
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 0,
-                                    child: Material(
-                                      elevation: 8,
-                                      child: _buildHintPanel(
-                                        gameState,
-                                        maxHeight: belowBoard,
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            );
-                          },
-                        ),
+    return PhoneFrame(
+      onBackgroundTap: () => context.read<GameState>().clearSelection(),
+      child: Focus(
+        focusNode: _focus,
+        autofocus: true,
+        onKeyEvent: _onKey,
+        child: Listener(
+          onPointerDown: (_) {
+            if (!_focus.hasFocus) _focus.requestFocus();
+          },
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () => context.read<GameState>().clearSelection(),
+            child: Scaffold(
+              appBar: AppBar(
+                title: const Text('数独游戏'),
+                actions: [
+                  IconButton(
+                    tooltip: '强调色',
+                    icon: const Icon(Icons.palette_outlined),
+                    onPressed: () => AccentPicker.open(context),
+                  ),
+                  PopupMenuButton<String>(
+                    tooltip: '更多',
+                    onSelected: (value) => _handleMenuAction(context, value),
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'copy',
+                        child: Text('一键复制'),
+                      ),
+                      const PopupMenuItem(
+                        value: 'reset',
+                        child: Text('重新开始'),
                       ),
                     ],
-                  );
-                },
+                  ),
+                ],
+              ),
+              body: SafeArea(
+                child: Consumer<GameState>(
+                  builder: (context, gameState, child) {
+                    if (gameState.board == null) {
+                      return const Center(child: Text('请先开始游戏'));
+                    }
+
+                    if (gameState.justCompleted) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (!mounted) return;
+                        gameState.consumeCompletionFlag();
+                        _showVictoryDialog(context, gameState);
+                      });
+                    }
+
+                    if (gameState.autoStrongNotice != null) {
+                      final notice = gameState.autoStrongNotice!;
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (!mounted) return;
+                        gameState.clearAutoStrongNotice();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(notice),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      });
+                    }
+
+                    return LayoutBuilder(
+                      builder: (context, area) =>
+                          _buildPlayArea(gameState, area),
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -303,37 +218,166 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
+  Widget _buildPlayArea(GameState gameState, BoxConstraints area) {
+    const topPad = 8.0;
+    const reserved = 252.0;
+    final short = area.maxHeight < 420;
+    final boardSide = (short
+            ? math.min(area.maxWidth - 32, area.maxHeight - topPad)
+            : math.min(
+                math.min(area.maxWidth - 32, PhoneFrame.maxWidth),
+                math.max(area.maxHeight - topPad - reserved, 0),
+              ))
+        .clamp(0.0, PhoneFrame.maxWidth)
+        .toDouble();
+    Widget strip(Widget child) => Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: boardSide),
+            child: child,
+          ),
+        );
+    const gap = SizedBox(height: 12);
+    final title = _buildInfoBar(gameState);
+    final board = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Center(
+        child: SizedBox(
+          width: boardSide,
+          height: boardSide,
+          child: _buildGrid(gameState),
+        ),
+      ),
+    );
+    final toolbar = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        strip(_buildActionRow1(gameState)),
+        gap,
+        if (gameState.markupEnabled) ...[
+          strip(_buildMarkupModes(gameState)),
+          gap,
+          strip(_buildMarkupColors(gameState)),
+        ] else
+          strip(_buildActionRow2(gameState)),
+        gap,
+        strip(_buildNumberPad(gameState)),
+      ],
+    );
+    final hint = _hintPanelVisible(gameState)
+        ? LayoutBuilder(
+            builder: (context, box) {
+              final cap = box.maxHeight.isFinite ? box.maxHeight : 200.0;
+              return Material(
+                elevation: 8,
+                child: _buildHintPanel(gameState, maxHeight: cap),
+              );
+            },
+          )
+        : null;
+    if (short) {
+      return Stack(
+        children: [
+          SingleChildScrollView(
+            child: Column(
+              children: [title, board, toolbar],
+            ),
+          ),
+          if (hint != null)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: area.maxHeight.isFinite
+                      ? area.maxHeight * 0.45
+                      : 160,
+                ),
+                child: hint,
+              ),
+            ),
+        ],
+      );
+    }
+    return Column(
+      children: [
+        title,
+        Expanded(
+          child: CustomMultiChildLayout(
+            delegate: _EvenPlayDelegate(boardSide: boardSide),
+            children: [
+              LayoutId(id: _PlaySlot.board, child: board),
+              LayoutId(id: _PlaySlot.toolbar, child: toolbar),
+              if (hint != null) LayoutId(id: _PlaySlot.hint, child: hint),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGrid(GameState gameState) {
+    return SudokuGrid(
+      board: gameState.board!,
+      selectedRow: gameState.displaySelectedRow,
+      selectedCol: gameState.displaySelectedCol,
+      showCandidates: gameState.showCandidates,
+      conflictCells: gameState.getConflictCells(),
+      conflictCandidates: gameState.candidateColorConflictRefs(),
+      markup: gameState.displayMarkup,
+      sameDigitCells: gameState.sameDigitHighlightCells(),
+      sameDigitCandidates: gameState.sameDigitHighlightCandidates(),
+      arrowAnchor: gameState.arrowAnchor,
+      onCellTap: (row, col) {
+        gameState.onCellTap(row, col);
+      },
+      onCandidateTap: gameState.markupEnabled ? gameState.onCandidateTap : null,
+    );
+  }
+
   Widget _buildInfoBar(GameState gameState) {
     final bg = Theme.of(context).colorScheme.surfaceContainerHighest;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: bg,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildInfoItem(
-            icon: Icons.timer_outlined,
-            label: '用时',
-            value: gameState.getFormattedTime(),
+    return Padding(
+      key: const ValueKey('info-bar'),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: PhoneFrame.maxWidth),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildInfoItem(
+                  icon: Icons.timer_outlined,
+                  label: '用时',
+                  value: gameState.getFormattedTime(),
+                ),
+                _buildInfoItem(
+                  icon: Icons.signal_cellular_alt,
+                  label: '难度',
+                  value: _getDifficultyName(gameState),
+                ),
+                _buildInfoItem(
+                  icon: Icons.help_outline,
+                  label: '提示',
+                  value: '${gameState.hintsUsed}',
+                ),
+                _buildInfoItem(
+                  icon: Icons.stars,
+                  label: '得分',
+                  value: gameState.board!.isComplete()
+                      ? '${gameState.getScore()}'
+                      : '--',
+                ),
+              ],
+            ),
           ),
-          _buildInfoItem(
-            icon: Icons.signal_cellular_alt,
-            label: '难度',
-            value: _getDifficultyName(gameState),
-          ),
-          _buildInfoItem(
-            icon: Icons.help_outline,
-            label: '提示',
-            value: '${gameState.hintsUsed}',
-          ),
-          _buildInfoItem(
-            icon: Icons.stars,
-            label: '得分',
-            value: gameState.board!.isComplete()
-                ? '${gameState.getScore()}'
-                : '--',
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -344,115 +388,117 @@ class _GameScreenState extends State<GameScreen> {
     required String value,
   }) {
     final scheme = Theme.of(context).colorScheme;
-    return Column(
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 20, color: scheme.onSurfaceVariant),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: scheme.onSurfaceVariant,
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: scheme.onSurface,
-          ),
+        Icon(icon, size: 18, color: scheme.onSurfaceVariant),
+        const SizedBox(width: 6),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: scheme.onSurface,
+              ),
+            ),
+          ],
         ),
       ],
     );
   }
 
-  Widget _buildControlButtons(GameState gameState) {
+  Widget _buildActionRow1(GameState gameState) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Column(
+      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildControlButton(
-                icon: gameState.showCandidates
-                    ? Icons.visibility
-                    : Icons.visibility_off,
-                label: gameState.showCandidates ? '隐藏候选' : '显示候选',
-                onPressed: () => gameState.toggleShowCandidates(),
-                active: gameState.showCandidates,
-              ),
-              _buildControlButton(
-                icon: Icons.edit_note,
-                label: gameState.candidateMode ? '填数模式' : '笔记模式',
-                onPressed: () => gameState.toggleCandidateMode(),
-                active: gameState.candidateMode,
-              ),
-              _buildControlButton(
-                icon: gameState.markupEnabled
-                    ? Icons.palette
-                    : Icons.palette_outlined,
-                label: gameState.markupEnabled ? '标记中' : '标记',
-                onPressed: () => gameState.toggleMarkupEnabled(),
-                active: gameState.markupEnabled,
-              ),
-              _buildControlButton(
-                icon: Icons.flash_on_outlined,
-                label: '快速填充',
-                onPressed: () => _applySimpleFills(context),
-              ),
-            ],
+          _buildControlButton(
+            icon: gameState.showCandidates
+                ? Icons.visibility
+                : Icons.visibility_off,
+            label: gameState.showCandidates ? '隐藏候选' : '显示候选',
+            onPressed: () => gameState.toggleShowCandidates(),
+            active: gameState.showCandidates,
           ),
-          if (gameState.markupEnabled) ...[
-            const SizedBox(height: 8),
-            _buildMarkupBar(gameState),
-          ] else ...[
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildControlButton(
-                  icon: Icons.undo,
-                  label: '撤销',
-                  onPressed: gameState.canUndo ? () => gameState.undo() : null,
-                ),
-                _buildControlButton(
-                  icon: Icons.redo,
-                  label: '重做',
-                  onPressed: gameState.canRedo ? () => gameState.redo() : null,
-                ),
-                _buildControlButton(
-                  icon: _readyHint(gameState) != null
-                      ? Icons.check
-                      : Icons.lightbulb,
-                  label: _readyHint(gameState) != null ? '应用' : '提示',
-                  active: _readyHint(gameState) != null,
-                  onPressed: () {
-                    final ready = _readyHint(gameState);
-                    if (ready != null) {
-                      gameState.applyHintAndAdvance(ready);
-                    } else {
-                      _showHint(context, gameState);
-                    }
-                  },
-                ),
-                _buildControlButton(
-                  icon: Icons.clear,
-                  label: '清除',
-                  onPressed: gameState.selectedRow != null
-                      ? () => gameState.clearSelected()
-                      : null,
-                ),
-              ],
-            ),
-          ],
+          _buildControlButton(
+            icon: gameState.markupEnabled
+                ? Icons.palette
+                : Icons.palette_outlined,
+            label: gameState.markupEnabled ? '标记中' : '标记',
+            onPressed: () => gameState.toggleMarkupEnabled(),
+            active: gameState.markupEnabled,
+          ),
+          _buildControlButton(
+            icon: Icons.undo,
+            label: '撤销',
+            onPressed: gameState.canUndo ? () => gameState.undo() : null,
+          ),
+          _buildControlButton(
+            icon: Icons.redo,
+            label: '重做',
+            onPressed: gameState.canRedo ? () => gameState.redo() : null,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildMarkupBar(GameState gameState) {
+  Widget _buildActionRow2(GameState gameState) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildControlButton(
+            icon: Icons.edit_note,
+            label: gameState.candidateMode ? '填数模式' : '笔记模式',
+            onPressed: () => gameState.toggleCandidateMode(),
+            active: gameState.candidateMode,
+          ),
+          _buildControlButton(
+            icon: Icons.flash_on_outlined,
+            label: '快速填充',
+            onPressed: () => _applySimpleFills(context),
+          ),
+          _buildControlButton(
+            icon: _readyHint(gameState) != null
+                ? Icons.check
+                : Icons.lightbulb,
+            label: _readyHint(gameState) != null ? '应用' : '提示',
+            active: _readyHint(gameState) != null,
+            onPressed: () {
+              final ready = _readyHint(gameState);
+              if (ready != null) {
+                gameState.applyHintAndAdvance(ready);
+              } else {
+                _showHint(context, gameState);
+              }
+            },
+          ),
+          _buildControlButton(
+            icon: Icons.clear,
+            label: '清除',
+            onPressed: gameState.selectedRow != null
+                ? () => gameState.clearSelected()
+                : null,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMarkupModes(GameState gameState) {
     final scheme = Theme.of(context).colorScheme;
 
     Widget modeChip(String label, MarkupMode mode) {
@@ -469,6 +515,8 @@ class _GameScreenState extends State<GameScreen> {
           ),
           visualDensity: VisualDensity.compact,
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          labelPadding: EdgeInsets.zero,
           selected: selected,
           showCheckmark: false,
           selectedColor: scheme.primary,
@@ -477,54 +525,68 @@ class _GameScreenState extends State<GameScreen> {
       );
     }
 
-    return Column(
-      children: [
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              modeChip('格色', MarkupMode.cellColor),
-              modeChip('候选色', MarkupMode.candidateColor),
-              modeChip('强链', MarkupMode.strong),
-              modeChip('弱链', MarkupMode.weak),
-              modeChip('自动强链', MarkupMode.autoStrong),
-              ActionChip(
-                label: const Text('清除标记', style: TextStyle(fontSize: 12)),
-                visualDensity: VisualDensity.compact,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                onPressed: () => gameState.clearUserMarkup(),
+    return SingleChildScrollView(
+      key: const ValueKey('markup-mode-row'),
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          modeChip('格子', MarkupMode.cellColor),
+          modeChip('候选', MarkupMode.candidateColor),
+          modeChip('强链', MarkupMode.strong),
+          modeChip('弱链', MarkupMode.weak),
+          modeChip('AIC', MarkupMode.autoStrong),
+          Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: FilterChip(
+              key: const ValueKey('clear-markup'),
+              label: Text(
+                'x',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
-            ],
+              visualDensity: VisualDensity.compact,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              labelPadding: EdgeInsets.zero,
+              selected: false,
+              showCheckmark: false,
+              onSelected: (_) => gameState.clearUserMarkup(),
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          key: const ValueKey('markup-color-row'),
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            for (final color in MarkupPalette.colors)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: GestureDetector(
-                  onTap: () => gameState.setMarkupColor(color),
-                  child: Container(
-                    width: 22,
-                    height: 22,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: color,
-                      border: Border.all(
-                        color: gameState.markupColor == color
-                            ? scheme.onSurface
-                            : Colors.transparent,
-                        width: 2,
-                      ),
-                    ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMarkupColors(GameState gameState) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      key: const ValueKey('markup-color-row'),
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        for (final color in MarkupPalette.colors)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: GestureDetector(
+              onTap: () => gameState.setMarkupColor(color),
+              child: Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: color,
+                  border: Border.all(
+                    color: gameState.markupColor == color
+                        ? scheme.onSurface
+                        : Colors.transparent,
+                    width: 2,
                   ),
                 ),
               ),
-          ],
-        ),
+            ),
+          ),
       ],
     );
   }
@@ -555,22 +617,30 @@ class _GameScreenState extends State<GameScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
         child: Column(
           children: [
-            Container(
+            SizedBox(
               width: 48,
               height: 48,
-              alignment: Alignment.center,
-              decoration: active
-                  ? BoxDecoration(
-                      color: scheme.primary,
-                      shape: BoxShape.circle,
-                    )
-                  : null,
-              child: Icon(icon, size: 28, color: iconColor),
+              child: Center(
+                child: Container(
+                  width: active ? 44 : 48,
+                  height: active ? 44 : 48,
+                  alignment: Alignment.center,
+                  decoration: active
+                      ? BoxDecoration(
+                          color: scheme.primary,
+                          shape: BoxShape.circle,
+                        )
+                      : null,
+                  child: Icon(icon, size: 28, color: iconColor),
+                ),
+              ),
             ),
             Text(
               label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 11,
                 color: enabled ? scheme.onSurface : disabled,
               ),
             ),
@@ -581,19 +651,32 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Widget _buildNumberPad(GameState gameState) {
+    final pad = LayoutBuilder(
+      builder: (context, c) {
+        final size = ((c.maxWidth - 8) / 9).clamp(24.0, 36.0);
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            for (var i = 1; i <= 9; i++)
+              _buildNumberButton(i, gameState, size: size),
+          ],
+        );
+      },
+    );
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: List.generate(9, (index) {
-          int number = index + 1;
-          return _buildNumberButton(number, gameState);
-        }),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: KeyedSubtree(
+        key: const ValueKey('number-pad'),
+        child: pad,
       ),
     );
   }
 
-  Widget _buildNumberButton(int number, GameState gameState) {
+  Widget _buildNumberButton(
+    int number,
+    GameState gameState, {
+    double size = 36,
+  }) {
     final isEnabled = gameState.isNumberPadEnabled(number);
     final noteMode =
         gameState.markupMode == MarkupMode.off && gameState.candidateMode;
@@ -614,11 +697,12 @@ class _GameScreenState extends State<GameScreen> {
     }
 
     return InkWell(
+      key: ValueKey('pad-$number'),
       onTap: isEnabled ? () => gameState.onNumberPad(number) : null,
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        width: 36,
-        height: 36,
+        width: size,
+        height: size,
         decoration: BoxDecoration(
           color: background,
           borderRadius: BorderRadius.circular(8),
@@ -784,4 +868,55 @@ class _GameScreenState extends State<GameScreen> {
       ),
     );
   }
+}
+
+enum _PlaySlot { board, toolbar, hint }
+
+/// 标题以下：棋盘、工具栏、底边三段空隙均分。提示抽屉只占棋盘下方。
+class _EvenPlayDelegate extends MultiChildLayoutDelegate {
+  _EvenPlayDelegate({required this.boardSide});
+
+  final double boardSide;
+
+  @override
+  void performLayout(Size size) {
+    final toolbarSize = layoutChild(
+      _PlaySlot.toolbar,
+      BoxConstraints(
+        maxWidth: size.width,
+        maxHeight: math.max(0.0, size.height - boardSide),
+      ),
+    );
+    final boardSize = layoutChild(
+      _PlaySlot.board,
+      BoxConstraints(maxWidth: size.width, maxHeight: boardSide),
+    );
+    final leftover = size.height - boardSize.height - toolbarSize.height;
+    final gap = leftover / 3;
+    final boardY = math.max(0.0, gap);
+    final toolbarY = (boardY + boardSize.height + math.max(0.0, gap))
+        .clamp(0.0, math.max(0.0, size.height - toolbarSize.height))
+        .toDouble();
+    positionChild(
+      _PlaySlot.board,
+      Offset((size.width - boardSize.width) / 2, boardY),
+    );
+    positionChild(_PlaySlot.toolbar, Offset(0, toolbarY));
+    if (hasChild(_PlaySlot.hint)) {
+      final shelf =
+          (size.height - boardY - boardSize.height).clamp(0.0, size.height);
+      final hintSize = layoutChild(
+        _PlaySlot.hint,
+        BoxConstraints(maxWidth: size.width, maxHeight: shelf),
+      );
+      positionChild(
+        _PlaySlot.hint,
+        Offset(0, size.height - hintSize.height),
+      );
+    }
+  }
+
+  @override
+  bool shouldRelayout(covariant _EvenPlayDelegate oldDelegate) =>
+      oldDelegate.boardSide != boardSide;
 }

@@ -34,6 +34,12 @@ class MarkupPalette {
     gold,
   ];
 
+  /// 预选色的对比色：色相转 180°，用来标链的首尾。
+  static Color contrast(Color color) {
+    final hsl = HSLColor.fromColor(color);
+    return hsl.withHue((hsl.hue + 180) % 360).toColor();
+  }
+
   /// 格子底色用的淡洗，数字保持深色可读。
   static Color wash(Color color) {
     final hsl = HSLColor.fromColor(color);
@@ -81,6 +87,18 @@ class MarkupArrow {
     this.color,
     this.directed = true,
   });
+
+  @override
+  bool operator ==(Object other) =>
+      other is MarkupArrow &&
+      other.from == from &&
+      other.to == to &&
+      other.kind == kind &&
+      other.color == color &&
+      other.directed == directed;
+
+  @override
+  int get hashCode => Object.hash(from, to, kind, color, directed);
 }
 
 /// 棋盘标记：格色、候选色、箭头、用户划掉的候选

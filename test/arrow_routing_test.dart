@@ -156,6 +156,21 @@ void main() {
     }
   });
 
+  test('同格双值强链弓出去，相邻候选之间仍看得到线', () {
+    const arrow = MarkupArrow(
+      from: CandidateRef(2, 3, 1),
+      to: CandidateRef(2, 3, 2),
+      kind: ArrowKind.strong,
+    );
+    final painter = _painter(arrow);
+    final path = painter.debugPath(arrow, _size);
+    expect(path.length, greaterThanOrEqualTo(3), reason: '同格链要弓一下，不能缩成看不见的短直线');
+    expect(_length(path), greaterThan(_cell * 0.28));
+    final centers = painter.debugCenters(arrow, _size);
+    expect((path.first - centers.$1).distance, lessThan(_cell * 0.12));
+    expect((path.last - centers.$2).distance, lessThan(_cell * 0.12));
+  });
+
   test('折线两端依旧从数字上退开约 6px', () {
     const arrow = MarkupArrow(
       from: CandidateRef(4, 1, 5),

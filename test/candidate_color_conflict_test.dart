@@ -43,14 +43,18 @@ void main() {
     expect(g.getConflictCells(), isNot(contains(BoardMarkup.cellKey(1, 1))));
   });
 
-  test('未上色的候选即使看见成数也不标冲突', () {
+  test('未上色但看见成数的候选也标冲突', () {
     final g = _fivesBoard();
-    expect(g.candidateColorConflictRefs(), isEmpty);
-    expect(g.getConflictCells(), isEmpty);
+    expect(
+      g.candidateColorConflictRefs(),
+      contains(const CandidateRef(0, 2, 5)),
+    );
+    expect(g.getConflictCells(), contains(BoardMarkup.cellKey(0, 0)));
   });
 
   test('候选色与成数不共宫时不冲突', () {
     final g = _fivesBoard();
+    g.board!.userCandidates[0][2] = {1, 2};
     g.setMarkupMode(MarkupMode.candidateColor);
     g.selectCell(2, 8);
     g.onNumberPad(5);

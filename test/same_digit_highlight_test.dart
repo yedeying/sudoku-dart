@@ -115,4 +115,51 @@ void main() {
     expect(candDigit.style?.color, washFg);
     expect(candDigit.style?.color, isNot(palette.sameDigit));
   });
+
+  testWidgets('同数字高亮碰上冲突候选时数字标红，不铺同数蓝底', (tester) async {
+    final board = SudokuBoard.fromString(
+      '500000000000000000000000000000000000000000000000000000000000000000000000000000000',
+    );
+    board.userCandidates[0][2] = {5};
+    await tester.pumpWidget(MaterialApp(
+      theme: AppTheme.light(),
+      home: Scaffold(
+        body: SizedBox(
+          width: 360,
+          child: SudokuGrid(
+            board: board,
+            selectedRow: 0,
+            selectedCol: 0,
+            onCellTap: (_, __) {},
+            showCandidates: true,
+            conflictCells: {BoardMarkup.cellKey(0, 0)},
+            conflictCandidates: {const CandidateRef(0, 2, 5)},
+            sameDigitCells: {BoardMarkup.cellKey(0, 0)},
+            sameDigitCandidates: {const CandidateRef(0, 2, 5)},
+          ),
+        ),
+      ),
+    ));
+
+    final palette = AppTheme.light().extension<BoardPalette>()!;
+    expect(
+      tester
+          .widget<Text>(
+            find.descendant(
+              of: find.byKey(const ValueKey('cand-0-2-5')),
+              matching: find.text('5'),
+            ),
+          )
+          .style
+          ?.color,
+      palette.conflictDigit,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('cand-0-2-5')),
+        matching: find.byType(Container),
+      ),
+      findsNothing,
+    );
+  });
 }

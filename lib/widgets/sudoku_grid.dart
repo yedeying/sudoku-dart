@@ -224,7 +224,10 @@ class SudokuGrid extends StatelessWidget {
               ? palette.candidateStruck
               : isAnchor
                   ? palette.anchor
-                  : cColor ?? (sameDigit ? palette.sameDigit : null);
+                  : cColor ??
+                      (inConflict
+                          ? null
+                          : (sameDigit ? palette.sameDigit : null));
           final Color glyphColor;
           if (inConflict) {
             glyphColor = palette.conflictDigit;

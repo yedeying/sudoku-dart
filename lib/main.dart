@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'app_orientation.dart';
 import 'screens/main_shell.dart';
 import 'models/game_state.dart';
 import 'theme/theme_controller.dart';
+import 'widgets/phone_frame.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  AppOrientation.lockPortrait();
   runApp(const SudokuApp());
 }
 
@@ -32,6 +36,9 @@ class SudokuApp extends StatelessWidget {
           theme: theme.light,
           darkTheme: theme.dark,
           themeMode: ThemeMode.system,
+          builder: (context, child) => PhoneFrame(
+            child: child ?? const SizedBox.shrink(),
+          ),
           home: const MainShell(),
           debugShowCheckedModeBanner: false,
         ),

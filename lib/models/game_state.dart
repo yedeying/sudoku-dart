@@ -235,6 +235,18 @@ class GameState extends ChangeNotifier {
     return true;
   }
 
+  /// 快捷键撤销/重做。`redo: true` 为重做。
+  bool handleUndoShortcut({required bool redo}) {
+    if (redo) {
+      if (!canRedo) return false;
+      this.redo();
+      return true;
+    }
+    if (!canUndo) return false;
+    undo();
+    return true;
+  }
+
   /// 键盘数字：玩法下空格 toggle 候选，Shift 填成数；标记态走数字区同一套路由。
   bool handleDigitKey(int number, {required bool shift}) {
     if (_board == null || hintActive) return false;
@@ -284,24 +296,26 @@ class GameState extends ChangeNotifier {
   /// 无选中时：该数字已有候选色则全部去掉，否则给盘上所有该数字候选涂当前色。
   void toggleGlobalCandidateColor(int digit) {
     if (_board == null) return;
-    final existing = [
-      for (final e in userMarkup.candidateColors.entries)
-        if (e.key.num == digit) e.key,
-    ];
-    if (existing.isNotEmpty) {
-      for (final ref in existing) {
-        userMarkup.candidateColors.remove(ref);
-      }
-    } else {
-      for (var r = 0; r < 9; r++) {
-        for (var c = 0; c < 9; c++) {
-          if (_board!.visibleCandidates(r, c).contains(digit)) {
-            userMarkup.candidateColors[CandidateRef(r, c, digit)] = markupColor;
+    _commitMarkup(() {
+      final existing = [
+        for (final e in userMarkup.candidateColors.entries)
+          if (e.key.num == digit) e.key,
+      ];
+      if (existing.isNotEmpty) {
+        for (final ref in existing) {
+          userMarkup.candidateColors.remove(ref);
+        }
+      } else {
+        for (var r = 0; r < 9; r++) {
+          for (var c = 0; c < 9; c++) {
+            if (_board!.visibleCandidates(r, c).contains(digit)) {
+              userMarkup.candidateColors[CandidateRef(r, c, digit)] =
+                  markupColor;
+            }
           }
         }
       }
-    }
-    notifyListeners();
+    });
   }
 
   /// 在选中的格子填入数字
@@ -688,21 +702,25 @@ class GameState extends ChangeNotifier {
     _selectedRow = row;
     _selectedCol = col;
     if (markupMode == MarkupMode.cellColor) {
-      final key = BoardMarkup.cellKey(row, col);
-      if (userMarkup.cellColors[key] == markupColor) {
-        userMarkup.cellColors.remove(key);
-      } else {
-        userMarkup.cellColors[key] = markupColor;
-      }
+      _commitMarkup(() {
+        final key = BoardMarkup.cellKey(row, col);
+        if (userMarkup.cellColors[key] == markupColor) {
+          userMarkup.cellColors.remove(key);
+        } else {
+          userMarkup.cellColors[key] = markupColor;
+        }
+      });
+      return;
     }
     notifyListeners();
   }
 
   void paintSelectedCell() {
     if (_selectedRow == null || _selectedCol == null) return;
-    userMarkup.cellColors[BoardMarkup.cellKey(_selectedRow!, _selectedCol!)] =
-        markupColor;
-    notifyListeners();
+    _commitMarkup(() {
+      userMarkup.cellColors[BoardMarkup.cellKey(_selectedRow!, _selectedCol!)] =
+          markupColor;
+    });
   }
 
   /// 数字键路由：填数 / 笔记 / 候选色 / 链锚点 / 自动强链
@@ -769,13 +787,14 @@ class GameState extends ChangeNotifier {
     final c = _selectedCol!;
     if (_board!.get(r, c) != 0) return;
     if (!_board!.visibleCandidates(r, c).contains(number)) return;
-    final ref = CandidateRef(r, c, number);
-    if (userMarkup.candidateColors[ref] == markupColor) {
-      userMarkup.candidateColors.remove(ref);
-    } else {
-      userMarkup.candidateColors[ref] = markupColor;
-    }
-    notifyListeners();
+    _commitMarkup(() {
+      final ref = CandidateRef(r, c, number);
+      if (userMarkup.candidateColors[ref] == markupColor) {
+        userMarkup.candidateColors.remove(ref);
+      } else {
+        userMarkup.candidateColors[ref] = markupColor;
+      }
+    });
   }
 
   /// 点棋盘上的小数字：候选色模式直接上色，强/弱链模式设锚点或连线。
@@ -784,21 +803,24 @@ class GameState extends ChangeNotifier {
     if (!_board!.visibleCandidates(row, col).contains(num)) return;
     switch (markupMode) {
       case MarkupMode.candidateColor:
-        final ref = CandidateRef(row, col, num);
-        if (userMarkup.candidateColors[ref] == markupColor) {
-          userMarkup.candidateColors.remove(ref);
-        } else {
-          userMarkup.candidateColors[ref] = markupColor;
-        }
-        notifyListeners();
+        _commitMarkup(() {
+          final ref = CandidateRef(row, col, num);
+          if (userMarkup.candidateColors[ref] == markupColor) {
+            userMarkup.candidateColors.remove(ref);
+          } else {
+            userMarkup.candidateColors[ref] = markupColor;
+          }
+        });
         return;
       case MarkupMode.strong:
       case MarkupMode.weak:
         onCandidateMarkupTap(row, col, num);
         return;
+      case MarkupMode.autoStrong:
+        expandAutoAic(row, col, num);
+        return;
       case MarkupMode.off:
       case MarkupMode.cellColor:
-      case MarkupMode.autoStrong:
         return;
     }
   }
@@ -809,19 +831,20 @@ class GameState extends ChangeNotifier {
     if (kind == null) return;
 
     final ref = CandidateRef(row, col, num);
-    if (arrowAnchor == null) {
-      arrowAnchor = ref;
-    } else {
-      userMarkup.addArrow(
-        arrowAnchor!,
-        ref,
-        kind,
-        _board?.candidates ?? [],
-        color: markupColor,
-      );
-      arrowAnchor = null;
-    }
-    notifyListeners();
+    _commitMarkup(() {
+      if (arrowAnchor == null) {
+        arrowAnchor = ref;
+      } else {
+        userMarkup.addArrow(
+          arrowAnchor!,
+          ref,
+          kind,
+          _board?.candidates ?? [],
+          color: markupColor,
+        );
+        arrowAnchor = null;
+      }
+    });
   }
 
   void clearAutoStrongNotice() {
@@ -831,59 +854,167 @@ class GameState extends ChangeNotifier {
   }
 
   void setFilterDigit(int? d) {
-    final next = userMarkup.copy();
-    userMarkup = BoardMarkup(
-      cellColors: next.cellColors,
-      candidateColors: next.candidateColors,
-      arrows: next.arrows,
-      struck: next.struck,
-      filterDigit: d,
-    );
-    notifyListeners();
+    _commitMarkup(() {
+      final next = userMarkup.copy();
+      userMarkup = BoardMarkup(
+        cellColors: next.cellColors,
+        candidateColors: next.candidateColors,
+        arrows: next.arrows,
+        struck: next.struck,
+        filterDigit: d,
+      );
+    });
   }
 
   void toggleStrikeOnSelected(int num) {
     if (_selectedRow == null || _selectedCol == null) return;
     final ref = CandidateRef(_selectedRow!, _selectedCol!, num);
-    if (userMarkup.struck.contains(ref)) {
-      userMarkup.struck.remove(ref);
-    } else {
-      userMarkup.struck.add(ref);
-    }
-    notifyListeners();
+    _commitMarkup(() {
+      if (userMarkup.struck.contains(ref)) {
+        userMarkup.struck.remove(ref);
+      } else {
+        userMarkup.struck.add(ref);
+      }
+    });
   }
 
-  /// 扫描行、列、宫；恰两处则画强链。返回新增条数。
+  /// 自动强弱链下点某个候选：只画以它为强链端点、另一端同数字的 AIC。
+  void expandAutoAic(int row, int col, int num) {
+    if (_board == null) return;
+    if (!_board!.visibleCandidates(row, col).contains(num)) return;
+    autoStrongNotice = null;
+    final start = CandidateRef(row, col, num);
+    _commitMarkup(() {
+      final focused = _aicSameDigitPaths(start, _aicLinks());
+      final digits = {start.num};
+      for (final e in focused.edges) {
+        digits.add(e.a.num);
+        digits.add(e.b.num);
+      }
+      userMarkup.arrows.removeWhere(
+        (a) => digits.contains(a.from.num) || digits.contains(a.to.num),
+      );
+      userMarkup.candidateColors
+          .removeWhere((ref, _) => digits.contains(ref.num));
+      if (focused.edges.isEmpty) {
+        autoStrongNotice = '该候选展不开 AIC';
+        return;
+      }
+      final endColor = MarkupPalette.contrast(markupColor);
+      final elimColor = markupColor == MarkupPalette.red
+          ? MarkupPalette.blue
+          : MarkupPalette.red;
+      Color nodeColor(CandidateRef ref) =>
+          focused.ends.contains(ref) ? endColor : markupColor;
+      final onPath = <CandidateRef>{};
+      for (final e in focused.edges) {
+        onPath.add(e.a);
+        onPath.add(e.b);
+        if (e.a.row == e.b.row && e.a.col == e.b.col) {
+          userMarkup.candidateColors[e.a] = nodeColor(e.a);
+          userMarkup.candidateColors[e.b] = nodeColor(e.b);
+          continue;
+        }
+        userMarkup.addArrow(
+          e.a,
+          e.b,
+          e.kind,
+          _board!.candidates,
+          color: e.kind == ArrowKind.strong ? markupColor : null,
+          directed: false,
+        );
+        userMarkup.candidateColors[e.a] = nodeColor(e.a);
+        userMarkup.candidateColors[e.b] = nodeColor(e.b);
+      }
+      for (final end in focused.ends) {
+        if (end == start) continue;
+        for (int r = 0; r < 9; r++) {
+          for (int c = 0; c < 9; c++) {
+            if (_board!.get(r, c) != 0) continue;
+            if (!_board!.visibleCandidates(r, c).contains(start.num)) continue;
+            final z = CandidateRef(r, c, start.num);
+            if (onPath.contains(z) || z == start || z == end) continue;
+            if (_sameDigitCanSee(z, start) && _sameDigitCanSee(z, end)) {
+              userMarkup.candidateColors[z] = elimColor;
+            }
+          }
+        }
+      }
+    });
+  }
+
+  /// 扫描行、列、宫：恰两处画强链；两条不同强链的端点互相看得见则补弱链。
   int paintAutoStrong(int digit) {
     if (_board == null) return 0;
     autoStrongNotice = null;
     var added = 0;
-    var foundExactTwo = false;
+    _commitMarkup(() {
+      final links = _sameDigitAicLinks(digit);
+      bool alreadyLinked(CandidateRef a, CandidateRef b) =>
+          userMarkup.arrows.any((arrow) =>
+              (arrow.from == a && arrow.to == b) ||
+              (arrow.from == b && arrow.to == a));
 
-    void addPair(List<CandidateRef> hits) {
-      if (hits.length != 2) return;
-      foundExactTwo = true;
-      final a = hits[0];
-      final b = hits[1];
-      final duplicate = userMarkup.arrows.any(
-        (arrow) =>
-            arrow.kind == ArrowKind.strong &&
-            ((arrow.from == a && arrow.to == b) ||
-                (arrow.from == b && arrow.to == a)),
-      );
-      if (duplicate) return;
-      if (userMarkup.addArrow(
-        a,
-        b,
-        ArrowKind.strong,
-        _board!.candidates,
-        color: markupColor,
-        directed: false,
-      )) {
-        added++;
+      for (final e in links) {
+        if (e.a.row == e.b.row && e.a.col == e.b.col) continue;
+        if (alreadyLinked(e.a, e.b)) continue;
+        if (userMarkup.addArrow(
+          e.a,
+          e.b,
+          e.kind,
+          _board!.candidates,
+          color: e.kind == ArrowKind.strong ? markupColor : null,
+          directed: false,
+        )) {
+          added++;
+        }
       }
-    }
 
+      if (!links.any((e) => e.kind == ArrowKind.strong)) {
+        autoStrongNotice = '该数字没有强链';
+      }
+    });
+    return added;
+  }
+
+  bool _sameDigitCanSee(CandidateRef a, CandidateRef b) =>
+      a.row == b.row ||
+      a.col == b.col ||
+      (a.row ~/ 3 == b.row ~/ 3 && a.col ~/ 3 == b.col ~/ 3);
+
+  /// 同格不同数字，或同数字且同行/列/宫。
+  bool _aicCanSee(CandidateRef a, CandidateRef b) {
+    if (a == b) return false;
+    if (a.row == b.row && a.col == b.col) return a.num != b.num;
+    return a.num == b.num && _sameDigitCanSee(a, b);
+  }
+
+  bool _aicLinked(
+    List<({CandidateRef a, CandidateRef b, ArrowKind kind})> edges,
+    CandidateRef a,
+    CandidateRef b,
+  ) =>
+      edges.any((e) =>
+          (e.a == a && e.b == b) || (e.a == b && e.b == a));
+
+  void _addConjugatePair(
+    List<(CandidateRef, CandidateRef)> strongs,
+    List<({CandidateRef a, CandidateRef b, ArrowKind kind})> out,
+    List<CandidateRef> hits,
+  ) {
+    if (hits.length != 2) return;
+    final a = hits[0];
+    final b = hits[1];
+    strongs.add((a, b));
+    if (_aicLinked(out, a, b)) return;
+    out.add((a: a, b: b, kind: ArrowKind.strong));
+  }
+
+  void _addHouseConjugates(
+    int digit,
+    List<(CandidateRef, CandidateRef)> strongs,
+    List<({CandidateRef a, CandidateRef b, ArrowKind kind})> out,
+  ) {
     for (int r = 0; r < 9; r++) {
       final hits = <CandidateRef>[];
       for (int c = 0; c < 9; c++) {
@@ -892,7 +1023,7 @@ class GameState extends ChangeNotifier {
           hits.add(CandidateRef(r, c, digit));
         }
       }
-      addPair(hits);
+      _addConjugatePair(strongs, out, hits);
     }
 
     for (int c = 0; c < 9; c++) {
@@ -903,7 +1034,7 @@ class GameState extends ChangeNotifier {
           hits.add(CandidateRef(r, c, digit));
         }
       }
-      addPair(hits);
+      _addConjugatePair(strongs, out, hits);
     }
 
     for (int br = 0; br < 3; br++) {
@@ -919,21 +1050,162 @@ class GameState extends ChangeNotifier {
             }
           }
         }
-        addPair(hits);
+        _addConjugatePair(strongs, out, hits);
       }
     }
+  }
 
-    if (!foundExactTwo) {
-      autoStrongNotice = '该数字没有强链';
+  void _addAicWeaks(
+    List<(CandidateRef, CandidateRef)> strongs,
+    List<({CandidateRef a, CandidateRef b, ArrowKind kind})> out,
+    bool Function(CandidateRef a, CandidateRef b) canSee,
+  ) {
+    for (var i = 0; i < strongs.length; i++) {
+      for (var j = i + 1; j < strongs.length; j++) {
+        for (final a in [strongs[i].$1, strongs[i].$2]) {
+          for (final b in [strongs[j].$1, strongs[j].$2]) {
+            if (a == b || !canSee(a, b) || _aicLinked(out, a, b)) continue;
+            out.add((a: a, b: b, kind: ArrowKind.weak));
+          }
+        }
+      }
     }
-    notifyListeners();
-    return added;
+  }
+
+  void _addBivalueStrongs(
+    List<(CandidateRef, CandidateRef)> strongs,
+    List<({CandidateRef a, CandidateRef b, ArrowKind kind})> out, {
+    int? digit,
+  }) {
+    for (int r = 0; r < 9; r++) {
+      for (int c = 0; c < 9; c++) {
+        if (_board!.get(r, c) != 0) continue;
+        final cands = _board!.getCandidates(r, c).toList();
+        if (cands.length != 2) continue;
+        if (digit != null && !cands.contains(digit)) continue;
+        _addConjugatePair(
+          strongs,
+          out,
+          [CandidateRef(r, c, cands[0]), CandidateRef(r, c, cands[1])],
+        );
+      }
+    }
+  }
+
+  List<({CandidateRef a, CandidateRef b, ArrowKind kind})> _sameDigitAicLinks(
+    int digit,
+  ) {
+    final strongs = <(CandidateRef, CandidateRef)>[];
+    final out = <({CandidateRef a, CandidateRef b, ArrowKind kind})>[];
+    _addHouseConjugates(digit, strongs, out);
+    _addBivalueStrongs(strongs, out, digit: digit);
+    _addAicWeaks(
+      strongs,
+      out,
+      (a, b) => a.num == b.num && _sameDigitCanSee(a, b),
+    );
+    return out;
+  }
+
+  /// 全盘 AIC：房屋共轭 + 双值格为强链；不同强链端点互相看得见则补弱链。
+  List<({CandidateRef a, CandidateRef b, ArrowKind kind})> _aicLinks() {
+    final strongs = <(CandidateRef, CandidateRef)>[];
+    final out = <({CandidateRef a, CandidateRef b, ArrowKind kind})>[];
+    for (var digit = 1; digit <= 9; digit++) {
+      _addHouseConjugates(digit, strongs, out);
+    }
+    _addBivalueStrongs(strongs, out);
+    _addAicWeaks(strongs, out, _aicCanSee);
+    return out;
+  }
+
+  /// 从强链端点出发，对每个同数字目标端点各留一条最短交替路径（至少 S-W-S）。
+  ({
+    List<({CandidateRef a, CandidateRef b, ArrowKind kind})> edges,
+    Set<CandidateRef> ends,
+  }) _aicSameDigitPaths(
+    CandidateRef start,
+    List<({CandidateRef a, CandidateRef b, ArrowKind kind})> links,
+  ) {
+    final strongAdj = <CandidateRef, List<CandidateRef>>{};
+    final weakAdj = <CandidateRef, List<CandidateRef>>{};
+    void addAdj(
+      Map<CandidateRef, List<CandidateRef>> adj,
+      CandidateRef a,
+      CandidateRef b,
+    ) {
+      (adj[a] ??= []).add(b);
+      (adj[b] ??= []).add(a);
+    }
+
+    for (final e in links) {
+      addAdj(e.kind == ArrowKind.strong ? strongAdj : weakAdj, e.a, e.b);
+    }
+    if (!strongAdj.containsKey(start)) {
+      return (edges: const [], ends: const {});
+    }
+
+    const maxLinks = 14;
+    final seenState = <(CandidateRef, bool)>{(start, true)};
+    final queue = <({
+      CandidateRef u,
+      bool needStrong,
+      List<({CandidateRef a, CandidateRef b, ArrowKind kind})> path,
+    })>[
+      (u: start, needStrong: true, path: const []),
+    ];
+    final pathByEnd =
+        <CandidateRef, List<({CandidateRef a, CandidateRef b, ArrowKind kind})>>{};
+    while (queue.isNotEmpty) {
+      final cur = queue.removeAt(0);
+      if (cur.path.length >= maxLinks) continue;
+      final nbrs = cur.needStrong
+          ? strongAdj[cur.u]
+          : <CandidateRef>{...?weakAdj[cur.u], ...?strongAdj[cur.u]};
+      if (nbrs == null || nbrs.isEmpty) continue;
+      final kind = cur.needStrong ? ArrowKind.strong : ArrowKind.weak;
+      for (final v in nbrs) {
+        if (cur.path.any((e) => e.a == v || e.b == v) || v == start) {
+          continue;
+        }
+        final next = [...cur.path, (a: cur.u, b: v, kind: kind)];
+        final nextNeed = !cur.needStrong;
+        if (cur.needStrong && v.num == start.num && cur.path.isNotEmpty) {
+          pathByEnd.putIfAbsent(v, () => next);
+        }
+        if (seenState.add((v, nextNeed))) {
+          queue.add((u: v, needStrong: nextNeed, path: next));
+        }
+      }
+    }
+    if (pathByEnd.isEmpty) {
+      return (edges: const [], ends: const {});
+    }
+    final used = <({CandidateRef a, CandidateRef b, ArrowKind kind})>[];
+    bool samePair(
+      ({CandidateRef a, CandidateRef b, ArrowKind kind}) e,
+      CandidateRef a,
+      CandidateRef b,
+    ) =>
+        (e.a == a && e.b == b) || (e.a == b && e.b == a);
+    for (final path in pathByEnd.values) {
+      for (final e in path) {
+        final i = used.indexWhere((x) => samePair(x, e.a, e.b));
+        if (i < 0) {
+          used.add(e);
+        } else if (e.kind == ArrowKind.strong && used[i].kind == ArrowKind.weak) {
+          used[i] = e;
+        }
+      }
+    }
+    return (edges: used, ends: {start, ...pathByEnd.keys});
   }
 
   void clearUserMarkup() {
-    userMarkup = BoardMarkup();
-    arrowAnchor = null;
-    notifyListeners();
+    _commitMarkup(() {
+      userMarkup = BoardMarkup();
+      arrowAnchor = null;
+    });
   }
 
   /// 撤销
@@ -944,7 +1216,10 @@ class GameState extends ChangeNotifier {
     hintSession = null;
 
     var move = _history[_historyIndex];
-    if (move.eliminations.isNotEmpty) {
+    if (move.isMarkup) {
+      userMarkup = move.markupBefore!.copy();
+      arrowAnchor = move.arrowAnchorBefore;
+    } else if (move.eliminations.isNotEmpty) {
       _applyEliminations(move, forward: false);
     } else if (move.isCandidate) {
       // 切换在可见集合上是自反的，再切一次即回到上一步。
@@ -972,7 +1247,10 @@ class GameState extends ChangeNotifier {
 
     _historyIndex++;
     var move = _history[_historyIndex];
-    if (move.eliminations.isNotEmpty) {
+    if (move.isMarkup) {
+      userMarkup = move.markupAfter!.copy();
+      arrowAnchor = move.arrowAnchorAfter;
+    } else if (move.eliminations.isNotEmpty) {
       _applyEliminations(move, forward: true);
     } else if (move.isCandidate) {
       _board!.toggleUserCandidate(move.row, move.col, move.candidateNum!);
@@ -1001,6 +1279,41 @@ class GameState extends ChangeNotifier {
       }
     }
     _board!.refreshCandidates();
+  }
+
+  void _commitMarkup(VoidCallback mutate) {
+    final before = userMarkup.copy();
+    final anchorBefore = arrowAnchor;
+    mutate();
+    if (_sameMarkup(before, userMarkup) && anchorBefore == arrowAnchor) {
+      notifyListeners();
+      return;
+    }
+    _addToHistory(GameMove.markup(
+      before: before,
+      after: userMarkup.copy(),
+      arrowAnchorBefore: anchorBefore,
+      arrowAnchorAfter: arrowAnchor,
+    ));
+    notifyListeners();
+  }
+
+  bool _sameMarkup(BoardMarkup a, BoardMarkup b) {
+    if (a.filterDigit != b.filterDigit) return false;
+    if (a.cellColors.length != b.cellColors.length) return false;
+    for (final e in a.cellColors.entries) {
+      if (b.cellColors[e.key] != e.value) return false;
+    }
+    if (a.candidateColors.length != b.candidateColors.length) return false;
+    for (final e in a.candidateColors.entries) {
+      if (b.candidateColors[e.key] != e.value) return false;
+    }
+    if (a.arrows.length != b.arrows.length) return false;
+    for (var i = 0; i < a.arrows.length; i++) {
+      if (a.arrows[i] != b.arrows[i]) return false;
+    }
+    if (a.struck.length != b.struck.length) return false;
+    return a.struck.containsAll(b.struck);
   }
 
   void _addToHistory(GameMove move) {
@@ -1091,7 +1404,7 @@ class GameState extends ChangeNotifier {
     return true;
   }
 
-  /// 当前所有冲突格子（成数互撞，或候选色看见了同宫成数）
+  /// 当前所有冲突格子（成数互撞，或候选看见了同宫成数）
   Set<int> getConflictCells() {
     final conflicts = <int>{};
     if (_board == null) return conflicts;
@@ -1102,25 +1415,26 @@ class GameState extends ChangeNotifier {
         }
       }
     }
-    conflicts.addAll(_candidateColorConflicts().cells);
+    conflicts.addAll(_candidateConflicts().cells);
     return conflicts;
   }
 
-  /// 与成数共宫的上色候选，数字要标红。
-  Set<CandidateRef> candidateColorConflictRefs() =>
-      _candidateColorConflicts().refs;
+  /// 与成数共宫的可见候选，数字要标红。
+  Set<CandidateRef> candidateColorConflictRefs() => _candidateConflicts().refs;
 
-  ({Set<int> cells, Set<CandidateRef> refs}) _candidateColorConflicts() {
+  ({Set<int> cells, Set<CandidateRef> refs}) _candidateConflicts() {
     final cells = <int>{};
     final refs = <CandidateRef>{};
     if (_board == null) return (cells: cells, refs: refs);
-    for (final ref in userMarkup.candidateColors.keys) {
-      if (!_board!.visibleCandidates(ref.row, ref.col).contains(ref.num)) {
-        continue;
+    for (var r = 0; r < 9; r++) {
+      for (var c = 0; c < 9; c++) {
+        if (_board!.get(r, c) != 0) continue;
+        for (final digit in _board!.visibleCandidates(r, c)) {
+          if (_board!.canPlace(r, c, digit)) continue;
+          refs.add(CandidateRef(r, c, digit));
+          _addFilledPeers(r, c, digit, cells);
+        }
       }
-      if (_board!.canPlace(ref.row, ref.col, ref.num)) continue;
-      refs.add(ref);
-      _addFilledPeers(ref.row, ref.col, ref.num, cells);
     }
     return (cells: cells, refs: refs);
   }
@@ -1248,6 +1562,12 @@ class GameMove {
   final int? candidateNum;
   final bool? candidateAdded;
   final List<CandidateElimUndo> eliminations;
+  final BoardMarkup? markupBefore;
+  final BoardMarkup? markupAfter;
+  final CandidateRef? arrowAnchorBefore;
+  final CandidateRef? arrowAnchorAfter;
+
+  bool get isMarkup => markupBefore != null;
 
   GameMove({
     required this.row,
@@ -1257,7 +1577,11 @@ class GameMove {
   })  : isCandidate = false,
         candidateNum = null,
         candidateAdded = null,
-        eliminations = const [];
+        eliminations = const [],
+        markupBefore = null,
+        markupAfter = null,
+        arrowAnchorBefore = null,
+        arrowAnchorAfter = null;
 
   GameMove.candidate({
     required this.row,
@@ -1267,7 +1591,11 @@ class GameMove {
   })  : oldValue = 0,
         newValue = 0,
         isCandidate = true,
-        eliminations = const [];
+        eliminations = const [],
+        markupBefore = null,
+        markupAfter = null,
+        arrowAnchorBefore = null,
+        arrowAnchorAfter = null;
 
   GameMove.eliminations(this.eliminations)
       : row = 0,
@@ -1276,5 +1604,25 @@ class GameMove {
         newValue = 0,
         isCandidate = false,
         candidateNum = null,
-        candidateAdded = null;
+        candidateAdded = null,
+        markupBefore = null,
+        markupAfter = null,
+        arrowAnchorBefore = null,
+        arrowAnchorAfter = null;
+
+  GameMove.markup({
+    required BoardMarkup before,
+    required BoardMarkup after,
+    this.arrowAnchorBefore,
+    this.arrowAnchorAfter,
+  })  : row = 0,
+        col = 0,
+        oldValue = 0,
+        newValue = 0,
+        isCandidate = false,
+        candidateNum = null,
+        candidateAdded = null,
+        eliminations = const [],
+        markupBefore = before,
+        markupAfter = after;
 }

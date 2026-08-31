@@ -81,8 +81,8 @@ void main() {
     expect(find.text('一键复制'), findsNothing);
     expect(find.text('快速填充'), findsOneWidget);
     expect(
-      tester.getTopLeft(find.text('快速填充')).dx,
-      greaterThan(tester.getTopLeft(find.text('标记')).dx),
+      tester.getTopLeft(find.text('快速填充')).dy,
+      greaterThan(tester.getTopLeft(find.text('标记')).dy),
     );
     await tester.tap(find.byIcon(Icons.flash_on_outlined));
     await tester.pump();

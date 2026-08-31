@@ -34,10 +34,26 @@ class BoardArrowsPainter extends CustomPainter {
     final b = _center(arrow.to, size);
     final sameRow = arrow.from.row == arrow.to.row;
     final sameCol = arrow.from.col == arrow.to.col;
-    // 同格（都相同）和斜向（都不同）走直线。
+    final cell = (size.width - padding * 2) / 9;
+    if (sameRow && sameCol) {
+      final mid = Offset((a.dx + b.dx) / 2, (a.dy + b.dy) / 2);
+      var normal = Offset(a.dy - b.dy, b.dx - a.dx);
+      final nLen = normal.distance;
+      if (nLen < 1) return [a, b];
+      normal = normal / nLen;
+      final cellMid = Offset(
+        padding + (arrow.from.col + 0.5) * cell,
+        padding + (arrow.from.row + 0.5) * cell,
+      );
+      final toward = cellMid - mid;
+      if (toward.dx * normal.dx + toward.dy * normal.dy < 0) {
+        normal = Offset(-normal.dx, -normal.dy);
+      }
+      return [a, mid + normal * (cell * 0.18), b];
+    }
+    // 斜向走直线。
     if (sameRow == sameCol) return [a, b];
 
-    final cell = (size.width - padding * 2) / 9;
     // 空档正好在相邻两排候选中心的中点，是唯一躲得开候选圆圈的位置。
     final gutter = cell / 6;
 
@@ -77,7 +93,10 @@ class BoardArrowsPainter extends CustomPainter {
   /// 两端各退开一点（棋盘 360 宽时约 6px），不压在数字上。
   List<Offset> _path(MarkupArrow arrow, Size size) {
     final points = _route(arrow, size);
-    final inset = ((size.width - padding * 2) / 9) * 0.155;
+    final cell = (size.width - padding * 2) / 9;
+    final sameCell =
+        arrow.from.row == arrow.to.row && arrow.from.col == arrow.to.col;
+    final inset = sameCell ? cell * 0.06 : cell * 0.155;
 
     Offset? pull(Offset from, Offset toward) {
       final d = toward - from;

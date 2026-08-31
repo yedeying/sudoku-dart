@@ -177,6 +177,31 @@ void main() {
     expect(state.selectedCol, isNull);
   });
 
+  testWidgets('Cmd+Z / Cmd+Y 撤销重做标记', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    final state = _game()..setMarkupMode(MarkupMode.cellColor);
+    await _pumpGame(tester, state);
+    state.onCellTap(1, 1);
+    await tester.pump();
+    final key = BoardMarkup.cellKey(1, 1);
+    expect(state.userMarkup.cellColors.containsKey(key), isTrue);
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+    await tester.pump();
+    expect(state.userMarkup.cellColors.containsKey(key), isFalse);
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyY);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+    await tester.pump();
+    expect(state.userMarkup.cellColors.containsKey(key), isTrue);
+  });
+
   testWidgets('键盘数字和方向作用在当前高亮格', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;

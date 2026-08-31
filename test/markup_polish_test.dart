@@ -18,6 +18,18 @@ const _classic = '530070000'
     '000080079';
 
 void main() {
+  test('预选色的对比色和原色能分开', () {
+    for (final color in MarkupPalette.colors) {
+      final contrast = MarkupPalette.contrast(color);
+      expect(contrast, isNot(color));
+      final a = HSLColor.fromColor(color);
+      final b = HSLColor.fromColor(contrast);
+      final dh = (a.hue - b.hue).abs();
+      final hueGap = dh > 180 ? 360 - dh : dh;
+      expect(hueGap, closeTo(180, 1));
+    }
+  });
+
   test('调色板给够 10 个可区分的颜色', () {
     expect(MarkupPalette.colors.length, 10);
     expect(MarkupPalette.colors.toSet().length, 10);
@@ -58,7 +70,15 @@ void main() {
 
     expect(added, greaterThan(0));
     expect(
-      state.userMarkup.arrows.every((a) => a.color == MarkupPalette.colors[6]),
+      state.userMarkup.arrows
+          .where((a) => a.kind == ArrowKind.strong)
+          .every((a) => a.color == MarkupPalette.colors[6]),
+      true,
+    );
+    expect(
+      state.userMarkup.arrows
+          .where((a) => a.kind == ArrowKind.weak)
+          .every((a) => a.color == null),
       true,
     );
   });
