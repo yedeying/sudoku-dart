@@ -12,6 +12,7 @@ dependencies:
   cupertino_icons: ^1.0.2
   provider: ^6.1.1
   shared_preferences: ^2.3.0
+  flutter_svg: ^2.3.0
 
 dev_dependencies:
   flutter_test:
@@ -23,6 +24,7 @@ flutter:
 
   assets:
     - assets/puzzles/
+    - assets/icons/
 
   # 内置中文子集字体，避免 Web 端首帧等待 CDN 字体时出现方块字。
   # 新增中文文案后运行 tools/build_font_subset.py 重新生成。

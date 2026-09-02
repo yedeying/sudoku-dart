@@ -80,6 +80,42 @@ void main() {
     );
   });
 
+  test('隐藏标记只影响显示，不清除用户标记', () {
+    final g = GameState()..loadCustomGame(classic);
+    g.setMarkupMode(MarkupMode.cellColor);
+    g.onCellTap(1, 1);
+    final key = BoardMarkup.cellKey(1, 1);
+    expect(g.markupHidden, isFalse);
+    expect(g.displayMarkup.cellColors[key], MarkupPalette.colors.first);
+
+    g.toggleMarkupHidden();
+    expect(g.markupHidden, isTrue);
+    expect(g.userMarkup.cellColors[key], MarkupPalette.colors.first);
+    expect(g.displayMarkup.cellColors.containsKey(key), isFalse);
+
+    g.toggleMarkupHidden();
+    expect(g.markupHidden, isFalse);
+    expect(g.displayMarkup.cellColors[key], MarkupPalette.colors.first);
+  });
+
+  test('隐藏用户标记时提示层仍显示', () {
+    final g = GameState()..loadCustomGame(classic);
+    g.setMarkupMode(MarkupMode.cellColor);
+    g.onCellTap(1, 1);
+    g.hintMarkup = BoardMarkup(
+      cellColors: {BoardMarkup.cellKey(2, 2): MarkupPalette.red},
+    );
+    g.toggleMarkupHidden();
+    expect(
+      g.displayMarkup.cellColors.containsKey(BoardMarkup.cellKey(1, 1)),
+      isFalse,
+    );
+    expect(
+      g.displayMarkup.cellColors[BoardMarkup.cellKey(2, 2)],
+      MarkupPalette.red,
+    );
+  });
+
   test('自动强链模式网格候选点不上色', () {
     final g = _classicWithVisible8();
     g.setMarkupColor(MarkupPalette.colors.first);

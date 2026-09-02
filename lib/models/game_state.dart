@@ -39,6 +39,7 @@ class GameState extends ChangeNotifier {
   CandidateRef? arrowAnchor;
   Color markupColor = MarkupPalette.colors.first;
   String? autoStrongNotice;
+  bool _markupHidden = false;
 
   /// 由强/弱链模式推导，不再单独设置
   ArrowKind? get pendingArrowKind {
@@ -87,9 +88,10 @@ class GameState extends ChangeNotifier {
   bool get candidateMode => _candidateMode;
   bool get justCompleted => _justCompleted;
   bool get markupEnabled => markupMode != MarkupMode.off;
+  bool get markupHidden => _markupHidden;
 
   BoardMarkup get displayMarkup {
-    final merged = userMarkup.copy();
+    final merged = _markupHidden ? BoardMarkup() : userMarkup.copy();
     if (hintMarkup != null) {
       merged.cellColors.addAll(hintMarkup!.cellColors);
       merged.candidateColors.addAll(hintMarkup!.candidateColors);
@@ -190,6 +192,7 @@ class GameState extends ChangeNotifier {
     _candidateMode = false;
     markupColor = MarkupPalette.colors.first;
     markupMode = MarkupMode.off;
+    _markupHidden = false;
     _clearBoardMarkup();
   }
 
@@ -635,6 +638,11 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void toggleMarkupHidden() {
+    _markupHidden = !_markupHidden;
+    notifyListeners();
+  }
+
   void toggleMarkupEnabled() {
     if (markupMode == MarkupMode.off) {
       setMarkupMode(MarkupMode.cellColor);
@@ -752,6 +760,18 @@ class GameState extends ChangeNotifier {
         paintAutoStrong(number);
         return;
     }
+  }
+
+  /// 该数字还差几格才填满（标准盘每数字 9 格）。
+  int remainingOf(int digit) {
+    if (_board == null || digit < 1 || digit > 9) return 0;
+    var filled = 0;
+    for (var r = 0; r < 9; r++) {
+      for (var c = 0; c < 9; c++) {
+        if (_board!.get(r, c) == digit) filled++;
+      }
+    }
+    return (9 - filled).clamp(0, 9);
   }
 
   bool isNumberPadEnabled(int number) {

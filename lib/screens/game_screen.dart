@@ -11,7 +11,9 @@ import '../models/technique_catalog.dart';
 import '../services/sudoku_solver.dart';
 import '../widgets/accent_picker.dart';
 import '../widgets/sudoku_grid.dart';
+import '../widgets/app_notice.dart';
 import '../widgets/hint_panel.dart';
+import '../widgets/markup_mode_icon.dart';
 import '../widgets/phone_frame.dart';
 
 class GameScreen extends StatefulWidget {
@@ -195,12 +197,7 @@ class _GameScreenState extends State<GameScreen> {
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         if (!mounted) return;
                         gameState.clearAutoStrongNotice();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(notice),
-                            duration: const Duration(seconds: 2),
-                          ),
-                        );
+                        showAppNotice(context, notice);
                       });
                     }
 
@@ -220,7 +217,7 @@ class _GameScreenState extends State<GameScreen> {
 
   Widget _buildPlayArea(GameState gameState, BoxConstraints area) {
     const topPad = 8.0;
-    const reserved = 252.0;
+    const reserved = 280.0;
     final short = area.maxHeight < 420;
     final boardSide = (short
             ? math.min(area.maxWidth - 32, area.maxHeight - topPad)
@@ -424,12 +421,19 @@ class _GameScreenState extends State<GameScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _buildControlButton(
-            icon: gameState.showCandidates
-                ? Icons.visibility
-                : Icons.visibility_off,
-            label: gameState.showCandidates ? '隐藏候选' : '显示候选',
-            onPressed: () => gameState.toggleShowCandidates(),
-            active: gameState.showCandidates,
+            icon: _readyHint(gameState) != null
+                ? Icons.check
+                : Icons.lightbulb,
+            label: _readyHint(gameState) != null ? '应用' : '提示',
+            active: _readyHint(gameState) != null,
+            onPressed: () {
+              final ready = _readyHint(gameState);
+              if (ready != null) {
+                gameState.applyHintAndAdvance(ready);
+              } else {
+                _showHint(context, gameState);
+              }
+            },
           ),
           _buildControlButton(
             icon: gameState.markupEnabled
@@ -461,6 +465,14 @@ class _GameScreenState extends State<GameScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _buildControlButton(
+            icon: gameState.showCandidates
+                ? Icons.visibility
+                : Icons.visibility_off,
+            label: gameState.showCandidates ? '隐藏候选' : '显示候选',
+            onPressed: () => gameState.toggleShowCandidates(),
+            active: gameState.showCandidates,
+          ),
+          _buildControlButton(
             icon: Icons.edit_note,
             label: gameState.candidateMode ? '填数模式' : '笔记模式',
             onPressed: () => gameState.toggleCandidateMode(),
@@ -470,21 +482,6 @@ class _GameScreenState extends State<GameScreen> {
             icon: Icons.flash_on_outlined,
             label: '快速填充',
             onPressed: () => _applySimpleFills(context),
-          ),
-          _buildControlButton(
-            icon: _readyHint(gameState) != null
-                ? Icons.check
-                : Icons.lightbulb,
-            label: _readyHint(gameState) != null ? '应用' : '提示',
-            active: _readyHint(gameState) != null,
-            onPressed: () {
-              final ready = _readyHint(gameState);
-              if (ready != null) {
-                gameState.applyHintAndAdvance(ready);
-              } else {
-                _showHint(context, gameState);
-              }
-            },
           ),
           _buildControlButton(
             icon: Icons.clear,
@@ -501,26 +498,21 @@ class _GameScreenState extends State<GameScreen> {
   Widget _buildMarkupModes(GameState gameState) {
     final scheme = Theme.of(context).colorScheme;
 
-    Widget modeChip(String label, MarkupMode mode) {
+    Widget modeButton(MarkupMode mode) {
       final selected = gameState.markupMode == mode;
-      return Padding(
-        padding: const EdgeInsets.only(right: 6),
-        child: FilterChip(
-          label: Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: selected ? scheme.onPrimary : scheme.onSurfaceVariant,
-            ),
-          ),
-          visualDensity: VisualDensity.compact,
-          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          labelPadding: EdgeInsets.zero,
-          selected: selected,
-          showCheckmark: false,
-          selectedColor: scheme.primary,
-          onSelected: (_) => gameState.setMarkupMode(mode),
+      final color = selected ? scheme.onPrimary : scheme.onSurfaceVariant;
+      return _markupCircleButton(
+        key: ValueKey(MarkupModeIcon.keyOf(mode)),
+        selected: selected,
+        tooltip: MarkupModeIcon.labelOf(mode),
+        onPressed: () => gameState.setMarkupMode(mode),
+        child: MarkupModeIcon(
+          mode: mode,
+          color: color,
+          size: switch (mode) {
+            MarkupMode.candidateColor || MarkupMode.autoStrong => 26,
+            _ => 22,
+          },
         ),
       );
     }
@@ -530,33 +522,63 @@ class _GameScreenState extends State<GameScreen> {
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          modeChip('格子', MarkupMode.cellColor),
-          modeChip('候选', MarkupMode.candidateColor),
-          modeChip('强链', MarkupMode.strong),
-          modeChip('弱链', MarkupMode.weak),
-          modeChip('AIC', MarkupMode.autoStrong),
-          Padding(
-            padding: const EdgeInsets.only(right: 6),
-            child: FilterChip(
-              key: const ValueKey('clear-markup'),
-              label: Text(
-                'x',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-              visualDensity: VisualDensity.compact,
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              labelPadding: EdgeInsets.zero,
-              selected: false,
-              showCheckmark: false,
-              onSelected: (_) => gameState.clearUserMarkup(),
+          modeButton(MarkupMode.cellColor),
+          modeButton(MarkupMode.candidateColor),
+          modeButton(MarkupMode.strong),
+          modeButton(MarkupMode.weak),
+          modeButton(MarkupMode.autoStrong),
+          _markupCircleButton(
+            key: const ValueKey('toggle-markup-visibility'),
+            tooltip: gameState.markupHidden ? '显示标记' : '隐藏标记',
+            onPressed: gameState.toggleMarkupHidden,
+            child: Icon(
+              gameState.markupHidden
+                  ? Icons.visibility_off
+                  : Icons.visibility,
+              size: 22,
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+          _markupCircleButton(
+            key: const ValueKey('clear-markup'),
+            tooltip: '清除标记',
+            onPressed: gameState.clearUserMarkup,
+            child: Icon(
+              Icons.close,
+              size: 22,
+              color: scheme.onSurfaceVariant,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _markupCircleButton({
+    required Key key,
+    required Widget child,
+    required VoidCallback onPressed,
+    String? tooltip,
+    bool selected = false,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    final button = Material(
+      color: selected ? scheme.primary : scheme.surfaceContainerHighest,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onPressed,
+        child: SizedBox(
+          width: 40,
+          height: 40,
+          child: Center(child: child),
+        ),
+      ),
+    );
+    return Padding(
+      key: key,
+      padding: const EdgeInsets.only(right: 6),
+      child: tooltip == null ? button : Tooltip(message: tooltip, child: button),
     );
   }
 
@@ -696,27 +718,42 @@ class _GameScreenState extends State<GameScreen> {
       foreground = scheme.onPrimary;
     }
 
-    return InkWell(
-      key: ValueKey('pad-$number'),
-      onTap: isEnabled ? () => gameState.onNumberPad(number) : null,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: background,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Center(
-          child: Text(
-            number.toString(),
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: foreground,
+    return SizedBox(
+      width: size,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _DigitRemainDots(
+            digit: number,
+            count: gameState.remainingOf(number),
+            color: scheme.primary,
+            width: size,
+          ),
+          const SizedBox(height: 6),
+          InkWell(
+            key: ValueKey('pad-$number'),
+            onTap: isEnabled ? () => gameState.onNumberPad(number) : null,
+            borderRadius: BorderRadius.circular(8),
+            child: Ink(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                color: background,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: Text(
+                  number.toString(),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: foreground,
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -786,6 +823,7 @@ class _GameScreenState extends State<GameScreen> {
   void _showHint(BuildContext context, GameState gameState) {
     final phase = gameState.hintSession?.phase ?? HintPhase.none;
     if (phase != HintPhase.none) return;
+    ScaffoldMessenger.of(context).clearSnackBars();
     gameState.getHint();
   }
 
@@ -826,9 +864,7 @@ class _GameScreenState extends State<GameScreen> {
     if (text.isEmpty) return;
     await Clipboard.setData(ClipboardData(text: text));
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('已复制残局'), duration: Duration(seconds: 2)),
-    );
+    showAppNotice(context, '已复制残局');
   }
 
   void _applySimpleFills(BuildContext context) {
@@ -841,12 +877,7 @@ class _GameScreenState extends State<GameScreen> {
             ? '已填写 ${result.filled} 格'
                 '${result.eliminated == 0 ? '' : '，删除 ${result.eliminated} 处'}'
             : '已用唯余/摒除填写 ${result.filled} 格';
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    showAppNotice(context, message);
   }
 
   void _showVictoryDialog(BuildContext context, GameState gameState) {
@@ -919,4 +950,61 @@ class _EvenPlayDelegate extends MultiChildLayoutDelegate {
   @override
   bool shouldRelayout(covariant _EvenPlayDelegate oldDelegate) =>
       oldDelegate.boardSide != boardSide;
+}
+
+class _DigitRemainDots extends StatelessWidget {
+  final int digit;
+  final int count;
+  final Color color;
+  final double width;
+
+  const _DigitRemainDots({
+    required this.digit,
+    required this.count,
+    required this.color,
+    required this.width,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final slot = width / 5;
+    final dot = ((slot * 0.62).clamp(3.0, 6.0) - 2).clamp(2.0, 6.0);
+    final pitch = (slot - 1).clamp(dot + 0.5, slot);
+    return SizedBox(
+      key: ValueKey('pad-$digit-remain'),
+      width: width,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var row = 0; row < 2; row++)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                for (var col = 0; col < 5; col++)
+                  SizedBox(
+                    width: pitch,
+                    height: pitch,
+                    child: Center(
+                      child: (row * 5 + col) < count
+                          ? DecoratedBox(
+                              key: ValueKey('pad-$digit-dot-${row * 5 + col}'),
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                              ),
+                              child: SizedBox(
+                                key: const ValueKey('remain-dot'),
+                                width: dot,
+                                height: dot,
+                              ),
+                            )
+                          : null,
+                    ),
+                  ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
 }
