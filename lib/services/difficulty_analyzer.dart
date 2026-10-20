@@ -7,14 +7,19 @@ import 'sudoku_solver.dart';
 class DifficultyAnalyzer {
   /// 技巧难度分数
   static const Map<String, int> techniqueScores = {
+    '单元唯一': 1,
+    '数字唯一': 1,
     '唯一余数': 1,
     '排除': 2,
     '显性数对': 5,
-    '隐性数对': 15,
     '显性三数组': 10,
+    '死锁数组': 12,
+    '直观数组': 14,
+    '隐性数对': 15,
     '隐性三数组': 20,
     '显性四数组': 25,
     '隐性四数组': 30,
+    '直观区块': 14,
     '宫区块': 15,
     '行/列区块': 15,
     'X-Wing': 25,
@@ -35,6 +40,7 @@ class DifficultyAnalyzer {
     '唯一矩形 Type 4': 56,
     '隐性唯一矩形': 58,
     '染色法': 70,
+    '远程数对': 71,
     'W-Wing': 90,
     'WXYZ-Wing': 92,
     '全双值格致死解法+1': 54,

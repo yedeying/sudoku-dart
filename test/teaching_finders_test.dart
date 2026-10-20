@@ -158,11 +158,16 @@ void main() {
   test('getHint 搜索顺序遵循评审难度和语义约束', () {
     final order = SudokuSolver.hintSearchOrder;
     const expected = [
+      '单元唯一',
+      '数字唯一',
       '唯一余数',
       '排除',
       '显性数对',
       '显性三数组',
+      '死锁数组',
+      '直观数组',
       '隐性数对',
+      '直观区块',
       '宫区块',
       '行/列区块',
       '隐性三数组',
@@ -201,6 +206,7 @@ void main() {
       '宫内鱼',
       '唯一环 Type 4',
       '染色法',
+      '远程数对',
       '唯一环 Type 3',
       '探长致命结构',
       '淑芬致命结构',
@@ -293,6 +299,7 @@ void main() {
       'als_xy': AdvancedTechniques.findAlsXyWing,
       'death_blossom': AdvancedTechniques.findDeathBlossom,
       'wxyz_wing': AdvancedTechniques.findWxyzWing,
+      'remote_pairs': AdvancedTechniques.findRemotePairs,
     };
     for (final entry in finders.entries) {
       final tech = _tech(entry.key);
@@ -417,5 +424,22 @@ void main() {
       expect(
           _elimKeys(fromHint).containsAll(_teachingElims('xy_chain')), isTrue);
     }
+  });
+
+  test('分档 1（6 项直观与拆步组合技巧）教学盘面 Finder 验证', () {
+    final fhHint = AdvancedTechniques.findFullHouse(_board('full_house'));
+    expect(fhHint, isNotNull);
+    expect(fhHint!.technique, '单元唯一');
+    expect(fhHint.isElimination, isFalse);
+
+    final ldHint = AdvancedTechniques.findLastDigit(_board('last_digit'));
+    expect(ldHint, isNotNull);
+    expect(ldHint!.technique, '数字唯一');
+    expect(ldHint.isElimination, isFalse);
+
+    _expectFinder('locked_subset', '死锁数组', AdvancedTechniques.findLockedSubset);
+    _expectFinder('visual_locked', '直观区块', AdvancedTechniques.findVisualLocked);
+    _expectFinder('visual_subset', '直观数组', AdvancedTechniques.findVisualSubset);
+    _expectFinder('remote_pairs', '远程数对', AdvancedTechniques.findRemotePairs);
   });
 }

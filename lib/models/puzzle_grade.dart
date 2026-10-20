@@ -73,12 +73,15 @@ class PuzzleGrades {
 
   /// 专业 / 大师 / 地狱 / 自定义 的快速填充额外会走这些删除。
   static const quickFillExtraTechniques = {
+    '死锁数组',
     '显性数对',
+    '直观数组',
     '隐性数对',
     '显性三数组',
     '隐性三数组',
     '显性四数组',
     '隐性四数组',
+    '直观区块',
     '宫区块',
     '行/列区块',
   };
@@ -131,11 +134,16 @@ class PuzzleGrades {
   }
 
   static const _techniqueGrade = <String, PuzzleGrade>{
+    '单元唯一': PuzzleGrade.beginner,
+    '数字唯一': PuzzleGrade.beginner,
     '唯一余数': PuzzleGrade.beginner,
     '排除': PuzzleGrade.beginner,
+    '死锁数组': PuzzleGrade.normal,
     '显性数对': PuzzleGrade.normal,
     '显性三数组': PuzzleGrade.normal,
+    '直观数组': PuzzleGrade.normal,
     '隐性数对': PuzzleGrade.normal,
+    '直观区块': PuzzleGrade.normal,
     '宫区块': PuzzleGrade.normal,
     '行/列区块': PuzzleGrade.normal,
     '隐性三数组': PuzzleGrade.normal,
@@ -174,6 +182,7 @@ class PuzzleGrades {
     '宫内鱼': PuzzleGrade.advanced,
     '唯一环 Type 4': PuzzleGrade.advanced,
     '染色法': PuzzleGrade.advanced,
+    '远程数对': PuzzleGrade.advanced,
     '唯一环 Type 3': PuzzleGrade.advanced,
     '探长致命结构': PuzzleGrade.advanced,
     '淑芬致命结构': PuzzleGrade.advanced,

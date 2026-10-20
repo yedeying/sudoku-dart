@@ -23,11 +23,16 @@ bool _completionExists(SudokuBoard base, int row, int col, int digit) {
 /// 教学目录必须和这张表一一对应：
 /// 多一条说明表里没收录，少一条说明教学缺口。
 const _reviewTableNames = <String>[
+  '单元唯一',
+  '数字唯一',
   '唯一余数',
   '排除',
   '显性数对',
   '显性三数组',
+  '死锁数组',
+  '直观数组',
   '隐性数对',
+  '直观区块',
   '宫区块',
   '行/列区块',
   '隐性三数组',
@@ -70,6 +75,7 @@ const _reviewTableNames = <String>[
   '唯一环 Type 3',
   '宫内鱼',
   '染色法',
+  '远程数对',
   '探长致命结构',
   '交叉鱼',
   '淑芬致命结构',

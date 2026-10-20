@@ -139,11 +139,16 @@ class SudokuSolver {
   /// 找不到已实现的逻辑技巧时返回 null，绝不以回溯结果冒充提示。
   static final List<(String, SudokuHint? Function(SudokuBoard))> _hintFinders =
       [
+    ('单元唯一', AdvancedTechniques.findFullHouse),
+    ('数字唯一', AdvancedTechniques.findLastDigit),
     ('唯一余数', _findNakedSingle),
     ('排除', _findHiddenSingle),
     ('显性数对', _findNakedPair),
     ('显性三数组', _findNakedTriple),
+    ('死锁数组', AdvancedTechniques.findLockedSubset),
+    ('直观数组', AdvancedTechniques.findVisualSubset),
     ('隐性数对', AdvancedTechniques.findHiddenPair),
+    ('直观区块', AdvancedTechniques.findVisualLocked),
     ('宫区块', _findPointingPair),
     ('行/列区块', _findBoxLineReduction),
     ('隐性三数组', AdvancedTechniques.findHiddenTriple),
@@ -182,6 +187,7 @@ class SudokuSolver {
     ('宫内鱼', AdvancedTechniques.findFrankenFish),
     ('唯一环 Type 4', AdvancedTechniques.findUniqueLoopType4),
     ('染色法', AdvancedTechniques.findSimpleColoring),
+    ('远程数对', AdvancedTechniques.findRemotePairs),
     ('唯一环 Type 3', AdvancedTechniques.findUniqueLoopType3),
     ('探长致命结构', AdvancedTechniques.findBorescoper),
     ('淑芬致命结构', AdvancedTechniques.findQiu),

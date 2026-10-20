@@ -7615,6 +7615,555 @@ class AdvancedTechniques {
     }
     return null;
   }
+
+  // ---------------------------------------------------------------------------
+  // 分档 1：单元唯一、数字唯一、直观区块、直观数组、死锁数组、远程数对
+  // ---------------------------------------------------------------------------
+
+  /// 单元唯一（Full House / Last Value）：某行、某列或某宫已有 8 个已知数，
+  /// 仅剩 1 个空格，直接填入该单元缺失的唯一数字。
+  static SudokuHint? findFullHouse(SudokuBoard board) {
+    for (var house = 0; house < 27; house++) {
+      final cells = _houseCells(house);
+      final empty = <List<int>>[];
+      final filled = <List<int>>[];
+      for (final cell in cells) {
+        if (board.get(cell[0], cell[1]) == 0) {
+          empty.add(cell);
+        } else {
+          filled.add(cell);
+        }
+      }
+      if (empty.length != 1) continue;
+      final target = empty.single;
+      final cands = board.getCandidates(target[0], target[1]);
+      if (cands.length != 1) continue;
+      final digit = cands.first;
+      final hl = _houseHighlight(house);
+      return SudokuHint(
+        row: target[0],
+        col: target[1],
+        value: digit,
+        technique: '单元唯一',
+        explanation: '${_houseLabel(house)} 已有 8 个已知数，'
+            '仅剩唯一空格 ${cellRef(target[0], target[1])}，'
+            '直接填入缺失的数字 $digit。',
+        patternCells: [
+          HintCell(target[0], target[1], HintRole.pattern),
+          ...hintCells(HintRole.link, filled),
+        ],
+        patternCandidates: [
+          HintCandidate(
+            CandidateRef(target[0], target[1], digit),
+            HintRole.pattern,
+          ),
+        ],
+        highlightRows: hl.rows,
+        highlightCols: hl.cols,
+        highlightBoxes: hl.boxes,
+      );
+    }
+    return null;
+  }
+
+  /// 数字唯一（Last Digit）：某个数字 d 在全盘已经出现了 8 次，
+  /// 第 9 个该数字只能落在唯一尚未出现 d 的行、列、宫交点空格上。
+  static SudokuHint? findLastDigit(SudokuBoard board) {
+    for (var digit = 1; digit <= 9; digit++) {
+      final placed = <List<int>>[];
+      for (var r = 0; r < 9; r++) {
+        for (var c = 0; c < 9; c++) {
+          if (board.get(r, c) == digit) {
+            placed.add([r, c]);
+          }
+        }
+      }
+      if (placed.length != 8) continue;
+      final spots = <List<int>>[];
+      for (var r = 0; r < 9; r++) {
+        for (var c = 0; c < 9; c++) {
+          if (board.get(r, c) == 0 &&
+              board.getCandidates(r, c).contains(digit)) {
+            spots.add([r, c]);
+          }
+        }
+      }
+      if (spots.length != 1) continue;
+      final target = spots.single;
+      return SudokuHint(
+        row: target[0],
+        col: target[1],
+        value: digit,
+        technique: '数字唯一',
+        explanation: '数字 $digit 在盘面上已出现 8 次（${cellsList(placed)}），'
+            '全盘仅剩 ${cellRef(target[0], target[1])} 可填入第 9 个 $digit。',
+        patternCells: [
+          HintCell(target[0], target[1], HintRole.pattern),
+          ...hintCells(HintRole.link, placed),
+        ],
+        patternCandidates: [
+          HintCandidate(
+            CandidateRef(target[0], target[1], digit),
+            HintRole.pattern,
+          ),
+        ],
+      );
+    }
+    return null;
+  }
+
+  /// 死锁数组（Locked Pair / Locked Triple）：2 格或 3 格同时位于同一宫与同一行（或列）
+  /// 的交集（宫线交界处），且候选并集恰好为 2 个或 3 个数字，同时在宫内（线外）和线上（宫外）
+  /// 产生候选数删除。
+  static SudokuHint? findLockedSubset(SudokuBoard board) {
+    for (var boxRow = 0; boxRow < 3; boxRow++) {
+      for (var boxCol = 0; boxCol < 3; boxCol++) {
+        final startRow = boxRow * 3;
+        final startCol = boxCol * 3;
+        // 检查宫内的 3 条行段和 3 条列段
+        for (final isRow in const [true, false]) {
+          for (var offset = 0; offset < 3; offset++) {
+            final line = isRow ? startRow + offset : startCol + offset;
+            final segEmpty = <List<int>>[];
+            for (var k = 0; k < 3; k++) {
+              final r = isRow ? line : startRow + k;
+              final c = isRow ? startCol + k : line;
+              if (board.get(r, c) == 0) {
+                segEmpty.add([r, c]);
+              }
+            }
+            for (final size in const [2, 3]) {
+              if (segEmpty.length < size) continue;
+              for (final subset in _combinations(segEmpty, size)) {
+                final union = <int>{};
+                for (final cell in subset) {
+                  union.addAll(board.getCandidates(cell[0], cell[1]));
+                }
+                if (union.length != size) continue;
+                final memberKeys = {
+                  for (final cell in subset) '${cell[0]},${cell[1]}',
+                };
+                final boxElims = <CandidateElim>[];
+                for (var r = startRow; r < startRow + 3; r++) {
+                  for (var c = startCol; c < startCol + 3; c++) {
+                    if (isRow ? r == line : c == line) continue;
+                    if (board.get(r, c) != 0) continue;
+                    for (final d in union) {
+                      if (board.getCandidates(r, c).contains(d)) {
+                        boxElims.add(CandidateElim(r, c, d));
+                      }
+                    }
+                  }
+                }
+                final lineElims = <CandidateElim>[];
+                for (var k = 0; k < 9; k++) {
+                  final r = isRow ? line : k;
+                  final c = isRow ? k : line;
+                  if (r >= startRow &&
+                      r < startRow + 3 &&
+                      c >= startCol &&
+                      c < startCol + 3) {
+                    continue;
+                  }
+                  if (memberKeys.contains('$r,$c') || board.get(r, c) != 0) {
+                    continue;
+                  }
+                  for (final d in union) {
+                    if (board.getCandidates(r, c).contains(d)) {
+                      lineElims.add(CandidateElim(r, c, d));
+                    }
+                  }
+                }
+                // 死锁数组的标志是同时锁死宫与行/列两个单元（两侧均有实质删数）
+                if (boxElims.isEmpty || lineElims.isEmpty) continue;
+                final elims = [...boxElims, ...lineElims];
+                final sortedDigits = union.toList()..sort();
+                final lineName = isRow ? rowRef(line) : colRef(line);
+                final boxName = boxRef(boxRow, boxCol);
+                final kindName = size == 2 ? '死锁数对' : '死锁三数组';
+                return SudokuHint.elimination(
+                  technique: '死锁数组',
+                  explanation: '${cellsList(subset)} 位于 $boxName 与 $lineName '
+                      '的交界处，候选并集仅含 ${sortedDigits.join('、')}，构成$kindName，'
+                      '可同时从 $boxName 与 $lineName 的其余格删去这些候选数。',
+                  eliminations: elims,
+                  patternCells: [
+                    ...hintCells(HintRole.pattern, subset),
+                    ..._targetCells(elims),
+                  ],
+                  patternCandidates: [
+                    for (final cell in subset)
+                      ...hintDigits(
+                        HintRole.pattern,
+                        cell,
+                        board.getCandidates(cell[0], cell[1]),
+                      ),
+                    ..._targetCands(elims),
+                  ],
+                  highlightRows: isRow ? [line] : const [],
+                  highlightCols: isRow ? const [] : [line],
+                  highlightBoxes: [boxRow * 3 + boxCol],
+                );
+              }
+            }
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  /// 直观区块（Visual Locked Candidates：区块排除 / 区块唯余）：
+  /// 宫区块或行/列区块消去候选数后，立即使某关联区域内的该数字只剩唯一位置（区块排除），
+  /// 或使受影响格只剩唯一候选数（区块唯余）。
+  static SudokuHint? findVisualLocked(SudokuBoard board) {
+    // 1. 宫区块触发的区块排除/区块唯余
+    for (var boxRow = 0; boxRow < 3; boxRow++) {
+      for (var boxCol = 0; boxCol < 3; boxCol++) {
+        final startRow = boxRow * 3;
+        final startCol = boxCol * 3;
+        for (var num = 1; num <= 9; num++) {
+          final positions = <List<int>>[];
+          for (var i = startRow; i < startRow + 3; i++) {
+            for (var j = startCol; j < startCol + 3; j++) {
+              if (board.get(i, j) == 0 &&
+                  board.getCandidates(i, j).contains(num)) {
+                positions.add([i, j]);
+              }
+            }
+          }
+          if (positions.length < 2 || positions.length > 3) continue;
+          for (final isRow in const [true, false]) {
+            final line = isRow ? positions[0][0] : positions[0][1];
+            if (!positions.every((p) => (isRow ? p[0] : p[1]) == line)) {
+              continue;
+            }
+            final elims = <CandidateElim>[];
+            for (var k = 0; k < 9; k++) {
+              final r = isRow ? line : k;
+              final c = isRow ? k : line;
+              if (r >= startRow &&
+                  r < startRow + 3 &&
+                  c >= startCol &&
+                  c < startCol + 3) {
+                continue;
+              }
+              if (board.get(r, c) == 0 &&
+                  board.getCandidates(r, c).contains(num)) {
+                elims.add(CandidateElim(r, c, num));
+              }
+            }
+            if (elims.isEmpty) continue;
+            final directSingle = _checkDirectSingleAfterElims(board, elims);
+            if (directSingle == null) continue;
+            final lineLabel = isRow ? rowRef(line) : colRef(line);
+            return SudokuHint.elimination(
+              technique: '直观区块',
+              explanation: '${boxRef(boxRow, boxCol)} 内数字 $num 只落在 '
+                  '$lineLabel 的 ${cellsList(positions)} 形成宫区块，'
+                  '排除 $lineLabel 宫外的 ${_elimsText(elims)} 后，'
+                  '$directSingle（直观区块组合）。',
+              eliminations: elims,
+              patternCells: [
+                ...hintCells(HintRole.pattern, positions),
+                ..._targetCells(elims),
+              ],
+              patternCandidates: [
+                ...hintCands(HintRole.pattern, num, positions),
+                ..._targetCands(elims),
+              ],
+              highlightRows: isRow ? [line] : const [],
+              highlightCols: isRow ? const [] : [line],
+              highlightBoxes: [boxRow * 3 + boxCol],
+            );
+          }
+        }
+      }
+    }
+
+    // 2. 行/列区块触发的区块排除/区块唯余
+    for (final isRow in const [true, false]) {
+      for (var line = 0; line < 9; line++) {
+        for (var num = 1; num <= 9; num++) {
+          final positions = <List<int>>[];
+          for (var k = 0; k < 9; k++) {
+            final r = isRow ? line : k;
+            final c = isRow ? k : line;
+            if (board.get(r, c) == 0 &&
+                board.getCandidates(r, c).contains(num)) {
+              positions.add([r, c]);
+            }
+          }
+          if (positions.length < 2 || positions.length > 3) continue;
+          final boxRow = positions[0][0] ~/ 3;
+          final boxCol = positions[0][1] ~/ 3;
+          if (!positions
+              .every((p) => p[0] ~/ 3 == boxRow && p[1] ~/ 3 == boxCol)) {
+            continue;
+          }
+          final startRow = boxRow * 3;
+          final startCol = boxCol * 3;
+          final elims = <CandidateElim>[];
+          for (var r = startRow; r < startRow + 3; r++) {
+            for (var c = startCol; c < startCol + 3; c++) {
+              if (isRow ? r == line : c == line) continue;
+              if (board.get(r, c) == 0 &&
+                  board.getCandidates(r, c).contains(num)) {
+                elims.add(CandidateElim(r, c, num));
+              }
+            }
+          }
+          if (elims.isEmpty) continue;
+          final directSingle = _checkDirectSingleAfterElims(board, elims);
+          if (directSingle == null) continue;
+          final lineLabel = isRow ? rowRef(line) : colRef(line);
+          return SudokuHint.elimination(
+            technique: '直观区块',
+            explanation: '$lineLabel 内数字 $num 只落在 '
+                '${boxRef(boxRow, boxCol)} 的 ${cellsList(positions)} 形成行/列区块，'
+                '排除宫内其余位置的 ${_elimsText(elims)} 后，'
+                '$directSingle（直观区块组合）。',
+            eliminations: elims,
+            patternCells: [
+              ...hintCells(HintRole.pattern, positions),
+              ..._targetCells(elims),
+            ],
+            patternCandidates: [
+              ...hintCands(HintRole.pattern, num, positions),
+              ..._targetCands(elims),
+            ],
+            highlightRows: isRow ? [line] : const [],
+            highlightCols: isRow ? const [] : [line],
+            highlightBoxes: [boxRow * 3 + boxCol],
+          );
+        }
+      }
+    }
+    return null;
+  }
+
+  /// 检查一组删除是否立即在被删格或其所在行/列/宫内制造出新的唯余或排除出数。
+  static String? _checkDirectSingleAfterElims(
+    SudokuBoard board,
+    List<CandidateElim> elims,
+  ) {
+    final work = board.copy();
+    for (final e in elims) {
+      work.eliminateCandidate(e.row, e.col, e.num);
+    }
+    // 1. 区块/数组唯余：某个被删候选的格子刚好只剩 1 个候选数
+    for (final e in elims) {
+      final cands = work.getCandidates(e.row, e.col);
+      if (cands.length == 1 && board.getCandidates(e.row, e.col).length > 1) {
+        return '${cellRef(e.row, e.col)} 仅剩唯一余数 ${cands.first}';
+      }
+    }
+    // 2. 区块/数组排除：被删的数字在受影响格所在的某个单元内刚好只剩 1 个位置
+    for (final e in elims) {
+      for (final h in _housesOf(e.row, e.col)) {
+        final beforeSpots = [
+          for (final cell in _houseCells(h))
+            if (board.get(cell[0], cell[1]) == 0 &&
+                board.getCandidates(cell[0], cell[1]).contains(e.num))
+              cell
+        ];
+        if (beforeSpots.length <= 1) continue;
+        final afterSpots = [
+          for (final cell in _houseCells(h))
+            if (work.get(cell[0], cell[1]) == 0 &&
+                work.getCandidates(cell[0], cell[1]).contains(e.num))
+              cell
+        ];
+        if (afterSpots.length == 1) {
+          final s = afterSpots.single;
+          return '${_houseLabel(h)} 内数字 ${e.num} 仅剩唯一位置 ${cellRef(s[0], s[1])}';
+        }
+      }
+    }
+    return null;
+  }
+
+  /// 直观数组（Visual Subset：数组排除 / 数组唯余）：
+  /// 单元内隐性数对占位后，直接令该单元或关联单元内的另一数字只剩唯一可填格（数组排除），
+  /// 或结合显性数组令某格只剩唯一余数（数组唯余）。
+  static SudokuHint? findVisualSubset(SudokuBoard board) {
+    for (var house = 0; house < 27; house++) {
+      final uCells = _houseCells(house);
+      final numPositions = <int, List<List<int>>>{};
+      for (var num = 1; num <= 9; num++) {
+        final positions = <List<int>>[];
+        for (final c in uCells) {
+          if (board.get(c[0], c[1]) == 0 &&
+              board.getCandidates(c[0], c[1]).contains(num)) {
+            positions.add(c);
+          }
+        }
+        if (positions.length == 2) numPositions[num] = positions;
+      }
+      final nums = numPositions.keys.toList();
+      for (var i = 0; i < nums.length; i++) {
+        for (var j = i + 1; j < nums.length; j++) {
+          final p1 = numPositions[nums[i]]!;
+          final p2 = numPositions[nums[j]]!;
+          if (p1[0][0] != p2[0][0] ||
+              p1[0][1] != p2[0][1] ||
+              p1[1][0] != p2[1][0] ||
+              p1[1][1] != p2[1][1]) {
+            continue;
+          }
+          final pairNums = {nums[i], nums[j]};
+          final elims = <CandidateElim>[];
+          for (final cell in p1) {
+            for (final n in board.getCandidates(cell[0], cell[1])) {
+              if (!pairNums.contains(n)) {
+                elims.add(CandidateElim(cell[0], cell[1], n));
+              }
+            }
+          }
+          if (elims.isEmpty) continue;
+          final directSingle = _checkDirectSingleAfterElims(board, elims);
+          if (directSingle == null) continue;
+          final hl = _houseHighlight(house);
+          return SudokuHint.elimination(
+            technique: '直观数组',
+            explanation: '${_houseLabel(house)} 中数字 ${nums[i]}、${nums[j]} '
+                '只出现在 ${cellsList(p1)} 形成数组占位，'
+                '排除这两格的其它候选 ${_elimsText(elims)} 后，'
+                '$directSingle（直观数组组合）。',
+            eliminations: elims,
+            patternCells: [
+              ...hintCells(HintRole.pattern, p1),
+              ..._targetCells(elims),
+            ],
+            patternCandidates: [
+              for (final cell in p1)
+                ...hintDigits(HintRole.pattern, cell, pairNums),
+              ..._targetCands(elims),
+            ],
+            highlightRows: hl.rows,
+            highlightCols: hl.cols,
+            highlightBoxes: hl.boxes,
+          );
+        }
+      }
+    }
+    return null;
+  }
+
+  /// 远程数对（Remote Pairs）：由相同两个候选数 {a, b} 的双值格通过同行/列/宫串联成
+  /// 偶数长度（至少 4 格）的链，链首与链尾必为一真一假（一个填 a、另一个填 b），
+  /// 因此同时看见链首与链尾的单元格可同时删去候选数 a 和 b。
+  static SudokuHint? findRemotePairs(SudokuBoard board) {
+    final biCells = <List<int>>[];
+    for (var r = 0; r < 9; r++) {
+      for (var c = 0; c < 9; c++) {
+        if (board.get(r, c) == 0 && board.getCandidates(r, c).length == 2) {
+          biCells.add([r, c]);
+        }
+      }
+    }
+    final groups = <String, List<List<int>>>{};
+    for (final cell in biCells) {
+      final cands = board.getCandidates(cell[0], cell[1]).toList()..sort();
+      final key = '${cands[0]},${cands[1]}';
+      groups.putIfAbsent(key, () => []).add(cell);
+    }
+
+    for (final entry in groups.entries) {
+      final cells = entry.value;
+      if (cells.length < 4) continue;
+      final parts = entry.key.split(',');
+      final d1 = int.parse(parts[0]);
+      final d2 = int.parse(parts[1]);
+      final pairSet = {d1, d2};
+
+      // 在同种双值格上按可见关系做 BFS 找最短偶数长度（>= 4 格，即距离为奇数 >= 3）路径
+      for (var i = 0; i < cells.length; i++) {
+        final start = cells[i];
+        final queue = <List<int>>[
+          [i]
+        ];
+        while (queue.isNotEmpty) {
+          final path = queue.removeAt(0);
+          final lastIdx = path.last;
+          final lastCell = cells[lastIdx];
+          if (path.length >= 4 && path.length.isEven) {
+            if (lastIdx > i &&
+                !_canSee(start[0], start[1], lastCell[0], lastCell[1])) {
+              final pathCells = [for (final idx in path) cells[idx]];
+              final pathKeys = {
+                for (final c in pathCells) '${c[0]},${c[1]}',
+              };
+              final elims = <CandidateElim>[];
+              for (var r = 0; r < 9; r++) {
+                for (var c = 0; c < 9; c++) {
+                  if (board.get(r, c) != 0 || pathKeys.contains('$r,$c')) {
+                    continue;
+                  }
+                  if (!_canSee(r, c, start[0], start[1]) ||
+                      !_canSee(r, c, lastCell[0], lastCell[1])) {
+                    continue;
+                  }
+                  for (final d in pairSet) {
+                    if (board.getCandidates(r, c).contains(d)) {
+                      elims.add(CandidateElim(r, c, d));
+                    }
+                  }
+                }
+              }
+              if (elims.isNotEmpty) {
+                final arrows = <MarkupArrow>[];
+                for (var k = 0; k < pathCells.length - 1; k++) {
+                  final from = pathCells[k];
+                  final to = pathCells[k + 1];
+                  final arrowDigit = k.isEven ? d1 : d2;
+                  arrows.add(MarkupArrow(
+                    from: CandidateRef(from[0], from[1], arrowDigit),
+                    to: CandidateRef(to[0], to[1], arrowDigit),
+                    kind: ArrowKind.weak,
+                  ));
+                }
+                return SudokuHint.elimination(
+                  technique: '远程数对',
+                  explanation: '相同的双值格 {$d1, $d2} 依次串联成 ${pathCells.length} 格链：'
+                      '${pathCells.map((c) => cellRef(c[0], c[1])).join(' → ')}。'
+                      '相邻格填写的数字交替反转，首尾两格 ${cellRef(start[0], start[1])} 与 '
+                      '${cellRef(lastCell[0], lastCell[1])} 必一格填 $d1、另一格填 $d2，'
+                      '因此同时看见首尾两格的单元格可删去 ${_elimsText(elims)}。',
+                  eliminations: elims,
+                  patternCells: [
+                    HintCell(start[0], start[1], HintRole.pattern),
+                    HintCell(lastCell[0], lastCell[1], HintRole.pattern),
+                    for (var k = 1; k < pathCells.length - 1; k++)
+                      HintCell(
+                          pathCells[k][0], pathCells[k][1], HintRole.link),
+                    ..._targetCells(elims),
+                  ],
+                  patternCandidates: [
+                    ...hintDigits(HintRole.pattern, start, pairSet),
+                    ...hintDigits(HintRole.pattern, lastCell, pairSet),
+                    for (var k = 1; k < pathCells.length - 1; k++)
+                      ...hintDigits(HintRole.link, pathCells[k], pairSet),
+                    ..._targetCands(elims),
+                  ],
+                  links: arrows,
+                );
+              }
+            }
+          }
+          if (path.length >= 8) continue;
+          for (var nextIdx = 0; nextIdx < cells.length; nextIdx++) {
+            if (path.contains(nextIdx)) continue;
+            final nextCell = cells[nextIdx];
+            if (_canSee(lastCell[0], lastCell[1], nextCell[0], nextCell[1])) {
+              queue.add([...path, nextIdx]);
+            }
+          }
+        }
+      }
+    }
+    return null;
+  }
 }
 
 /// 差两个多余候选就退回双值死盘的局面：例外格，以及各自多出来的那个数字。
