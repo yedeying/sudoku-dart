@@ -217,6 +217,11 @@ void main() {
       '融合待定数组',
       'Nice Loop / AIC 环',
       '区块链',
+      '对交空矩形',
+      '欠一数组',
+      '烟花数组',
+      'M-Wing',
+      'S-Wing',
       '死环',
       '待定唯一矩形',
       'ALS-XZ',
@@ -225,6 +230,8 @@ void main() {
       '待定唯一环',
       '待定全双值格致死解法',
       '死亡绽放',
+      '双强链待定数组',
+      '待定数组・W-Wing',
       '隐性待定数组',
       'Kraken Fish',
       // 毛刺数组「毛刺为真」那一种情况推到推不动为止，力度同强制链，所以和
@@ -233,12 +240,14 @@ void main() {
       '毛刺数组',
       '初级飞鱼',
       '分类强制链',
+      '区域强制链',
       '强制唯一矩形',
       '强制拓展矩形',
       '强制唯一环',
       'ALS-XY-Wing',
       'Nishio',
       '分类强制网',
+      '图案叠加删数',
     ];
 
     for (final name in expected) {
@@ -441,5 +450,25 @@ void main() {
     _expectFinder('visual_locked', '直观区块', AdvancedTechniques.findVisualLocked);
     _expectFinder('visual_subset', '直观数组', AdvancedTechniques.findVisualSubset);
     _expectFinder('remote_pairs', '远程数对', AdvancedTechniques.findRemotePairs);
+  });
+
+  test('分档 2（9 项独立几何与代数技巧）教学盘面 Finder 验证', () {
+    _expectFinder('almost_locked_candidates', '欠一数组',
+        AdvancedTechniques.findAlmostLockedCandidates);
+    _expectFinder('fireworks', '烟花数组', AdvancedTechniques.findFireworks);
+    _expectFinder('dual_empty_rectangle', '对交空矩形',
+        AdvancedTechniques.findDualEmptyRectangle);
+    _expectFinder(
+        'template_delete', '图案叠加删数', AdvancedTechniques.findTemplateDelete);
+    _expectFinder('m_wing', 'M-Wing', AdvancedTechniques.findMWing);
+    _expectFinder('s_wing', 'S-Wing', AdvancedTechniques.findSWing);
+    _expectFinder(
+        'als_xz_double', '双强链待定数组', AdvancedTechniques.findAlsXzDouble);
+    _expectFinder('als_w_wing', '待定数组・W-Wing', AdvancedTechniques.findAlsWWing);
+
+    final rfcHint = AdvancedTechniques.findRegionForcingChain(
+        _board('region_forcing_chain'));
+    expect(rfcHint, isNotNull);
+    expect(rfcHint!.technique, '区域强制链');
   });
 }

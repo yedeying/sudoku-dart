@@ -821,4 +821,153 @@ List<TechniqueInfo> chainTechniqueExamples() => [
         ),
         legend: _forcingLegend,
       ),
+      TechniqueInfo(
+        id: 'template_delete',
+        name: '图案叠加删数',
+        summary: '枚举单个数字在盘面上所有合法的 9 格落位图案，不出现在任何图案中的候选数直接删除。',
+        definition: '图案叠加删数（Template Delete）与图案叠加填数（Template Set）合称图案叠加（Templates）：'
+            '对于某一个确定的数字 d，它在 9×9 盘面上的最终解必然构成每行、每列、每宫各占一格的 9 格落位图案（互不攻击的九车图案）。'
+            '结合盘面已填数字和剩余候选格，将数字 d 当前仍合法的所有 9 格图案全部枚举并叠加在一起：'
+            '若某个候选格在所有合法图案中都从不出现（出现次数为 0），则该格绝不可能填入 d，可直接删去（图案叠加删数）；'
+            '若某个候选格在所有合法图案中百分之百出现，则该格可直接填入 d（图案叠加填数）。',
+        howToSpot: '当某个数字剩余候选位置较少但常规鱼类难以直接看出时，按逐行每宫各取一格的方式尝试铺放该数字，找出永远无法凑齐 9 格的孤立候选点。',
+        walkthrough: '本例观察数字 4 在盘面上的全部合法 9 格落位图案：将所有合法图案叠加后，'
+            '发现 r8c9 虽然表面上仍有候选 4，但一旦在 r8c9 填入 4，其余行与宫就无法同时各放置一个 4；'
+            '即 4r8c9 在所有合法图案中均不出现，因此可直接删去 r8c9 的候选 4。',
+        caveats: '图案叠加本质是对单数字落点的穷举交集/并集检验，实战中通常作为高阶鱼类与单数字链的兜底验证手段。',
+        rank: 753,
+        examplePuzzle:
+            '098061300361009008007384090980010700136078520702000810013847900870690030009100087',
+        exampleMarkup: BoardMarkup(
+          cellColors: {
+            _ck(3, 2): TeachingColors.start,
+            _ck(7, 2): TeachingColors.start,
+            _ck(3, 7): TeachingColors.node,
+            _ck(3, 8): TeachingColors.node,
+            _ck(4, 8): TeachingColors.node,
+            _ck(5, 8): TeachingColors.node,
+            _ck(7, 8): TeachingColors.elimCell,
+          },
+          candidateColors: {
+            _cr(7, 8, 4): TeachingColors.elimCand,
+          },
+        ),
+        legend: _chainLegend,
+      ),
+      TechniqueInfo(
+        id: 'als_xz_double',
+        name: '双强链待定数组',
+        summary: '两个待定数组同时拥有两个限制公共候选，形成零秩闭环，锁定各自内部候选并向外大范围删数。',
+        definition: '双强链待定数组（Doubly Linked ALS-XZ）是待定数组（ALS-XZ）的强力升级形态：'
+            '当两个互不重叠的待定数组 A 与 B 之间同时存在两个限制公共候选 X1 与 X2（即两边的 X1 格彼此全可见，两边的 X2 格也彼此全可见）时，'
+            'X1 与 X2 不可能同时落在同一个 ALS 内（否则另一个 ALS 将同时失去两个候选名额而出现格数大于候选数的矛盾）。'
+            '因此 X1 与 X2 必然一边分一个，从而使 A 与 B 剩下的所有非公共候选都变成各自 ALS 内部的锁定真数！'
+            '这带来两类强力删数：① 盘面外同时看见 A、B 所有 X1（或 X2）的格可删去 X1（或 X2）；'
+            '② 盘面外只要同时看见 A 内部某非 RCC 数字的所有格（无需再看 B），即可直接删去该数字（对 B 同理）。',
+        howToSpot: '在寻找 ALS-XZ 时，若发现两个 ALS 的公共候选里有不止一个数字满足“两边所有同名候选互相可见”，立即检查双强链待定数组。',
+        walkthrough: '本例中 r1c4 构成候选 {3, 8} 的 ALS A，c4 上的其余格构成 ALS B，两边同时以两个公共候选形成双向受限锁定，'
+            '不仅能删去两侧公共受限候选共同可见格的候选，还能直接将各自 ALS 内的剩余候选当作锁定数组向外删数（如删去 3r2c5）。',
+        caveats: '必须确认两个限制公共候选 X1、X2 各自都满足“A 中所有该数与 B 中所有该数两两互相可见”，缺一不可。',
+        rank: 656,
+        examplePuzzle:
+            '076049200901000004243005896030591002102084300400203001300000007000907008010408020',
+        exampleMarkup: _alsMarkup(
+          alsA: [
+            [0, 3],
+          ],
+          alsB: [
+            [1, 3],
+            [2, 3],
+            [4, 3],
+            [6, 3],
+          ],
+          arrows: [
+            _arrow(0, 3, 8, 1, 3, 8, ArrowKind.strong),
+            _arrow(0, 3, 3, 1, 3, 3, ArrowKind.strong),
+          ],
+          eliminated: [
+            [1, 4, 3],
+          ],
+        ),
+        legend: _alsLegend,
+      ),
+      TechniqueInfo(
+        id: 'als_w_wing',
+        name: '待定数组・W-Wing',
+        summary: '两个共享候选 X 与 Z 的待定数组通过外部一条 X 的共轭强链桥接，删去两侧 Z 的共同可见格。',
+        definition: '待定数组・W-Wing（ALS W-Wing）是将 W-Wing 中的两个双值格推广为两个待定数组（ALS）：'
+            '设有两个互不重叠的待定数组 A 与 B，它们都含有候选数 X 与 Z；'
+            '虽然 A 与 B 中的 X 不能直接互相看见（不构成直接 RCC），但盘面上存在一条关于数字 X 的共轭强链（e1 = e2），'
+            '其中一端 e1 能看见 A 中所有的 X，另一端 e2 能看见 B 中所有的 X。'
+            '由于强链两端 e1、e2 必有一真，A 与 B 中的 X 至少有一侧会被全部排除，被迫变成锁定集并填入 Z；'
+            '因此 Z 至少会在 A 或 B 的某一侧为真，同时看见 A 与 B 中所有 Z 的外部单元格即可删去候选 Z。',
+        howToSpot: '找两个都含候选 X 和 Z 的 ALS（比如一个双值格和一个三值兩格 ALS），再用数字 X 的一条同行/列/宫共轭强链把它们两端连起来。',
+        walkthrough: '本例中 ALS A 与 ALS B 均含有候选 4 与 7，数字 7 在 r6 上的共轭强链 7r6c6 = 7r6c9 两端分别看见两侧 ALS 中的所有 7，'
+            '构成待定数组・W-Wing，从而逼出至少一侧必含 4，删去同时看见两侧所有 4 的 r4c4、r4c5、r4c6 中的候选 4。',
+        caveats: '强链的一端必须看见对应 ALS 内“全部”含 X 的格子，若有哪怕一格看不见，就无法把该侧 ALS 的 X 完全排空。',
+        rank: 655,
+        examplePuzzle:
+            '630000275821975643547362981052000096018690532960520810170856029285039160096200058',
+        exampleMarkup: _alsMarkup(
+          alsA: [
+            [4, 5],
+          ],
+          alsB: [
+            [3, 6],
+            [3, 3],
+          ],
+          pivot: [
+            [5, 5],
+            [5, 8],
+          ],
+          arrows: [
+            _arrow(4, 5, 7, 5, 5, 7, ArrowKind.weak),
+            _arrow(5, 5, 7, 5, 8, 7, ArrowKind.strong),
+            _arrow(5, 8, 7, 3, 6, 7, ArrowKind.weak),
+          ],
+          eliminated: [
+            [3, 4, 4],
+            [3, 5, 4],
+          ],
+        ),
+        legend: _alsLegend,
+      ),
+      TechniqueInfo(
+        id: 'region_forcing_chain',
+        name: '区域强制链',
+        summary: '某区域内某数字仅有两三个候选位置，从每个位置出发分别推导均得出同一结论，则该结论必成立。',
+        definition: '区域强制链（Region Forcing Chain）与按格分类的分类强制链（Cell Forcing Chain）互为对偶：'
+            '选定某一行、某一列或某一宫，其中数字 d 只剩下 2 个（或 3 个）候选格可填。'
+            '由于该区域内必然有一格填入 d，我们从这几个候选位置分别出发，用唯一余数、排除等基础逻辑独立往下推导；'
+            '如果每一个分支最终都推出同一个单元格填入同一个数字（或同一个候选被排除），那么不管 d 最终落在该区域的哪一格，该公共结论都必然成立。',
+        howToSpot: '寻找某行、列或宫内只剩 2~3 个位置的数字 d，分别假设 d 填在这些位置上，观察各分支是否汇合到同一个填数或删数结论。',
+        walkthrough: '本例观察 c2 中数字 6 的候选位置，仅能落在 r4c2 与 r6c2 两格。'
+            '分支一：假设 r4c2 填 6，顺着唯一余数推导可得 r9c2 填 4；'
+            '分支二：假设 r6c2 填 6，顺着唯一余数推导同样可得 r9c2 填 4。'
+            '两个区域分支汇合于同一结论，因此 r9c2 必填入 4（删去其余候选 6、7）。',
+        caveats: '必须把该区域内数字 d 的所有候选位置全部纳入分支，漏掉任何一个可能位置都会导致推理不完备。',
+        rank: 754,
+        examplePuzzle:
+            '030050980000791000005800700304189500851204390209305008002508600000900000503010800',
+        exampleMarkup: _chainMarkup(
+          start: [3, 1],
+          end: [8, 1],
+          nodes: [
+            [5, 1],
+            [4, 4],
+          ],
+          arrows: [
+            _arrow(3, 1, 6, 5, 1, 7, ArrowKind.weak),
+            _arrow(5, 1, 7, 4, 4, 7, ArrowKind.weak),
+            _arrow(4, 4, 7, 8, 1, 4, ArrowKind.weak),
+            _arrow(5, 1, 6, 4, 4, 6, ArrowKind.weak),
+            _arrow(4, 4, 6, 8, 1, 4, ArrowKind.weak),
+          ],
+          eliminated: [
+            [8, 1, 6],
+            [8, 1, 7],
+          ],
+        ),
+        legend: _forcingLegend,
+      ),
     ];
