@@ -139,18 +139,18 @@ class SudokuSolver {
   /// 找不到已实现的逻辑技巧时返回 null，绝不以回溯结果冒充提示。
   static final List<(String, SudokuHint? Function(SudokuBoard))> _hintFinders =
       [
+    ('唯一余数', _findNakedSingle),
     ('单元唯一', AdvancedTechniques.findFullHouse),
     ('数字唯一', AdvancedTechniques.findLastDigit),
-    ('唯一余数', _findNakedSingle),
     ('排除', _findHiddenSingle),
     ('显性数对', _findNakedPair),
     ('显性三数组', _findNakedTriple),
-    ('死锁数组', AdvancedTechniques.findLockedSubset),
-    ('直观数组', AdvancedTechniques.findVisualSubset),
     ('隐性数对', AdvancedTechniques.findHiddenPair),
-    ('直观区块', AdvancedTechniques.findVisualLocked),
     ('宫区块', _findPointingPair),
     ('行/列区块', _findBoxLineReduction),
+    ('死锁数组', AdvancedTechniques.findLockedSubset),
+    ('直观数组', AdvancedTechniques.findVisualSubset),
+    ('直观区块', AdvancedTechniques.findVisualLocked),
     ('隐性三数组', AdvancedTechniques.findHiddenTriple),
     ('显性四数组', AdvancedTechniques.findNakedQuad),
     ('X-Wing', _findXWing),
@@ -198,9 +198,9 @@ class SudokuSolver {
     ('融合待定数组', AdvancedTechniques.findSueDeCoq),
     ('Nice Loop / AIC 环', AdvancedTechniques.findNiceLoop),
     ('区块链', AdvancedTechniques.findGroupedAic),
-    ('对交空矩形', AdvancedTechniques.findDualEmptyRectangle),
     ('欠一数组', AdvancedTechniques.findAlmostLockedCandidates),
     ('烟花数组', AdvancedTechniques.findFireworks),
+    ('对交空矩形', AdvancedTechniques.findDualEmptyRectangle),
     ('M-Wing', AdvancedTechniques.findMWing),
     ('S-Wing', AdvancedTechniques.findSWing),
     ('死环', AdvancedTechniques.findDeadLoop),
@@ -215,6 +215,7 @@ class SudokuSolver {
     ('待定数组・W-Wing', AdvancedTechniques.findAlsWWing),
     ('隐性待定数组', AdvancedTechniques.findWals),
     ('Kraken Fish', AdvancedTechniques.findKrakenFish),
+    ('图案叠加删数', AdvancedTechniques.findTemplateDelete),
     ('毛刺数组', AdvancedTechniques.findBurredSubset),
     ('初级飞鱼', AdvancedTechniques.findExocet),
     ('分类强制链', AdvancedTechniques.findForcingChain),
@@ -225,7 +226,6 @@ class SudokuSolver {
     ('ALS-XY-Wing', AdvancedTechniques.findAlsXyWing),
     ('Nishio', AdvancedTechniques.findNishio),
     ('分类强制网', AdvancedTechniques.findForcingNet),
-    ('图案叠加删数', AdvancedTechniques.findTemplateDelete),
   ];
 
   /// 提示搜索的实际顺序，供顺序约束测试与诊断使用。

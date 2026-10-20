@@ -57,6 +57,10 @@ void main() {
       'wals',
       'burr_array',
       'bdp',
+      'als_xz_double',
+      'als_w_wing',
+      'template_delete',
+      'region_forcing_chain',
     };
     final misses = <String>[];
     for (final t in TechniqueCatalog.all) {
