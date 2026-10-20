@@ -9,7 +9,7 @@ import 'support/finder_soundness.dart';
 /// Type 1 只多出一格。那一格要是多出好几个候选，结论不是「填哪一个」，
 /// 而是「底数一个都填不了」——该删的是它身上的全部底数，而不是整块放弃。
 final _type1 = <String, SudokuHint? Function(SudokuBoard)>{
-  '扩展矩形 Type 1': AdvancedTechniques.findExtendedRectType1,
+  '拓展矩形 Type 1': AdvancedTechniques.findExtendedRectType1,
   '唯一环 Type 1': AdvancedTechniques.findUniqueLoopType1,
 };
 
@@ -128,7 +128,7 @@ void main() {
       const puzzle = '410905062380072019000004000168000007050040030700000285'
           '000700000840260073570408021';
       final hint = walkTo(puzzle, AdvancedTechniques.findExtendedRectType1);
-      expect(hint.technique, '扩展矩形 Type 1');
+      expect(hint.technique, '拓展矩形 Type 1');
       expect(elimKeys(hint), {'6,2,2', '6,2,6', '6,2,9'});
       expectSound(puzzle, hint);
       expect(hint.explanation, contains('都可以删'));

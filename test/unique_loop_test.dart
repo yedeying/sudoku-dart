@@ -289,7 +289,7 @@ void main() {
     for (final name in ['唯一环 Type 1', '唯一环 Type 2', '唯一环 Type 3', '唯一环 Type 4']) {
       expect(order, contains(name), reason: '$name 应进提示顺序');
     }
-    expect(order.indexOf('扩展矩形 Type 3'), lessThan(order.indexOf('唯一环 Type 1')));
+    expect(order.indexOf('拓展矩形 Type 3'), lessThan(order.indexOf('唯一环 Type 1')));
     expect(order.indexOf('唯一环 Type 1'), lessThan(order.indexOf('唯一环 Type 2')));
     expect(order.indexOf('唯一环 Type 2'), lessThan(order.indexOf('唯一环 Type 4')));
     // 唯一环 Type 3（7.2）比染色法（7.0）还深，排在它后面才跟难度分同向。

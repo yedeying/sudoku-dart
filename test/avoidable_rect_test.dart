@@ -110,7 +110,7 @@ void main() {
   test('可规避矩形排在全双值坟墓+1之后、唯一矩形 Type 4 之前，难度分 5.5', () {
     final order = SudokuSolver.hintSearchOrder;
     expect(order, contains('可规避矩形'));
-    expect(order.indexOf('全双值坟墓+1'), lessThan(order.indexOf('可规避矩形')));
+    expect(order.indexOf('全双值格致死解法+1'), lessThan(order.indexOf('可规避矩形')));
     expect(order.indexOf('可规避矩形'), lessThan(order.indexOf('唯一矩形 Type 4')));
     expect(
       order.indexOf('唯一矩形 Type 1'),

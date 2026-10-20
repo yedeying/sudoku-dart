@@ -47,27 +47,27 @@ void main() {
       }
     });
 
-    test('按难度排在分类强制链之后、强制扩展矩形之前，并开放教学页', () {
+    test('按难度排在分类强制链之后、强制拓展矩形之前，并开放教学页', () {
       final order = SudokuSolver.hintSearchOrder;
       expect(order, contains('强制唯一矩形'));
       expect(
         order.indexOf('分类强制链'),
         lessThan(order.indexOf('强制唯一矩形')),
       );
-      expect(order.indexOf('强制唯一矩形'), lessThan(order.indexOf('强制扩展矩形')));
+      expect(order.indexOf('强制唯一矩形'), lessThan(order.indexOf('强制拓展矩形')));
       expect(DifficultyAnalyzer.techniqueScores, containsPair('强制唯一矩形', 98));
       expect(_tech('forcing_ur').teachingOnly, isFalse);
     });
   });
 
-  group('强制扩展矩形', () {
+  group('强制拓展矩形', () {
     test('教学盘：三支都删掉 1r9c9', () {
       final puzzle = _tech('forcing_er').examplePuzzle;
       final board = SudokuBoard.fromString(puzzle);
       final hint = AdvancedTechniques.findForcingEr(board);
 
       expect(hint, isNotNull);
-      expect(hint!.technique, '强制扩展矩形');
+      expect(hint!.technique, '强制拓展矩形');
       expect(hint.isElimination, isTrue);
       expect(elimKeys(hint), contains('8,8,1'));
       expectEliminationsPresent(board, hint);
@@ -93,10 +93,10 @@ void main() {
 
     test('按难度排在强制唯一矩形之后、强制唯一环之前，并开放教学页', () {
       final order = SudokuSolver.hintSearchOrder;
-      expect(order, contains('强制扩展矩形'));
-      expect(order.indexOf('强制唯一矩形'), lessThan(order.indexOf('强制扩展矩形')));
-      expect(order.indexOf('强制扩展矩形'), lessThan(order.indexOf('强制唯一环')));
-      expect(DifficultyAnalyzer.techniqueScores, containsPair('强制扩展矩形', 98));
+      expect(order, contains('强制拓展矩形'));
+      expect(order.indexOf('强制唯一矩形'), lessThan(order.indexOf('强制拓展矩形')));
+      expect(order.indexOf('强制拓展矩形'), lessThan(order.indexOf('强制唯一环')));
+      expect(DifficultyAnalyzer.techniqueScores, containsPair('强制拓展矩形', 98));
       expect(_tech('forcing_er').teachingOnly, isFalse);
     });
   });
@@ -132,10 +132,10 @@ void main() {
       }
     });
 
-    test('按难度排在强制扩展矩形之后、ALS-XY-Wing 之前，并开放教学页', () {
+    test('按难度排在强制拓展矩形之后、ALS-XY-Wing 之前，并开放教学页', () {
       final order = SudokuSolver.hintSearchOrder;
       expect(order, contains('强制唯一环'));
-      expect(order.indexOf('强制扩展矩形'), lessThan(order.indexOf('强制唯一环')));
+      expect(order.indexOf('强制拓展矩形'), lessThan(order.indexOf('强制唯一环')));
       expect(order.indexOf('强制唯一环'), lessThan(order.indexOf('ALS-XY-Wing')));
       expect(DifficultyAnalyzer.techniqueScores, containsPair('强制唯一环', 98));
       expect(_tech('forcing_ul').teachingOnly, isFalse);

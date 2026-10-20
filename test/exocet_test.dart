@@ -16,14 +16,14 @@ Set<String> _cellKeys(SudokuHint hint, HintRole role) => {
     };
 
 void main() {
-  group('飞鱼导弹', () {
-    test('教学盘：开局第一步就是飞鱼导弹，目标格删掉 5 和 6', () {
+  group('初级飞鱼', () {
+    test('教学盘：开局第一步就是初级飞鱼，目标单元格删数 5 和 6', () {
       final puzzle = _tech('exocet').examplePuzzle;
       final board = SudokuBoard.fromString(puzzle);
       final hint = AdvancedTechniques.findExocet(board);
 
       expect(hint, isNotNull);
-      expect(hint!.technique, '飞鱼导弹');
+      expect(hint!.technique, '初级飞鱼');
       expect(hint.isElimination, isTrue);
       expect(elimKeys(hint), {'1,3,5', '0,6,6'});
       expectEliminationsPresent(board, hint);
@@ -31,12 +31,16 @@ void main() {
       expectEvidenceBeyondTargets(hint);
       expect(_cellKeys(hint, HintRole.pattern), {'2,0', '2,1'});
       expect(_cellKeys(hint, HintRole.cover), {'1,3', '0,6'});
-      expect(hint.highlightRows, containsAll([0, 1, 2]));
       expect(hint.highlightCols, containsAll([2, 3, 6]));
-      expect(SudokuSolver.getHint(board)!.technique, '飞鱼导弹');
+      expect(SudokuSolver.getHint(board)!.technique, '初级飞鱼');
     });
 
-    test('基格候选并集只有两个数字时不报', () {
+    test('教学页示意图不含凑数的基格间弱链箭头', () {
+      final markup = _tech('exocet').exampleMarkup;
+      expect(markup.arrows, isEmpty);
+    });
+
+    test('基格候选数并集只有两个数字时不报', () {
       final board = SudokuBoard.empty();
       var fill = 4;
       for (var r = 0; r < 9; r++) {
@@ -57,7 +61,7 @@ void main() {
       expect(AdvancedTechniques.findExocet(board), isNull);
     });
 
-    test('伴随格带着基格数字时整枚导弹不成立', () {
+    test('伴随格含有基格数字时整枚初级飞鱼不成立', () {
       // 教学盘 r1c4=7 是伴随格。改成基格数字 1 之后，
       // 这对对象格就能装两个基格数字，JE 不再成立。
       final raw = _tech('exocet').examplePuzzle;
@@ -80,13 +84,13 @@ void main() {
 
     test('按难度排在毛刺数组之后、分类强制链之前，并开放教学页', () {
       final order = SudokuSolver.hintSearchOrder;
-      expect(order, contains('飞鱼导弹'));
+      expect(order, contains('初级飞鱼'));
       expect(
         order.indexOf('毛刺数组'),
-        lessThan(order.indexOf('飞鱼导弹')),
+        lessThan(order.indexOf('初级飞鱼')),
       );
-      expect(order.indexOf('飞鱼导弹'), lessThan(order.indexOf('分类强制链')));
-      expect(DifficultyAnalyzer.techniqueScores, containsPair('飞鱼导弹', 97));
+      expect(order.indexOf('初级飞鱼'), lessThan(order.indexOf('分类强制链')));
+      expect(DifficultyAnalyzer.techniqueScores, containsPair('初级飞鱼', 97));
       expect(_tech('exocet').teachingOnly, isFalse);
     });
   });

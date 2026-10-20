@@ -60,18 +60,18 @@ void _expectFishHouse(SudokuHint hint) {
 }
 
 void main() {
-  test('带鳍 X-Wing 教学盘面', () {
+  test('鳍 X-Wing 教学盘面', () {
     _expectFinder(
-        'finned_xwing', '带鳍 X-Wing', AdvancedTechniques.findFinnedXWing);
+        'finned_xwing', '鳍 X-Wing', AdvancedTechniques.findFinnedXWing);
   });
 
-  test('带鳍 Swordfish 教学盘面', () {
-    _expectFinder('finned_swordfish', '带鳍 Swordfish',
+  test('鳍 Swordfish 教学盘面', () {
+    _expectFinder('finned_swordfish', '鳍 Swordfish',
         AdvancedTechniques.findFinnedSwordfish);
   });
 
-  test('带鳍 Jellyfish 教学盘面', () {
-    _expectFinder('finned_jellyfish', '带鳍 Jellyfish',
+  test('鳍 Jellyfish 教学盘面', () {
+    _expectFinder('finned_jellyfish', '鳍 Jellyfish',
         AdvancedTechniques.findFinnedJellyfish);
   });
 
@@ -82,15 +82,15 @@ void main() {
 
   test('鱼类教学盘面标出定义行或列', () {
     final cases = <(String, String, SudokuHint? Function(SudokuBoard))>[
-      ('finned_xwing', '带鳍 X-Wing', AdvancedTechniques.findFinnedXWing),
+      ('finned_xwing', '鳍 X-Wing', AdvancedTechniques.findFinnedXWing),
       (
         'finned_swordfish',
-        '带鳍 Swordfish',
+        '鳍 Swordfish',
         AdvancedTechniques.findFinnedSwordfish
       ),
       (
         'finned_jellyfish',
-        '带鳍 Jellyfish',
+        '鳍 Jellyfish',
         AdvancedTechniques.findFinnedJellyfish
       ),
       ('franken_fish', '宫内鱼', AdvancedTechniques.findFrankenFish),
@@ -145,10 +145,10 @@ void main() {
     _expectFinder('wxyz_wing', 'WXYZ-Wing', AdvancedTechniques.findWxyzWing);
   });
 
-  test('全双值坟墓+1教学盘面填入奇数次候选', () {
+  test('全双值格致死解法+1教学盘面填入奇数次候选', () {
     final hint = AdvancedTechniques.findBugPlusOne(_board('bug1'));
     expect(hint, isNotNull);
-    expect(hint!.technique, '全双值坟墓+1');
+    expect(hint!.technique, '全双值格致死解法+1');
     expect(hint.isElimination, isFalse);
     expect(hint.row, 3);
     expect(hint.col, 7);
@@ -158,8 +158,8 @@ void main() {
   test('getHint 搜索顺序遵循评审难度和语义约束', () {
     final order = SudokuSolver.hintSearchOrder;
     const expected = [
-      '唯余法',
-      '摒除法（行/列/宫）',
+      '唯一余数',
+      '排除',
       '显性数对',
       '显性三数组',
       '隐性数对',
@@ -173,30 +173,30 @@ void main() {
       '双线风筝',
       'Swordfish',
       '多宝鱼',
-      '带鳍 X-Wing',
-      '刺身鱼',
+      '鳍 X-Wing',
+      '退化鱼',
       '空矩形',
       'Jellyfish',
       'XY-Wing',
       '唯一矩形 Type 1',
-      '不完整唯一矩形',
+      '残缺唯一矩形',
       '唯一矩形 Type 2',
-      '全双值坟墓+1',
+      '全双值格致死解法+1',
       '可规避矩形',
-      '带鳍 Swordfish',
+      '鳍 Swordfish',
       '唯一矩形 Type 4',
       '隐性唯一矩形',
-      '全双值坟墓 Type 2',
-      '扩展矩形 Type 1',
+      '全双值格致死解法 Type 2',
+      '拓展矩形 Type 1',
       'XYZ-Wing',
-      '带鳍 Jellyfish',
-      '扩展矩形 Type 2',
+      '鳍 Jellyfish',
+      '拓展矩形 Type 2',
       '唯一矩形 Type 3',
-      '全双值坟墓 Type 4',
-      '扩展矩形 Type 4',
-      '扩展矩形 Type 3',
+      '全双值格致死解法 Type 4',
+      '拓展矩形 Type 4',
+      '拓展矩形 Type 3',
       '唯一环 Type 1',
-      '全双值坟墓 Type 3',
+      '全双值格致死解法 Type 3',
       '唯一环 Type 2',
       '宫内鱼',
       '唯一环 Type 4',
@@ -208,27 +208,27 @@ void main() {
       'XY-Chain',
       'WXYZ-Wing',
       '强弱交替链',
-      '融合式待定数组',
+      '融合待定数组',
       'Nice Loop / AIC 环',
       '区块链',
       '死环',
       '待定唯一矩形',
       'ALS-XZ',
-      'DDS',
-      '待定扩展矩形',
+      '跨区数组',
+      '待定拓展矩形',
       '待定唯一环',
-      '待定全双值坟墓',
+      '待定全双值格致死解法',
       '死亡绽放',
-      '弱待定数组',
+      '隐性待定数组',
       'Kraken Fish',
       // 毛刺数组「毛刺为真」那一种情况推到推不动为止，力度同强制链，所以和
       // Kraken 同档而排在它后面。按原先估的 9.4 排到 ALS-XZ 之前时，
       // 它会把这三种深技巧该出面的局面全抢走。
       '毛刺数组',
-      '飞鱼导弹',
+      '初级飞鱼',
       '分类强制链',
       '强制唯一矩形',
-      '强制扩展矩形',
+      '强制拓展矩形',
       '强制唯一环',
       'ALS-XY-Wing',
       'Nishio',
@@ -327,8 +327,8 @@ void main() {
     );
   });
 
-  test('融合式待定数组教学盘面', () {
-    _expectFinder('sue_de_coq', '融合式待定数组', AdvancedTechniques.findSueDeCoq);
+  test('融合待定数组教学盘面', () {
+    _expectFinder('sue_de_coq', '融合待定数组', AdvancedTechniques.findSueDeCoq);
   });
 
   test('死亡绽放教学盘面', () {

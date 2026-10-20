@@ -10,12 +10,12 @@ import 'support/bank_sweep.dart';
 /// 关键房屋是一条具体房屋的技巧：虚拟格数组配在哪条房屋里、底数锁在哪条房屋里。
 /// 这一族的提示必须把那条房屋标出来，不管它是行、是列还是宫。
 final _houseFinders = <String, SudokuHint? Function(SudokuBoard)>{
-  '扩展矩形 Type 3': AdvancedTechniques.findExtendedRectType3,
-  '扩展矩形 Type 4': AdvancedTechniques.findExtendedRectType4,
+  '拓展矩形 Type 3': AdvancedTechniques.findExtendedRectType3,
+  '拓展矩形 Type 4': AdvancedTechniques.findExtendedRectType4,
   '唯一环 Type 3': AdvancedTechniques.findUniqueLoopType3,
   '唯一环 Type 4': AdvancedTechniques.findUniqueLoopType4,
-  '全双值坟墓 Type 3': AdvancedTechniques.findBugType3,
-  '全双值坟墓 Type 4': AdvancedTechniques.findBugType4,
+  '全双值格致死解法 Type 3': AdvancedTechniques.findBugType3,
+  '全双值格致死解法 Type 4': AdvancedTechniques.findBugType4,
   '唯一矩形 Type 3': AdvancedTechniques.findUniqueRectangleType3,
   '唯一矩形 Type 4': AdvancedTechniques.findUniqueRectangleType4,
 };
@@ -138,7 +138,7 @@ void main() {
     }
 
     expect(boxed, isNotNull, reason: '这张盘上应当走到关键房屋是宫的扩展矩形 Type 3');
-    expect(boxed!.technique, '扩展矩形 Type 3');
+    expect(boxed!.technique, '拓展矩形 Type 3');
     expect(boxed.highlightBoxes, [4]);
     expect(boxed.highlightRows, isEmpty);
     expect(boxed.highlightCols, isEmpty);

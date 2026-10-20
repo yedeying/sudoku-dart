@@ -14,7 +14,7 @@ const _ur2Puzzle =
     '687040001031008700049701008123596800956874123874123500005082410012400080408010002';
 
 void main() {
-  test('底数被删过一个的矩形改由不完整唯一矩形接手', () {
+  test('底数被删过一个的矩形改由残缺唯一矩形接手', () {
     final solved = SudokuBoard.fromString(_ur2Puzzle);
     expect(SudokuSolver.solve(solved), isTrue);
     expect(solved.get(6, 3), 3, reason: 'r7c4 的正解是 3，删掉那里的 9 是条真删除');
@@ -30,7 +30,7 @@ void main() {
 
     final hint = AdvancedTechniques.findIncompleteUniqueRectangle(board);
     expect(hint, isNotNull);
-    expect(hint!.technique, '不完整唯一矩形');
+    expect(hint!.technique, '残缺唯一矩形');
     expect(elimKeys(hint), {'0,3,3', '7,4,3'});
     expectEliminationsPresent(board, hint);
     expectEliminationsSound(_ur2Puzzle, hint);
@@ -71,29 +71,29 @@ void main() {
 
     final hint = AdvancedTechniques.findIncompleteUniqueRectangle(board);
     expect(hint, isNotNull);
-    expect(hint!.technique, '不完整唯一矩形');
+    expect(hint!.technique, '残缺唯一矩形');
     expect(elimKeys(hint), {'1,3,5', '1,3,6'});
     expectEvidenceBeyondTargets(hint);
   });
 
-  test('不完整唯一矩形排在唯一矩形 Type 1 之后、唯一矩形 Type 2 之前，难度分 5.2', () {
+  test('残缺唯一矩形排在唯一矩形 Type 1 之后、唯一矩形 Type 2 之前，难度分 5.2', () {
     final order = SudokuSolver.hintSearchOrder;
-    expect(order, contains('不完整唯一矩形'));
+    expect(order, contains('残缺唯一矩形'));
     expect(
       order.indexOf('唯一矩形 Type 1'),
-      lessThan(order.indexOf('不完整唯一矩形')),
+      lessThan(order.indexOf('残缺唯一矩形')),
     );
     expect(
-      order.indexOf('不完整唯一矩形'),
+      order.indexOf('残缺唯一矩形'),
       lessThan(order.indexOf('唯一矩形 Type 2')),
     );
     expect(
       order.indexOf('X-Wing'),
-      lessThan(order.indexOf('不完整唯一矩形')),
+      lessThan(order.indexOf('残缺唯一矩形')),
     );
     expect(
       DifficultyAnalyzer.techniqueScores,
-      containsPair('不完整唯一矩形', 52),
+      containsPair('残缺唯一矩形', 52),
     );
     expect(
       TechniqueCatalog.all

@@ -1122,7 +1122,7 @@ class AdvancedTechniques {
     if (!avoidable && !incomplete) return null;
     if (roofs.isEmpty) return null;
 
-    final technique = avoidable ? '可规避矩形' : '不完整唯一矩形';
+    final technique = avoidable ? '可规避矩形' : '残缺唯一矩形';
     final digits = pair.toList()..sort();
     final base = '${digits[0]}、${digits[1]}';
     final premise = avoidable
@@ -1962,7 +1962,7 @@ class AdvancedTechniques {
 
   static SudokuHint? findExtendedRectType1(SudokuBoard board) {
     for (final read in _extendedRectReads(board)) {
-      final hint = _deadlyType1(board, read, '扩展矩形 Type 1', '扩展矩形');
+      final hint = _deadlyType1(board, read, '拓展矩形 Type 1', '拓展矩形');
       if (hint != null) return hint;
     }
     return null;
@@ -1970,7 +1970,7 @@ class AdvancedTechniques {
 
   static SudokuHint? findExtendedRectType2(SudokuBoard board) {
     for (final read in _extendedRectReads(board)) {
-      final hint = _deadlyType2(board, read, '扩展矩形 Type 2', '扩展矩形');
+      final hint = _deadlyType2(board, read, '拓展矩形 Type 2', '拓展矩形');
       if (hint != null) return hint;
     }
     return null;
@@ -1978,7 +1978,7 @@ class AdvancedTechniques {
 
   static SudokuHint? findExtendedRectType3(SudokuBoard board) {
     for (final read in _extendedRectReads(board)) {
-      final hint = _deadlyType3(board, read, '扩展矩形 Type 3', '扩展矩形');
+      final hint = _deadlyType3(board, read, '拓展矩形 Type 3', '拓展矩形');
       if (hint != null) return hint;
     }
     return null;
@@ -1986,7 +1986,7 @@ class AdvancedTechniques {
 
   static SudokuHint? findExtendedRectType4(SudokuBoard board) {
     for (final read in _extendedRectReads(board)) {
-      final hint = _deadlyType4(board, read, '扩展矩形 Type 4', '扩展矩形');
+      final hint = _deadlyType4(board, read, '拓展矩形 Type 4', '拓展矩形');
       if (hint != null) return hint;
     }
     return null;
@@ -4637,13 +4637,13 @@ class AdvancedTechniques {
   // ---------------------------------------------------------------------------
 
   static SudokuHint? findFinnedXWing(SudokuBoard board) =>
-      _findFinnedFish(board, 2, '带鳍 X-Wing');
+      _findFinnedFish(board, 2, '鳍 X-Wing');
 
   static SudokuHint? findFinnedSwordfish(SudokuBoard board) =>
-      _findFinnedFish(board, 3, '带鳍 Swordfish');
+      _findFinnedFish(board, 3, '鳍 Swordfish');
 
   static SudokuHint? findFinnedJellyfish(SudokuBoard board) =>
-      _findFinnedFish(board, 4, '带鳍 Jellyfish');
+      _findFinnedFish(board, 4, '鳍 Jellyfish');
 
   static SudokuHint? _findFinnedFish(
     SudokuBoard board,
@@ -4898,14 +4898,14 @@ class AdvancedTechniques {
         final lineWord = byRow ? '行' : '列';
         final coverWord = byRow ? '列' : '行';
         return SudokuHint.elimination(
-          technique: '刺身鱼',
+          technique: '退化鱼',
           explanation:
               '数字 $digit 以 ${base.map((l) => byRow ? rowRef(l) : colRef(l)).join(',')} '
-              '为基线、${cover.map((c) => byRow ? colRef(c) : rowRef(c)).join(',')} 为覆盖。'
-              '有基线在覆盖上只剩一个顶点（${cellsList(deficits)} 空着），'
-              '去掉鳍这条$lineWord就撑不起整条鱼，所以是刺身而不是普通带鳍。'
-              '鳍 ${cellsList(fins)} 为真时它看得见的地方塌，为假时鱼成立，'
-              '两种情形都删得掉的是同时看见鳍、又踩在覆盖$coverWord上的 $digit。',
+              '为定义域、${cover.map((c) => byRow ? colRef(c) : rowRef(c)).join(',')} 为删除域。'
+              '有定义域在删除域上只剩一个交点（${cellsList(deficits)} 空缺），'
+              '去掉鱼鳍这条$lineWord就退化而不成鱼，因此属于退化鱼而非普通鳍鱼。'
+              '鱼鳍 ${cellsList(fins)} 为真时其可见格排除，为假时鱼结构成立，'
+              '两种情形都能排除同时看见鱼鳍且落在删除域$coverWord上的 $digit。',
           eliminations: elims,
           patternCells: [
             ...hintCells(HintRole.pattern, body),
@@ -5255,10 +5255,10 @@ class AdvancedTechniques {
       row: row,
       col: col,
       value: fill,
-      technique: '全双值坟墓+1',
-      explanation: '${cellRef(row, col)} 是盘面唯一的非双值格。候选 $fill '
-          '在其所在行、列、宫都出现奇数次；若填其余候选会退化成双值墓地、题目多解，'
-          '因此这里必须填 $fill。',
+      technique: '全双值格致死解法+1',
+      explanation: '${cellRef(row, col)} 是盘面唯一的非双值格。候选数 $fill '
+          '在其所在行、列、宫均出现奇数次；若填其余候选数则会退化成全双值致死盘面而导致多解，'
+          '因此该格必须填入 $fill。',
       patternCells: [HintCell(row, col, HintRole.pattern)],
       patternCandidates: [
         HintCandidate(CandidateRef(row, col, fill), HintRole.pattern),
@@ -5401,11 +5401,11 @@ class AdvancedTechniques {
     }
     if (elims.isEmpty) return null;
     return SudokuHint.elimination(
-      technique: '全双值坟墓 Type 2',
-      explanation: '题目保证唯一解。除了 ${cellsList(owners)}，'
-          '盘上每个空格都只剩两个候选，而且把这两格多出来的 $digit 拿掉之后，'
-          '每个区域里每个未填数字都恰好出现两次——那就是一张双值死盘，解的个数会是偶数。'
-          '所以 $digit 至少在这两格之一为真，同时看得见它们的位置都能删 $digit。',
+      technique: '全双值格致死解法 Type 2',
+      explanation: '题目保证唯一解。除 ${cellsList(owners)} 外，'
+          '盘面其余空格均只剩两个候选数，且去掉这两格多出的真数 $digit 后，'
+          '各区域内每个未填数字都恰好出现两次，构成全双值致死盘面。'
+          '因此 $digit 至少在这两格之一为真，同时看见这两格的位置可删去 $digit。',
       eliminations: elims,
       patternCells: [
         ...hintCells(HintRole.pattern, owners),
@@ -5467,7 +5467,7 @@ class AdvancedTechniques {
       final onOwner =
           sub.elims.any((e) => ownerKeys.contains('${e.row},${e.col}'));
       return SudokuHint.elimination(
-        technique: '全双值坟墓 Type 3',
+        technique: '全双值格致死解法 Type 3',
         explanation: '题目保证唯一解。除了 ${cellsList(owners)}，'
             '盘上每个空格都只剩两个候选；把 '
             '${candRef(owners[0][0], owners[0][1], grave.extras[0])}、'
@@ -5582,7 +5582,7 @@ class AdvancedTechniques {
         if (elims.isEmpty) continue;
         final hl = _houseHighlight(house);
         return SudokuHint.elimination(
-          technique: '全双值坟墓 Type 4',
+          technique: '全双值格致死解法 Type 4',
           explanation: '题目保证唯一解。除了 ${cellsList(owners)}，'
               '盘上每个空格都只剩两个候选；把 '
               '${candRef(owners[0][0], owners[0][1], grave.extras[0])}、'
@@ -5975,15 +5975,15 @@ class AdvancedTechniques {
     ].join('；');
 
     return SudokuHint.elimination(
-      technique: 'DDS',
-      explanation: '${cellsList(cells)} 一共 ${cells.length} 格，'
-          '候选并集是 ${(union.toList()..sort()).join("、")}，'
-          '正好 ${union.length} 个数字。'
-          '每个数字的结构落点都能被一个区域装下：$houseText。'
-          '这三条以上的片换不成两条，所以不是融合式待定数组；'
-          '格子也没有落在同一个区域里，所以不是显性数组。'
-          '${cells.length} 格配 ${cells.length} 片，rank 0，'
-          '每片里结构之外的同名候选都删：${_elimsText(elims)}。',
+      technique: '跨区数组',
+      explanation: '${cellsList(cells)} 共 ${cells.length} 格，'
+          '候选数并集为 ${(union.toList()..sort()).join("、")}，'
+          '恰好 ${union.length} 个数字。'
+          '每个数字在结构内的分布各自位于单一区域：$houseText。'
+          '这些区域超过两个，不属于双区域交叉的融合待定数组；'
+          '各格也不共处同一区域，不属于显性数组。'
+          '${cells.length} 格对应 ${cells.length} 个区域构成零秩锁定，'
+          '各区域内结构以外的同数字候选数均可删去：${_elimsText(elims)}。',
       eliminations: elims,
       patternCells: [
         ...hintCells(HintRole.pattern, cells),
@@ -6140,12 +6140,12 @@ class AdvancedTechniques {
     final baseText = (base.toList()..sort()).join('、');
     final hl = _houseHighlight(house);
     return SudokuHint.elimination(
-      technique: '弱待定数组',
-      explanation: '${_houseLabel(house)} 上 $baseText 一共占 ${spots.length} 格：'
-          '${cellsList(spots)}，比隐性数组多一格，是弱待定数组。'
-          '从 ${cellRef(split[0], split[1])} 分成两种情况：'
-          '这一格填的是 $baseText 之一，或不是。'
-          '两种情况都删掉 ${_elimsText(both)}。',
+      technique: '隐性待定数组',
+      explanation: '${_houseLabel(house)} 上数字 $baseText 共分布在 ${spots.length} 格：'
+          '${cellsList(spots)}，比隐性数组多出一格，构成隐性待定数组（AHS）。'
+          '从 ${cellRef(split[0], split[1])} 分为两种情况：'
+          '该格填入 $baseText 之一，或不填入。'
+          '两种情况均能排除 ${_elimsText(both)}。',
       eliminations: both,
       patternCells: [
         ...hintCells(HintRole.pattern, spots),
@@ -6303,19 +6303,39 @@ class AdvancedTechniques {
                   continue;
                 }
                 final baseText = (union.toList()..sort()).join('、');
-                final bandLines = [band * 3, band * 3 + 1, band * 3 + 2];
                 final crosses = wantCross.toList()..sort();
+                final sCells = [
+                  for (final x in wantCross)
+                    for (var k = 0; k < 9; k++)
+                      if (k ~/ 3 != band) horizontal ? [k, x] : [x, k]
+                ];
+                final coverSummary = [
+                  for (final d in union.toList()..sort())
+                    () {
+                      final hs = _minimalCoverHouses([
+                        for (final cell in sCells)
+                          if (board.get(cell[0], cell[1]) == d ||
+                              (board.get(cell[0], cell[1]) == 0 &&
+                                  board
+                                      .getCandidates(cell[0], cell[1])
+                                      .contains(d)))
+                            cell
+                      ]);
+                      return hs.isEmpty
+                          ? '$d(无)'
+                          : '$d(${hs.map(_houseLabel).join("、")})';
+                    }(),
+                ].join('，');
                 best = SudokuHint.elimination(
-                  technique: '飞鱼导弹',
-                  explanation: '${cellsList(bases)} 同宫同线，'
-                      '候选并集是 $baseText。'
-                      '同一带另外两宫的对象格是 ${cellsList(targets)}（目标）'
-                      '和 ${cellsList(companions)}（伴随）。'
-                      '每个基格数字在交叉线伸出带外的 S 格上'
-                      '都被不超过两个区域覆盖，'
-                      '两个目标格必须分别落到两个基格数字上。'
+                  technique: '初级飞鱼',
+                  explanation: '基准单元格 ${cellsList(bases)} 同宫同线，'
+                      '候选数并集为 $baseText。'
+                      '同大行（或大列）另外两宫的目标单元格为 ${cellsList(targets)}，'
+                      '伴随单元格为 ${cellsList(companions)}。'
+                      '各基格数字在交叉单元格（S 格）上的覆盖区域为：$coverSummary（均不超过两个区域），'
+                      '因此两个目标单元格必分别填入两个不同的基格数字。'
                       '${_exocetExtraReason(elims, union, targets)}'
-                      '于是删掉 ${_elimsText(elims)}。',
+                      '可删去 ${_elimsText(elims)}。',
                   eliminations: elims,
                   patternCells: [
                     ...hintCells(HintRole.pattern, bases),
@@ -6335,8 +6355,8 @@ class AdvancedTechniques {
                           ),
                     ..._targetCands(elims),
                   ],
-                  highlightRows: horizontal ? bandLines : crosses,
-                  highlightCols: horizontal ? crosses : bandLines,
+                  highlightRows: horizontal ? const [] : crosses,
+                  highlightCols: horizontal ? crosses : const [],
                 );
               }
             }
@@ -6420,15 +6440,18 @@ class AdvancedTechniques {
         for (var k = 0; k < 9; k++)
           if (k ~/ 3 != band) horizontal ? [k, x] : [x, k]
     ];
-    final cover = <int, List<int>>{
+    final spotsByDigit = <int, List<List<int>>>{
       for (final d in union)
-        d: _minimalCoverHouses([
+        d: [
           for (final cell in sCells)
             if (board.get(cell[0], cell[1]) == d ||
                 (board.get(cell[0], cell[1]) == 0 &&
                     board.getCandidates(cell[0], cell[1]).contains(d)))
               cell
-        ]),
+        ],
+    };
+    final cover = <int, List<int>>{
+      for (final d in union) d: _minimalCoverHouses(spotsByDigit[d]!),
     };
 
     for (final d in union) {
@@ -6440,13 +6463,18 @@ class AdvancedTechniques {
     }
 
     for (final d in union) {
-      for (final house in cover[d]!) {
-        final isCross = horizontal ? house >= 9 && house < 18 : house < 9;
-        if (!isCross) continue;
-        final cross = horizontal ? house - 9 : house;
-        for (final cell in targets) {
-          final cellCross = horizontal ? cell[1] : cell[0];
-          if (cellCross == cross) add(cell, d);
+      if (cover[d]!.length <= 1) continue;
+      for (final cell in targets) {
+        final cellCross = horizontal ? cell[1] : cell[0];
+        final outsideSpots = [
+          for (final s in spotsByDigit[d]!)
+            if ((horizontal ? s[1] : s[0]) != cellCross) s
+        ];
+        // 若不把该交叉线本身作为覆盖线时，其余 S 格至多需要 1 个区域即可覆盖
+        // （即该交叉线与那 1 个区域共同构成 2 区域覆盖），该交叉线上的目标格若填 d
+        // 会导致其余两条交叉线无法在仅有的 1 个覆盖区域内同时放下两个 d。
+        if (_minimalCoverHouses(outsideSpots).length <= 1) {
+          add(cell, d);
         }
       }
     }
@@ -6548,8 +6576,8 @@ class AdvancedTechniques {
   static SudokuHint? findPendingEr(SudokuBoard board) => _pendingBest(
         board,
         _extendedRectReads(board),
-        '待定扩展矩形',
-        '扩展矩形',
+        '待定拓展矩形',
+        '拓展矩形',
       );
 
   static SudokuHint? findPendingUl(SudokuBoard board) => _pendingBest(
@@ -6571,8 +6599,8 @@ class AdvancedTechniques {
         board,
         extras,
         owners: grave.owners,
-        technique: '待定全双值坟墓',
-        shape: '双值死盘',
+        technique: '待定全双值格致死解法',
+        shape: '全双值致死盘面',
       );
       if (hint == null) continue;
       if (best == null ||
@@ -6768,8 +6796,8 @@ class AdvancedTechniques {
   static SudokuHint? findForcingEr(SudokuBoard board) => _forcingBest(
         board,
         _extendedRectReads(board, maxRoofs: 4),
-        '强制扩展矩形',
-        '扩展矩形',
+        '强制拓展矩形',
+        '拓展矩形',
       );
 
   static SudokuHint? findForcingUl(SudokuBoard board) => _forcingBest(
@@ -6956,12 +6984,12 @@ class AdvancedTechniques {
             }
             if (elims.isEmpty) continue;
             return SudokuHint.elimination(
-              technique: '融合式待定数组',
+              technique: '融合待定数组',
               explanation:
-                  '${inter.map((c) => cellRef(c[0], c[1])).join('、')} 把候选拆成 '
+                  '交叉格 ${inter.map((c) => cellRef(c[0], c[1])).join('、')} 将候选数拆分为 '
                   '${(pileA.toList()..sort()).join('、')} 与 '
-                  '${(pileB.toList()..sort()).join('、')}，分别由宫内、线上的'
-                  '几乎锁定集消化，这两堆数字在对应区域的其它格子可删。',
+                  '${(pileB.toList()..sort()).join('、')}，分别与宫内、线上的'
+                  '待定数组构成零秩锁定，这两组数字在对应区域的其余单元格中均可删去。',
               eliminations: elims,
               patternCells: [
                 ...hintCells(HintRole.extra, inter),

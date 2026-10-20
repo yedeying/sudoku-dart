@@ -46,7 +46,7 @@ void main() {
       if (result.level == 'unsupported' || result.level == 'invalid') continue;
       final grade = PuzzleGrades.byId(result.level)?.grade;
       if (grade == null) continue;
-      var maxTech = '唯余法';
+      var maxTech = '唯一余数';
       var maxScore = -1;
       for (final e in result.usedTechniques.entries) {
         final score = DifficultyAnalyzer.techniqueScores[e.key] ?? 0;

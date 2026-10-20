@@ -255,7 +255,7 @@ void main() {
     final order = SudokuSolver.hintSearchOrder;
     expect(order, contains('多宝鱼'));
     expect(order.indexOf('多宝鱼'), greaterThan(order.indexOf('Swordfish')));
-    expect(order.indexOf('多宝鱼'), lessThan(order.indexOf('带鳍 X-Wing')));
+    expect(order.indexOf('多宝鱼'), lessThan(order.indexOf('鳍 X-Wing')));
     expect(order.indexOf('摩天楼'), lessThan(order.indexOf('多宝鱼')));
     expect(order.indexOf('双线风筝'), lessThan(order.indexOf('多宝鱼')));
     expect(

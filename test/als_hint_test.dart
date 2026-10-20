@@ -106,7 +106,7 @@ void main() {
             hint.technique == 'XY-Chain' ||
             hint.technique == '强弱交替链' ||
             hint.technique == 'Nice Loop / AIC 环' ||
-            hint.technique == '融合式待定数组' ||
+            hint.technique == '融合待定数组' ||
             hint.technique == '死亡绽放' ||
             hint.technique == 'Kraken Fish' ||
             hint.technique == '分类强制链' ||
@@ -135,7 +135,7 @@ void main() {
           'XY-Chain',
           '强弱交替链',
           'Nice Loop / AIC 环',
-          '融合式待定数组',
+          '融合待定数组',
           '死亡绽放',
           'Kraken Fish',
           '分类强制链',

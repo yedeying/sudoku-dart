@@ -61,8 +61,8 @@ void main() {
     final board = _sashimiSwordfishBoard();
     final hint = AdvancedTechniques.findSashimiFish(board);
 
-    expect(hint, isNotNull, reason: '基线 r4 在覆盖里只剩一个顶点，应报刺身鱼');
-    expect(hint!.technique, '刺身鱼');
+    expect(hint, isNotNull, reason: '基线 r4 在覆盖里只剩一个顶点，应报退化鱼');
+    expect(hint!.technique, '退化鱼');
     expect(hint.isElimination, isTrue);
     expect(elimKeys(hint), {'4,3,5', '5,3,5'});
     expectEliminationsPresent(board, hint);
@@ -71,22 +71,22 @@ void main() {
     expect(hint.highlightCols, isEmpty);
   });
 
-  test('刺身鱼教学盘面报出教学页那两条删除', () {
+  test('退化鱼教学盘面报出教学页那两条删除', () {
     final puzzle = _tech('sashimi').examplePuzzle;
     final board = SudokuBoard.fromString(puzzle);
     final hint = AdvancedTechniques.findSashimiFish(board);
 
     expect(hint, isNotNull, reason: '教学盘面上应找得到刺身 Swordfish');
-    expect(hint!.technique, '刺身鱼');
+    expect(hint!.technique, '退化鱼');
     expect(elimKeys(hint), {'0,6,3', '0,8,3'});
     expectEliminationsPresent(board, hint);
     expectEliminationsSound(puzzle, hint);
     expectEvidenceBeyondTargets(hint);
   });
 
-  test('刺身鱼只报 Swordfish 及以上规格，X-Wing 那一档留给摩天楼', () {
+  test('退化鱼只报 Swordfish 及以上规格，X-Wing 那一档留给摩天楼', () {
     // 摩天楼那张盘正是「刺身 X-Wing 等于摩天楼」的典型：两条只剩两个候选的行，
-    // 共用一个底列。刺身鱼不该在这里抢报。
+    // 共用一个底列。退化鱼不该在这里抢报。
     final board = _emptyBoard();
     _keepOnly(board, 5, [
       ..._row(0),
@@ -113,7 +113,7 @@ void main() {
     );
   });
 
-  test('题库残局逐步核对：刺身鱼删的都不是正解，单次搜索不超过 2 秒', () {
+  test('题库残局逐步核对：退化鱼删的都不是正解，单次搜索不超过 2 秒', () {
     const puzzles = [
       '000100504005840203420500087004071859090608401008000306000000708000700902007080045',
       '024610007006070402003824560000200800301060024002001000069002100240130600130006240',
@@ -135,7 +135,7 @@ void main() {
             expect(
               solved.get(e.row, e.col) == e.num,
               isFalse,
-              reason: '刺身鱼删了正解 r${e.row + 1}c${e.col + 1}=${e.num}',
+              reason: '退化鱼删了正解 r${e.row + 1}c${e.col + 1}=${e.num}',
             );
           }
         }
@@ -152,13 +152,13 @@ void main() {
     }
   });
 
-  test('刺身鱼排在带鳍 X-Wing 之后、空矩形之前，难度分取评审的 4.6', () {
+  test('退化鱼排在带鳍 X-Wing 之后、空矩形之前，难度分取评审的 4.6', () {
     final order = SudokuSolver.hintSearchOrder;
-    expect(order, contains('刺身鱼'));
-    expect(order.indexOf('摩天楼'), lessThan(order.indexOf('刺身鱼')));
-    expect(order.indexOf('带鳍 X-Wing'), lessThan(order.indexOf('刺身鱼')));
-    expect(order.indexOf('刺身鱼'), lessThan(order.indexOf('空矩形')));
-    expect(order.indexOf('刺身鱼'), lessThan(order.indexOf('带鳍 Swordfish')));
-    expect(DifficultyAnalyzer.techniqueScores, containsPair('刺身鱼', 46));
+    expect(order, contains('退化鱼'));
+    expect(order.indexOf('摩天楼'), lessThan(order.indexOf('退化鱼')));
+    expect(order.indexOf('鳍 X-Wing'), lessThan(order.indexOf('退化鱼')));
+    expect(order.indexOf('退化鱼'), lessThan(order.indexOf('空矩形')));
+    expect(order.indexOf('退化鱼'), lessThan(order.indexOf('鳍 Swordfish')));
+    expect(DifficultyAnalyzer.techniqueScores, containsPair('退化鱼', 46));
   });
 }

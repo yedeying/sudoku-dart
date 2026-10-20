@@ -8,9 +8,9 @@ import 'support/bank_sweep.dart';
 
 /// 走虚拟格数组这一族。
 final _type3 = <String, SudokuHint? Function(SudokuBoard)>{
-  '扩展矩形 Type 3': AdvancedTechniques.findExtendedRectType3,
+  '拓展矩形 Type 3': AdvancedTechniques.findExtendedRectType3,
   '唯一环 Type 3': AdvancedTechniques.findUniqueLoopType3,
-  '全双值坟墓 Type 3': AdvancedTechniques.findBugType3,
+  '全双值格致死解法 Type 3': AdvancedTechniques.findBugType3,
 };
 
 /// 例外格 → 它多出来的那些候选。

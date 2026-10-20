@@ -51,7 +51,7 @@ void main() {
       print(DifficultyAnalyzer.getDifficultyReport(result));
 
       expect(result.level, 'beginner');
-      expect(result.usedTechniques.containsKey('唯余法'), true);
+      expect(result.usedTechniques.containsKey('唯一余数'), true);
 
       // 简单题目不应使用高级技巧
       expect(result.usedTechniques.containsKey('X-Wing'), false);
@@ -221,7 +221,7 @@ void main() {
       }
 
       // 验证分数递增逻辑
-      expect(scores['唯余法']! < scores['显性数对']!, true);
+      expect(scores['唯一余数']! < scores['显性数对']!, true);
       expect(scores['显性数对']! < scores['X-Wing']!, true);
       expect(scores['X-Wing']! < scores['XY-Wing']!, true);
 

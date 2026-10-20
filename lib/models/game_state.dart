@@ -563,12 +563,14 @@ class GameState extends ChangeNotifier {
     required bool includeHiddenSingle,
   }) {
     if (_board == null) return (filled: 0, eliminated: 0);
-    final allowed = <String>{'唯余法'};
-    if (includeHiddenSingle) allowed.add('摒除法（行/列/宫）');
+    final allowed = <String>{'唯一余数', '唯余法', '单元唯一', '数字唯一'};
+    if (includeHiddenSingle) {
+      allowed.addAll(const ['排除', '摒除法', '摒除法（行/列/宫）']);
+    }
     final extended = PuzzleGrades.extendsQuickFill(_difficulty);
     if (extended) {
       allowed
-        ..add('摒除法（行/列/宫）')
+        ..addAll(const ['排除', '摒除法', '摒除法（行/列/宫）'])
         ..addAll(PuzzleGrades.quickFillExtraTechniques);
     }
     var filled = 0;

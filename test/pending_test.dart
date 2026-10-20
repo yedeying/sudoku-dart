@@ -61,14 +61,14 @@ void main() {
     });
   });
 
-  group('待定扩展矩形', () {
+  group('待定拓展矩形', () {
     test('教学盘：六格 {2,5,7} 上 3r3c8 与 8r9c9 作强链，能推出删除', () {
       final puzzle = _tech('pending_er').examplePuzzle;
       final board = SudokuBoard.fromString(puzzle);
       final hint = AdvancedTechniques.findPendingEr(board);
 
       expect(hint, isNotNull);
-      expect(hint!.technique, '待定扩展矩形');
+      expect(hint!.technique, '待定拓展矩形');
       expect(hint.isElimination, isTrue);
       expectEliminationsPresent(board, hint);
       expectEliminationsSound(puzzle, hint);
@@ -93,10 +93,10 @@ void main() {
 
     test('按难度排在 DDS 之后、待定唯一环之前，并开放教学页', () {
       final order = SudokuSolver.hintSearchOrder;
-      expect(order, contains('待定扩展矩形'));
-      expect(order.indexOf('DDS'), lessThan(order.indexOf('待定扩展矩形')));
-      expect(order.indexOf('待定扩展矩形'), lessThan(order.indexOf('待定唯一环')));
-      expect(DifficultyAnalyzer.techniqueScores, containsPair('待定扩展矩形', 95));
+      expect(order, contains('待定拓展矩形'));
+      expect(order.indexOf('跨区数组'), lessThan(order.indexOf('待定拓展矩形')));
+      expect(order.indexOf('待定拓展矩形'), lessThan(order.indexOf('待定唯一环')));
+      expect(DifficultyAnalyzer.techniqueScores, containsPair('待定拓展矩形', 95));
       expect(_tech('pending_er').teachingOnly, isFalse);
     });
   });
@@ -131,24 +131,24 @@ void main() {
       }
     });
 
-    test('按难度排在待定扩展矩形之后、待定全双值坟墓之前，并开放教学页', () {
+    test('按难度排在待定拓展矩形之后、待定全双值格致死解法之前，并开放教学页', () {
       final order = SudokuSolver.hintSearchOrder;
       expect(order, contains('待定唯一环'));
-      expect(order.indexOf('待定扩展矩形'), lessThan(order.indexOf('待定唯一环')));
-      expect(order.indexOf('待定唯一环'), lessThan(order.indexOf('待定全双值坟墓')));
+      expect(order.indexOf('待定拓展矩形'), lessThan(order.indexOf('待定唯一环')));
+      expect(order.indexOf('待定唯一环'), lessThan(order.indexOf('待定全双值格致死解法')));
       expect(DifficultyAnalyzer.techniqueScores, containsPair('待定唯一环', 95));
       expect(_tech('pending_ul').teachingOnly, isFalse);
     });
   });
 
-  group('待定全双值坟墓', () {
+  group('待定全双值格致死解法', () {
     test('教学盘：7r7c1 与 2r9c4 作死盘节点，删 2r8c4', () {
       final puzzle = _tech('pending_bug').examplePuzzle;
       final board = SudokuBoard.fromString(puzzle);
       final hint = AdvancedTechniques.findPendingBug(board);
 
       expect(hint, isNotNull);
-      expect(hint!.technique, '待定全双值坟墓');
+      expect(hint!.technique, '待定全双值格致死解法');
       expect(hint.isElimination, isTrue);
       expect(elimKeys(hint), contains('7,3,2'));
       expectEliminationsPresent(board, hint);
@@ -176,10 +176,10 @@ void main() {
 
     test('按难度排在待定唯一环之后、死亡绽放之前，并开放教学页', () {
       final order = SudokuSolver.hintSearchOrder;
-      expect(order, contains('待定全双值坟墓'));
-      expect(order.indexOf('待定唯一环'), lessThan(order.indexOf('待定全双值坟墓')));
-      expect(order.indexOf('待定全双值坟墓'), lessThan(order.indexOf('死亡绽放')));
-      expect(DifficultyAnalyzer.techniqueScores, containsPair('待定全双值坟墓', 95));
+      expect(order, contains('待定全双值格致死解法'));
+      expect(order.indexOf('待定唯一环'), lessThan(order.indexOf('待定全双值格致死解法')));
+      expect(order.indexOf('待定全双值格致死解法'), lessThan(order.indexOf('死亡绽放')));
+      expect(DifficultyAnalyzer.techniqueScores, containsPair('待定全双值格致死解法', 95));
       expect(_tech('pending_bug').teachingOnly, isFalse);
     });
   });

@@ -86,7 +86,7 @@ const setStructureLegend = [
 ];
 
 const graveLegend = [
-  TechniqueLegendItem(color: TeachingColors.cover, label: '双值死盘格'),
+  TechniqueLegendItem(color: TeachingColors.cover, label: '双值格'),
   TechniqueLegendItem(color: TeachingColors.pattern, label: '例外格'),
   TechniqueLegendItem(color: TeachingColors.elimCell, label: '结论落点'),
   TechniqueLegendItem(color: TeachingColors.node, label: '死盘底数'),

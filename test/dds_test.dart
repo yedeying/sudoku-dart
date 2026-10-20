@@ -16,14 +16,14 @@ Set<String> _cellKeys(SudokuHint hint, HintRole role) => {
     };
 
 void main() {
-  group('DDS', () {
+  group('跨区数组', () {
     test('教学盘：六格六数分到 c1、左下宫、r8，片外删除 1/5/8 和 4', () {
       final puzzle = _tech('dds').examplePuzzle;
       final board = SudokuBoard.fromString(puzzle);
       final hint = AdvancedTechniques.findDds(board);
 
       expect(hint, isNotNull);
-      expect(hint!.technique, 'DDS');
+      expect(hint!.technique, '跨区数组');
       expect(hint.isElimination, isTrue);
       expect(
         elimKeys(hint),
@@ -45,7 +45,7 @@ void main() {
       expect(hint.highlightBoxes, contains(6));
     });
 
-    test('全部格子落在同一个房屋里时按显性数组处理，不报 DDS', () {
+    test('全部格子落在同一个房屋里时按显性数组处理，不报 跨区数组', () {
       final board = SudokuBoard.empty();
       for (var r = 0; r < 9; r++) {
         for (var c = 0; c < 9; c++) {
@@ -64,12 +64,12 @@ void main() {
     test('两条房屋就装得下每个数字时不冒充三个以上区域', () {
       final board = SudokuBoard.fromString(_tech('sue_de_coq').examplePuzzle);
       final hint = AdvancedTechniques.findDds(board);
-      expect(hint, isNull, reason: '融合式待定数组教学盘不该被 DDS 抢走');
+      expect(hint, isNull, reason: '融合式待定数组教学盘不该被 跨区数组 抢走');
     });
 
     test('某个数字在结构里只落一格时不报', () {
       final board = SudokuBoard.empty();
-      // 三格三个数字，其中 7 只出现一次，是摒除不是 DDS。
+      // 三格三个数字，其中 7 只出现一次，是摒除不是 跨区数组。
       final keep = <String, Set<int>>{
         '0,0': {1, 2},
         '1,0': {1, 2},
@@ -107,10 +107,10 @@ void main() {
 
     test('按难度排在 ALS-XZ 之后、死亡绽放之前，并开放教学页', () {
       final order = SudokuSolver.hintSearchOrder;
-      expect(order, contains('DDS'));
-      expect(order.indexOf('ALS-XZ'), lessThan(order.indexOf('DDS')));
-      expect(order.indexOf('DDS'), lessThan(order.indexOf('死亡绽放')));
-      expect(DifficultyAnalyzer.techniqueScores, containsPair('DDS', 95));
+      expect(order, contains('跨区数组'));
+      expect(order.indexOf('ALS-XZ'), lessThan(order.indexOf('跨区数组')));
+      expect(order.indexOf('跨区数组'), lessThan(order.indexOf('死亡绽放')));
+      expect(DifficultyAnalyzer.techniqueScores, containsPair('跨区数组', 95));
       expect(_tech('dds').teachingOnly, isFalse);
     });
   });
