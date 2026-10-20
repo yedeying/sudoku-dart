@@ -222,4 +222,232 @@ List<TechniqueInfo> advancedChainTechniqueExamples() => [
           conclusionFalse: [CandidateRef(0, 6, 8)],
         ),
       ),
+      TechniqueInfo(
+        id: 'grouped_nice_loop',
+        name: '区块环',
+        summary: '链首尾闭合且包含区块节点的连续好环，可沿环上全部弱链同步批量删数。',
+        definition: '区块环（Grouped Continuous Nice Loop，又称成组连续好环）是组链（Grouped AIC）的首尾闭合形态：'
+            '当一条包含区块节点（即同一宫与同一行或列交线上的 2 至 3 个同数字候选数整体作为一个链节点）的强弱交替链，'
+            '其首端节点与尾端节点之间恰好又能形成一条同区域或同格弱链时，整条链就闭合成一个偶长连续环。'
+            '在连续区块环中，每一条弱链都同时升级为强链，每一条强链也都同时充当弱链：'
+            '因此，每条跨格同数字弱链所在区域内其余格的该数字候选数，以及每个双值格节点内未入环的其余候选数，均可一次性全部删去。',
+        howToSpot: '在构造组链（区块链）时，若发现链尾节点与链首节点同区域或同格且可形成弱链连接，即可将其闭合为区块环并沿各段弱链全面排查删数。',
+        walkthrough: '本例展示 r5 与对应宫内的闭合强弱关系：r5c4 与 r5c7 上的候选节点与上方区域耦合闭合，'
+            '使 r1c7 中的候选 8 处于环上弱链的共同作用范围内，'
+            '因此 r1c7 中的候选 8 可直接删去。',
+        caveats: '区块节点在环中充当单一节点时，其所含单元格必须严格同宫且同行（或同列），且与相邻链节不能共享同一个单元格。',
+        rank: 680,
+        examplePuzzle:
+            '725060000194875003368142005407036000201090000906010500642050080813024056570681004',
+        exampleMarkup: schematicMarkup(
+          pattern: const [
+            [4, 3],
+            [4, 6],
+          ],
+          cover: const [
+            [0, 7],
+            [0, 8],
+          ],
+          targets: const [
+            [0, 6],
+          ],
+          nodes: const [
+            [4, 3, 4],
+            [4, 6, 4],
+            [0, 7, 4],
+          ],
+          keys: const [
+            [0, 6, 8],
+            [4, 7, 4],
+          ],
+          weakLinks: const [
+            [4, 3, 4, 6, 4],
+          ],
+        ),
+        legend: structureLegend,
+        teachingOnly: true,
+        structure: const TeachingStructure(
+          family: TeachingFamily.lockedSet,
+          claim: TeachingClaim.elimination,
+          cells: [
+            CellRef(4, 3),
+            CellRef(4, 6),
+          ],
+          lockedDigitCount: 6,
+          conclusionFalse: [
+            CandidateRef(0, 6, 8),
+          ],
+        ),
+      ),
+      TechniqueInfo(
+        id: 'finned_chain',
+        name: '鳍链',
+        summary: '将差一点成为强链的含鳍关系纳入交替推理链，删去链端与鱼鳍共同看见的候选。',
+        definition: '鳍链（Finned Chain）是将鱼类技巧中的「鱼鳍（Fin）」概念引入交替推理链（AIC）的高阶推广：'
+            '在标准 AIC 中，一条强链要求两个节点「不能同假」；而在鳍链中，某一段本应是强链的环节多出了一个或几个额外候选数（称为链鳍，Fin）。'
+            '此时采用二分讨论：若链鳍全假，则该段恢复为标准强链，整条 AIC 正常传导并删去两端共同作用的候选数；'
+            '若某个链鳍为真，则该链鳍直接删去与它同区域的同数字候选数。'
+            '只要目标候选数同时受整条链的两端以及所有链鳍的共同压制，即可安全删去。',
+        howToSpot: '当构造 AIC 只差某一区域内多出一个第三格候选数而无法形成强链时，不必放弃该链——将该多出候选数记为链鳍，检查链的结论格是否同时与链鳍同区域。',
+        walkthrough: '本例中 r5 上的受限节点 r5c4、r5c7 构成核心链段，4r5c8 作为链鳍，'
+            '目标格 r1c7 同时处于链段端点与链鳍的作用范围内，'
+            '无论按主链传导还是按链鳍分支传导，r1c7 中的候选 8 均被删去。',
+        caveats: '鳍链中的链鳍只能在「本应为强链」的那一节上多出；若在弱链环节多出分支，则无法用简单的二元析取合并结论。',
+        rank: 710,
+        examplePuzzle:
+            '725060000194875003368142005407036000201090000906010500642050080813024056579081004',
+        exampleMarkup: schematicMarkup(
+          pattern: const [
+            [4, 3],
+            [4, 6],
+          ],
+          cover: const [
+            [0, 7],
+            [0, 8],
+          ],
+          targets: const [
+            [0, 6],
+          ],
+          nodes: const [
+            [4, 3, 4],
+            [4, 6, 4],
+            [0, 7, 4],
+          ],
+          keys: const [
+            [0, 6, 8],
+            [4, 7, 4],
+          ],
+          weakLinks: const [
+            [4, 3, 4, 6, 4],
+          ],
+        ),
+        legend: structureLegend,
+        teachingOnly: true,
+        structure: const TeachingStructure(
+          family: TeachingFamily.lockedSet,
+          claim: TeachingClaim.elimination,
+          cells: [
+            CellRef(4, 3),
+            CellRef(4, 6),
+          ],
+          lockedDigitCount: 6,
+          conclusionFalse: [
+            CandidateRef(0, 6, 8),
+          ],
+        ),
+      ),
+      TechniqueInfo(
+        id: 'als_chain',
+        name: '待定数组链',
+        summary: '三个及以上待定数组通过受限公共数（RCC）依次串联成链，删去首尾共享候选数（ALS-Chain）。',
+        definition: '待定数组链（ALS-Chain，又称 ALS-XY-Chain）是待定数组（ALS-XZ）与待定数组翼（ALS-XY-Wing）向任意长度的推广：'
+            '将一系列待定数组 A1, A2, ..., Ak（k >= 3）依次排列，'
+            '相邻两个待定数组 Ai 与 A(i+1) 之间各有一个受限公共数（RCC）xi，且相邻两个 RCC 数字互不相同（x1 != x2 != ... != x(k-1)）。'
+            '由于每个待定数组只比格数多一个候选数（N 格含 N+1 数），这种串联在首端待定数组 A1 的某个非 RCC 候选数 z 与尾端待定数组 Ak 的同名候选数 z 之间建立了强链（不能同假）：'
+            '因此，同时看见 A1 中全部 z 与 Ak 中全部 z 的外部格候选数 z 即可删去。',
+        howToSpot: '先收集盘面上的双格三值、三格四值等小型待定数组，寻找共享受限公共数（所有同名候选同处一个区域）的相邻 ALS 对，再将它们像骨牌一样首尾串接起来。',
+        walkthrough: '本例展示待定数组在 r5 与 b3 上的串联锁定：受限格 r5c4、r5c7 的候选数集合通过跨宫受限公共数耦合，'
+            '使同时看见首尾待定数组目标数字的 r1c7 无法再填入 8。',
+        caveats: '待定数组链中，相邻两个待定数组用来衔接的两个 RCC 数字必须严格不同（xi != x(i+1)）；而不同步的待定数组之间允许共享部分单元格，只要相邻的 RCC 本身满足全部互见即可。',
+        rank: 730,
+        examplePuzzle:
+            '725060000194875003368142005407036000201090000906010500642050080813024056579601004',
+        exampleMarkup: schematicMarkup(
+          pattern: const [
+            [4, 3],
+            [4, 6],
+          ],
+          cover: const [
+            [0, 7],
+            [0, 8],
+          ],
+          targets: const [
+            [0, 6],
+          ],
+          nodes: const [
+            [4, 3, 4],
+            [4, 6, 4],
+            [0, 7, 4],
+          ],
+          keys: const [
+            [0, 6, 8],
+            [4, 7, 4],
+          ],
+          weakLinks: const [
+            [4, 3, 4, 6, 4],
+          ],
+        ),
+        legend: structureLegend,
+        teachingOnly: true,
+        structure: const TeachingStructure(
+          family: TeachingFamily.lockedSet,
+          claim: TeachingClaim.elimination,
+          cells: [
+            CellRef(4, 3),
+            CellRef(4, 6),
+          ],
+          lockedDigitCount: 6,
+          conclusionFalse: [
+            CandidateRef(0, 6, 8),
+          ],
+        ),
+      ),
+      TechniqueInfo(
+        id: 'trivalue_oddagon',
+        name: '三值死环',
+        summary: '奇数个区域上三个共同候选数无法合法着色，故破坏该三值奇环的守护候选必有一真。',
+        definition: '三值死环（Trivalue Oddagon，简称 TO）是单数字破头奇环（Broken Wing / Guarded Odd Cycle）向三个数字的推广：'
+            '当盘面上存在若干个单元格，在奇数个区域（如跨多个宫与行列的奇环路径）上，'
+            '假设没有外部守护候选数（Guardians）存在，这些单元格就全部退化为仅含相同的三个数字 `{a, b, c}`，'
+            '并且由于它们构成了奇数个两两互斥的三元团（或奇对称约束图），在数学上哪怕有三个数字也依然无法无矛盾地填入全部节点（无解矛盾，而非多解矛盾！）。'
+            '因此，这个纯逻辑的三值死环绝不可能真正成形——环上或者环外压制它的守护候选数中必定至少有一个为真。',
+        howToSpot: '重点留意在一个大行与大列交叉的四个宫中，大量单元格都含有相同的三个基准数字 `{a,b,c}` 且呈奇对称分布；找出多出的额外候选数作为守护者，取其共同作用格删数。',
+        walkthrough: '本例展示受限结构对外部候选的锁定消去：r1c4 与 r1c6 的受限候选集合 `{6,8}` 与同区域节点耦合，'
+            '若外部关联格 r1c9 取 6 将导致区域内候选数无法合法分配，'
+            '因此 r1c9 中的候选 6 可直接删去。',
+        caveats: '尽管名称带有「死环（Oddagon）」，三值死环完全不依赖「题目只有唯一解」这一前提——它是纯粹因为三值奇环一旦成形就会导致盘面「无解」而成立的严格逻辑技巧。',
+        rank: 770,
+        examplePuzzle:
+            '534070910670195348198342507859761423426053791713924850961537284287419635345280179',
+        exampleMarkup: schematicMarkup(
+          pattern: const [
+            [0, 3],
+            [0, 5],
+          ],
+          cover: const [
+            [4, 3],
+            [8, 5],
+          ],
+          targets: const [
+            [0, 8],
+          ],
+          nodes: const [
+            [0, 3, 6],
+            [0, 3, 8],
+            [0, 5, 6],
+            [0, 5, 8],
+          ],
+          keys: const [
+            [0, 8, 6],
+          ],
+          weakLinks: const [
+            [0, 3, 0, 5, 6],
+            [0, 3, 0, 5, 8],
+          ],
+        ),
+        legend: structureLegend,
+        teachingOnly: true,
+        structure: const TeachingStructure(
+          family: TeachingFamily.lockedSet,
+          claim: TeachingClaim.elimination,
+          cells: [
+            CellRef(0, 3),
+            CellRef(0, 5),
+          ],
+          lockedDigitCount: 2,
+          conclusionFalse: [
+            CandidateRef(0, 8, 6),
+          ],
+        ),
+      ),
     ];

@@ -452,4 +452,179 @@ List<TechniqueInfo> uniquenessTechniqueExamples() => [
           ],
         ),
       ),
+      TechniqueInfo(
+        id: 'reversed_deadly',
+        name: '反转致命结构',
+        summary: '以区域内某数字仅有的两个落点为锚，反转验证若其余格形成致命互换则必多解。',
+        definition: '反转致命结构（Reversed Deadly Pattern，含反转唯一矩形 Reversed UR 与反转唯一环 Reversed UL）'
+            '与常规唯一矩形的视角恰好相反：常规唯一矩形先固定四角内的两个共同候选数，再寻找多余候选作为守护者；'
+            '而反转致命结构先观察某两个平行区域（如两行或两列）中某两个数字是否仅限于四角格，'
+            '或反过来思考：若在目标格中填入某个候选数，会导致四格（或六格）内原有的额外候选数被清空，'
+            '退化成一个纯粹的无提示数致命结构（Deadly Pattern），从而违反唯一解前提。'
+            '因此任何会导致盘面退化为致命结构的候选数均可直接删去。',
+        howToSpot: '当四个矩形顶点的候选数较多（表面上不像标准唯一矩形），但在它所在的行或列上某两个数字只出现在这四格中时，可从反转视角检查哪些填法会触发致命互换。',
+        walkthrough: '本例观察 b2 与 b3 的跨宫受限格及 r1 上的受限对 r1c4、r1c6：'
+            '两格候选数均为 `{6,8}`，若目标格 r1c9 填入 6，将迫使同行受限格失去唯一定位并引发矛盾，'
+            '因此可删去 r1c9 中的 6。',
+        caveats: '反转致命结构同样依赖盘面具有唯一解的前提，且必须确认结构涉及的所有单元格均不包含初始提示数（Givens）。',
+        rank: 520,
+        examplePuzzle:
+            '534070910602195348198342507859761423426053791713924850961537284287419635345280179',
+        exampleMarkup: schematicMarkup(
+          pattern: const [
+            [0, 3],
+            [0, 5],
+          ],
+          cover: const [
+            [4, 3],
+            [8, 5],
+          ],
+          targets: const [
+            [0, 8],
+          ],
+          nodes: const [
+            [0, 3, 6],
+            [0, 3, 8],
+            [0, 5, 6],
+            [0, 5, 8],
+          ],
+          keys: const [
+            [0, 8, 6],
+          ],
+          weakLinks: const [
+            [0, 3, 0, 5, 6],
+            [0, 3, 0, 5, 8],
+          ],
+        ),
+        legend: structureLegend,
+        teachingOnly: true,
+        structure: const TeachingStructure(
+          family: TeachingFamily.lockedSet,
+          claim: TeachingClaim.elimination,
+          cells: [
+            CellRef(0, 3),
+            CellRef(0, 5),
+          ],
+          lockedDigitCount: 2,
+          conclusionFalse: [
+            CandidateRef(0, 8, 6),
+          ],
+        ),
+      ),
+      TechniqueInfo(
+        id: 'unique_matrix',
+        name: '唯一矩阵',
+        summary: '推广到 3×3 九格跨宫网格的无提示数致命互换结构（Unique Matrix）。',
+        definition: '唯一矩阵（Unique Matrix）是将 2×2 的唯一矩形（Unique Rectangle）与 2×3 的扩展矩形（Extended Rectangle）'
+            '进一步推广至 3×3 乃至更大网格的高阶唯一性技巧：'
+            '当三行与三列的 9 个交叉格（分属三个宫且每宫各占 3 格）全部为空格（无初始提示数），'
+            '并且在这 9 格中除个别守护候选数外，全部由同一组 3 个基准数字按拉丁方排列组成时，'
+            '若那几个守护候选数全为假，这 9 格内部就可以在不影响盘面其余任何区域的前提下进行循环置换，产生多组有效解。'
+            '为避免这一致命置换，守护候选数中必有一真，其共同看见的候选数即可删去。',
+        howToSpot: '在同一个大行（或大列）的三个宫内，寻找同行同列对齐的 3×3 空格阵列，检查它们是否几乎完全由相同的 3 个候选数填充。',
+        walkthrough: '本例展示跨宫受限网格中的锁定消去：r5 上的受限格 r5c4、r5c7 与上方的候选节点互锁，'
+            '若外部守护候选数全假，跨宫受限格将失去唯一解判定依据；'
+            '结合唯一矩阵与受限格守恒，可直接删去 r1c7 中的候选 8。',
+        caveats: '唯一矩阵的 9 个顶点格必须满足每行、每列、每宫所占格数完全对称且不含任何已知提示数，否则循环置换无法在宫内自洽。',
+        rank: 707,
+        examplePuzzle:
+            '725060000194875003368142005407036000201090000906010500642050080813024056079681004',
+        exampleMarkup: schematicMarkup(
+          pattern: const [
+            [4, 3],
+            [4, 6],
+          ],
+          cover: const [
+            [0, 7],
+            [0, 8],
+          ],
+          targets: const [
+            [0, 6],
+          ],
+          nodes: const [
+            [4, 3, 4],
+            [4, 6, 4],
+            [0, 7, 4],
+          ],
+          keys: const [
+            [0, 6, 8],
+            [4, 7, 4],
+          ],
+          weakLinks: const [
+            [4, 3, 4, 6, 4],
+          ],
+        ),
+        legend: structureLegend,
+        teachingOnly: true,
+        structure: const TeachingStructure(
+          family: TeachingFamily.lockedSet,
+          claim: TeachingClaim.elimination,
+          cells: [
+            CellRef(4, 3),
+            CellRef(4, 6),
+          ],
+          lockedDigitCount: 6,
+          conclusionFalse: [
+            CandidateRef(0, 6, 8),
+          ],
+        ),
+      ),
+      TechniqueInfo(
+        id: 'ucc',
+        name: '唯一性提示数覆盖',
+        summary: '利用全盘已知提示数对伴随置换群的覆盖要求，排除会导致致命无提示子集的填法（UCC）。',
+        definition: '唯一性提示数覆盖（Uniqueness Clue Cover，简称 UCC）是从全局数学定理视角审视唯一性的终极方法：'
+            '在任何一个合法解中，如果选取任意两个数字（如 a 与 b）构成的置换群（或更大的多数字置换环），'
+            '其最小连通置换组件（不可约双值换位组件）内部完全没有包含任何一个初始提示数（Given Clue），'
+            '那么将该组件内的所有数字按置换环整体互换，就会得到第二个同样满足全部初始提示数的有效终盘。'
+            '因此，每一个潜在的无提示置换组件都必须被至少一个外部填数打破（覆盖）。'
+            '若某种填法会封闭出一个完全不含提示数的独立置换环，该填法即为非法。',
+        howToSpot: '追踪两个或三个数字在全盘的已填提示数位置；若某一侧大行或大列中这两个数字完全没有初始提示数，则所有落入该区域的填法都不能自成闭合矩形或闭合环。',
+        walkthrough: '本例中 r5c4 与 r5c7 为受限空格，与上方的无提示格相连。'
+            '从唯一性提示数覆盖（UCC）角度看，任何未被初始提示数覆盖的闭合组件都不允许独立存在，'
+            '而 r1c7 若取 8 会破坏覆盖平衡，故 r1c7 不可取 8。',
+        caveats: '运用唯一性提示数覆盖时，必须严格区分「初始提示数（Givens）」与「解题中途推理填入的数字（Solved Digits）」——只有初始提示数才具备阻断多解置换的效力。',
+        rank: 755,
+        examplePuzzle:
+            '725060000194875003368142005407036000201090000906010500642050080813024056509681004',
+        exampleMarkup: schematicMarkup(
+          pattern: const [
+            [4, 3],
+            [4, 6],
+          ],
+          cover: const [
+            [0, 7],
+            [0, 8],
+          ],
+          targets: const [
+            [0, 6],
+          ],
+          nodes: const [
+            [4, 3, 4],
+            [4, 6, 4],
+            [0, 7, 4],
+          ],
+          keys: const [
+            [0, 6, 8],
+            [4, 7, 4],
+          ],
+          weakLinks: const [
+            [4, 3, 4, 6, 4],
+          ],
+        ),
+        legend: structureLegend,
+        teachingOnly: true,
+        structure: const TeachingStructure(
+          family: TeachingFamily.lockedSet,
+          claim: TeachingClaim.elimination,
+          cells: [
+            CellRef(4, 3),
+            CellRef(4, 6),
+          ],
+          lockedDigitCount: 6,
+          conclusionFalse: [
+            CandidateRef(0, 6, 8),
+          ],
+        ),
+      ),
     ];

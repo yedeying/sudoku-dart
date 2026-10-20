@@ -1,6 +1,8 @@
 import 'board_markup.dart';
 import 'teaching_colors.dart';
 import 'technique_catalog.dart';
+import 'technique_examples_teaching_support.dart';
+import 'technique_structure.dart';
 
 int _ck(int r, int c) => BoardMarkup.cellKey(r, c);
 CandidateRef _cr(int r, int c, int n) => CandidateRef(r, c, n);
@@ -555,5 +557,65 @@ List<TechniqueInfo> basicTechniqueExamples() => [
           ],
         ),
         legend: _elimLegend,
+      ),
+      TechniqueInfo(
+        id: 'lol',
+        name: '割补',
+        summary: '宫与行或列相交后，相交部分以外的两组单元格所含数字集合完全相等（Law of Leftovers）。',
+        definition: '割补（Law of Leftovers，简称 LoL，又称集合等价法）基于九宫格的基本守恒定律：'
+            '每一宫与每一行（或每一列）都必须各自完整填入数字 1 至 9。'
+            '当选取若干个宫与同等数量的行（或列）进行交叉对比时，扣除它们重叠相交的公共单元格后，'
+            '宫内剩余的单元格集合与行（或列）内剩余的单元格集合，所填入的数字多重集必然完全相等。'
+            '若其中一侧剩余格较少且全部为空格，其候选数并集就会被另一侧剩余格的数字集合严格锁定，'
+            '从而直接形成等价数组并删去同区域其余格中的这些候选数。',
+        howToSpot: '观察某一行（或列）穿过某一宫的交界处：若行在该宫外的 6 格已有较多提示数，只剩 2 至 3 个空格，'
+            '即可将这几个空格与该宫其余两行的 6 格作割补对比，利用集合相等直接锁定候选数。',
+        walkthrough: '本例将 r1 与 b2 进行割补对比：r1 与 b2 共享交集 r1c4、r1c5、r1c6。'
+            '扣除这三格后，r1 在 b2 外的剩余格与 b2 在 r1 外的剩余格（r2c4–r3c6）所含数字集合必然完全相同。\n'
+            '结合交集与补集的守恒约束，r5c4 与 r5c7 的候选数集合严格受限，'
+            '与 r1c7 的 8 构成互锁，可排除 r1c7 中的候选 8。',
+        caveats: '割补对比要求所选的宫数与行（列）数相等，且必须将两侧剩余格中的提示数（已知数）与空格候选数一并纳入集合核算。',
+        rank: 510,
+        examplePuzzle:
+            '725060000194875003368142005407036000201090000906010500642050080813024056579681304',
+        exampleMarkup: schematicMarkup(
+          pattern: const [
+            [4, 3],
+            [4, 6],
+          ],
+          cover: const [
+            [0, 7],
+            [0, 8],
+          ],
+          targets: const [
+            [0, 6],
+          ],
+          nodes: const [
+            [4, 3, 4],
+            [4, 6, 4],
+            [0, 7, 4],
+          ],
+          keys: const [
+            [0, 6, 8],
+            [4, 7, 4],
+          ],
+          weakLinks: const [
+            [4, 3, 4, 6, 4],
+          ],
+        ),
+        legend: structureLegend,
+        teachingOnly: true,
+        structure: const TeachingStructure(
+          family: TeachingFamily.lockedSet,
+          claim: TeachingClaim.elimination,
+          cells: [
+            CellRef(4, 3),
+            CellRef(4, 6),
+          ],
+          lockedDigitCount: 5,
+          conclusionFalse: [
+            CandidateRef(0, 6, 8),
+          ],
+        ),
       ),
     ];

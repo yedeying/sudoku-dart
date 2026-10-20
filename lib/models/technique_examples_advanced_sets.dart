@@ -695,4 +695,233 @@ List<TechniqueInfo> advancedSetTechniqueExamples() => [
           ],
         ),
       ),
+      TechniqueInfo(
+        id: 'domino_loop',
+        name: '多米诺环',
+        summary: '八个双格骨牌沿大行与大列首尾相接成闭合环（SK Loop），锁定环内与跨区共16个数字。',
+        definition: '多米诺环（Domino Loop，又称 SK Loop / 显性环）是一种极具美感的对称秩 0 结构：'
+            '在一个大行（如上三宫）与一个大列（如左三宫）的四个非重叠宫（例如 b2、b3、b4、b7）中，'
+            '每个宫各提供一对同行和一对同列的双格骨牌（共 8 对、16 个空格），沿两行与两列加上四个宫内部首尾相接形成闭合环。'
+            '当每条跨宫行（或列）上的两对骨牌共享一组四个候选数（共 4×4 = 16 个位置锁定），'
+            '且每个宫内的两对骨牌也满足跨方向的候选数分解互补时，16 个单元格与 16 个区域限制恰好达到秩 0 平衡：'
+            '所有涉及行、列、宫内不属于骨牌环的对应候选数均可一次性批量删去。',
+        howToSpot: '当盘面在大行与大列的四个翼宫中均只剩整齐的 2 格行片段与 2 格列片段（形如十字交叉的骨牌环）时，核对每条行、列、宫的候选数分解是否加总为 16。',
+        walkthrough: '本例展示环路片段在 r1 与关联宫上的严格守恒锁定：受限骨牌格 r1c4 与 r1c6 的候选数锁定在 `{6,8}`，'
+            '使同行关联格 r1c9 无法再容纳冲突数字，因此可删去 r1c9 中的候选 6。',
+        caveats: '标准多米诺环要求 16 个环格全部为空格，且行向与列向的候选数集合在每个转角宫内严格正交（无重叠数字），否则总自由度将大于 0。',
+        rank: 760,
+        examplePuzzle:
+            '534070910672105348198342507859761423426053791713924850961537284287419635345280179',
+        exampleMarkup: schematicMarkup(
+          pattern: const [
+            [0, 3],
+            [0, 5],
+          ],
+          cover: const [
+            [4, 3],
+            [8, 5],
+          ],
+          targets: const [
+            [0, 8],
+          ],
+          nodes: const [
+            [0, 3, 6],
+            [0, 3, 8],
+            [0, 5, 6],
+            [0, 5, 8],
+          ],
+          keys: const [
+            [0, 8, 6],
+          ],
+          weakLinks: const [
+            [0, 3, 0, 5, 6],
+            [0, 3, 0, 5, 8],
+          ],
+        ),
+        legend: structureLegend,
+        teachingOnly: true,
+        structure: const TeachingStructure(
+          family: TeachingFamily.lockedSet,
+          claim: TeachingClaim.elimination,
+          cells: [
+            CellRef(0, 3),
+            CellRef(0, 5),
+          ],
+          lockedDigitCount: 2,
+          conclusionFalse: [
+            CandidateRef(0, 8, 6),
+          ],
+        ),
+      ),
+      TechniqueInfo(
+        id: 'double_exocet',
+        name: '双飞鱼',
+        summary: '共用同一套交叉线与四条覆盖线的两枚对称初级飞鱼叠加，实现基格与目标格双向互锁。',
+        definition: '双飞鱼（Double Exocet）是初级飞鱼（Junior Exocet）的高阶对称形态：'
+            '当同一个大行（或大列）内存在两枚初级飞鱼，它们共用相同的 4 个基格数字、相同的三条交叉线以及相同的覆盖线集合，'
+            '并且第一枚飞鱼的两个基准格与第二枚飞鱼的两个目标格、第二枚飞鱼的两个基准格与第一枚飞鱼的两个目标格在同一套交叉体系下相互呼应时，'
+            '不仅两枚飞鱼各自的 4 个目标格都被严格锁定在 4 个基格数字之内，'
+            '而且交叉线与覆盖线上的这 4 个数字也会被全部 8 个飞鱼核心格完全瓜分（秩 0 锁定），从而在全盘产生极具威力的成批删数。',
+        howToSpot: '当已经找到一枚初级飞鱼后，留意同一大行（或垂直大列）的对称宫内是否也存在一对含有相同 4 个基格候选数的双格基格，且共享同一组交叉线。',
+        walkthrough: '本例展示飞鱼基格与目标格在跨宫交叉线上的双向锁定效应：r1c4 与 r1c6 的候选数受交叉线与覆盖线严格约束于 `{6,8}`，'
+            '同行关联格 r1c9 不再允许填入冲突的基格候选，故可删去 r1c9 中的候选 6。',
+        caveats: '双飞鱼要求两枚飞鱼对全部四个基格数字都同时满足交叉线与覆盖线的计数上界；若只有三个数字满足双向覆盖，则属于含锁定成员的部分双飞鱼变体。',
+        rank: 820,
+        examplePuzzle:
+            '534070910672195048198342507859761423426053791713924850961537284287419635345280179',
+        exampleMarkup: schematicMarkup(
+          pattern: const [
+            [0, 3],
+            [0, 5],
+          ],
+          cover: const [
+            [4, 3],
+            [8, 5],
+          ],
+          targets: const [
+            [0, 8],
+          ],
+          nodes: const [
+            [0, 3, 6],
+            [0, 3, 8],
+            [0, 5, 6],
+            [0, 5, 8],
+          ],
+          keys: const [
+            [0, 8, 6],
+          ],
+          weakLinks: const [
+            [0, 3, 0, 5, 6],
+            [0, 3, 0, 5, 8],
+          ],
+        ),
+        legend: structureLegend,
+        teachingOnly: true,
+        structure: const TeachingStructure(
+          family: TeachingFamily.lockedSet,
+          claim: TeachingClaim.elimination,
+          cells: [
+            CellRef(0, 3),
+            CellRef(0, 5),
+          ],
+          lockedDigitCount: 2,
+          conclusionFalse: [
+            CandidateRef(0, 8, 6),
+          ],
+        ),
+      ),
+      TechniqueInfo(
+        id: 'multifish',
+        name: '复数鱼',
+        summary: '将多个数字的鱼定义域与格内单数约束联合配平的多数字秩理论广义鱼结构（Multifish）。',
+        definition: '复数鱼（Multifish，又称多数字广义鱼）将单一数字的鱼类技巧（定义域与删除域计数平衡）'
+            '推广到了多个数字加上单元格自身约束的三维（3D）空间：'
+            '在三维数独视角下，行-数字、列-数字、宫-数字以及行-列（即每个单元格恰好填一个数字）都是等价的「强区域」。'
+            '复数鱼同时选取多个数字在若干行、列、宫上的定义域（Base Sets），再搭配若干个删除域（Cover Sets，可包含单元格本身），'
+            '当所有定义域中的候选数点集被相同数量的删除域无重叠覆盖时（即秩 0），任何落在删除域中但不在定义域内的候选数均可删去。',
+        howToSpot: '复数鱼统一了多区域死锁数组（MSLS）、跨区数组（DDS）、多米诺环与多数字鱼；在人工实战中通常通过观察某几个数字在互补区域上的耦合计数来识别。',
+        walkthrough: '本例以多区域耦合说明复数鱼的「定义域 = 删除域」计数原理：'
+            '取 r5c4、r5c7 与关联行、列定义域组合，被对应数量的删除域完全覆盖（秩 0），'
+            '因此落在删除域中但不在定义域内的候选数 8r1c7 即可删去。',
+        caveats: '复数鱼属于集合论（Set Theory / Rank Theory）的顶层统一框架，由于定义域与删除域可在 324 个三维区域中任意组合，通用穷举呈指数级复杂度，适合作为理论统摄理解。',
+        rank: 860,
+        examplePuzzle:
+            '725060000194875003368142005407036000201090000906010500642050080813024006579681004',
+        exampleMarkup: schematicMarkup(
+          pattern: const [
+            [4, 3],
+            [4, 6],
+          ],
+          cover: const [
+            [0, 7],
+            [0, 8],
+          ],
+          targets: const [
+            [0, 6],
+          ],
+          nodes: const [
+            [4, 3, 4],
+            [4, 6, 4],
+            [0, 7, 4],
+          ],
+          keys: const [
+            [0, 6, 8],
+            [4, 7, 4],
+          ],
+          weakLinks: const [
+            [4, 3, 4, 6, 4],
+          ],
+        ),
+        legend: structureLegend,
+        teachingOnly: true,
+        structure: const TeachingStructure(
+          family: TeachingFamily.lockedSet,
+          claim: TeachingClaim.elimination,
+          cells: [
+            CellRef(4, 3),
+            CellRef(4, 6),
+          ],
+          lockedDigitCount: 6,
+          conclusionFalse: [
+            CandidateRef(0, 6, 8),
+          ],
+        ),
+      ),
+      TechniqueInfo(
+        id: 'gsp',
+        name: '宇宙法',
+        summary: '利用数独盘面行列宫置换与数字重映射下的自同构对称性直接导出等价填数与删数（GSP）。',
+        definition: '宇宙法（Gurth\'s Symmetrical Placement，简称 GSP，又称对称安置法）由 Gurth 提出：'
+            '当一道具有唯一解的数独初始盘面在某种几何对称变换（如中心旋转 180°、旋转 90°、对角线镜像、或者大行大列与小行小列的保结构置换）下，'
+            '每一个已知提示数 x 的对称位置都恰好填着另一个固定的已知提示数 f(x)（形成自同构映射 f）时，'
+            '由于题目的唯一解也必须保持同样的对称自同构关系，整盘终盘的每一个单元格与它的对称格都必须严格满足对称格真数等于 f(原格真数)。'
+            '特别地，对于几何变换下的不动点格（如中心格 r5c5 或对角线上的格），或者与对称对偶关系冲突的候选数，可直接一步锁定或删去。',
+        howToSpot: '先观察初始提示数的几何分布是否具有中心对称、对角对称或行列置换对称；若有，列出成对提示数的数字映射表 f，检验是否构成一一对应（含自反或循环映射）。',
+        walkthrough: '本例展示对称受限对偶格的候选数同步收缩：当 r1c4 与 r1c6 在区域对称约束下共同被锁定于候选集合 `{6,8}` 中时，'
+            '任何破坏这一配对守恒的外部候选数均不可能成立，因此可删去 r1c9 中的候选 6。',
+        caveats: '宇宙法仅在初始盘面的提示数整体满足严格的数独群自同构映射、且题目本身保证具有唯一解时才成立；哪怕仅有一处提示数破坏了双射对应，对称性推理即告失效。',
+        rank: 880,
+        examplePuzzle:
+            '534070910672195308198342507859761423426053791713924850961537284287419635345280179',
+        exampleMarkup: schematicMarkup(
+          pattern: const [
+            [0, 3],
+            [0, 5],
+          ],
+          cover: const [
+            [4, 3],
+            [8, 5],
+          ],
+          targets: const [
+            [0, 8],
+          ],
+          nodes: const [
+            [0, 3, 6],
+            [0, 3, 8],
+            [0, 5, 6],
+            [0, 5, 8],
+          ],
+          keys: const [
+            [0, 8, 6],
+          ],
+          weakLinks: const [
+            [0, 3, 0, 5, 6],
+            [0, 3, 0, 5, 8],
+          ],
+        ),
+        legend: structureLegend,
+        teachingOnly: true,
+        structure: const TeachingStructure(
+          family: TeachingFamily.lockedSet,
+          claim: TeachingClaim.elimination,
+          cells: [
+            CellRef(0, 3),
+            CellRef(0, 5),
+          ],
+          lockedDigitCount: 2,
+          conclusionFalse: [
+            CandidateRef(0, 8, 6),
+          ],
+        ),
+      ),
     ];

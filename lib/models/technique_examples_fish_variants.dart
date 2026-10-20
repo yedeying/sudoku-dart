@@ -344,4 +344,62 @@ List<TechniqueInfo> fishVariantTechniqueExamples() => [
           conclusionFalse: [CandidateRef(3, 7, 9)],
         ),
       ),
+      TechniqueInfo(
+        id: 'finned_franken_fish',
+        name: '鳍宫内鱼',
+        summary: '定义域与删除域含宫的宫内鱼，且带有少量未被删除域覆盖的鱼鳍候选数。',
+        definition: '鳍宫内鱼（Finned Franken Fish）将宫内鱼（Franken Fish）与鱼鳍机制结合：'
+            '定义域或删除域中包含宫（3×3 区域），定义域内绝大多数目标数字候选数被同阶数量的删除域覆盖，'
+            '仅在同一定义域内多出 1 至 2 个未被删除域覆盖的候选数作为鱼鳍（Fin）。'
+            '根据鳍鱼二分法：若鱼鳍全假，则退化为标准宫内鱼并删去删除域中鱼身以外的候选数；'
+            '若鱼鳍为真，则直接删去与鱼鳍同区域（同行、同列或同宫）的候选数。'
+            '因此，位于删除域内（非鱼身）且同时能看见全部鱼鳍的同数字候选数必可删去。',
+        howToSpot: '先寻找差一格就能构成宫内鱼的行列与宫组合，将该定义域多出的那一格视为鱼鳍，检查鱼鳍所在区域与删除域的交集格是否有同数字候选数。',
+        walkthrough: '本例观察数字 4 在 r5 与 b3、b5、b6 中的分布：'
+            'r5c4 与 r5c7 的候选数受限于宫内与列上的区域覆盖，'
+            '与鱼鳍及删除域关联的 r1c7 上的候选 8 可由结构锁定删去。',
+        caveats: '鳍宫内鱼要求全部鱼鳍都能同时看见被删候选格；若定义域与删除域中同时混用了行、列与宫，则进一步升级为鳍交叉鱼（Finned Mutant Fish）。',
+        rank: 657,
+        examplePuzzle:
+            '725060000194875003368142005407036000201090000906010500642050080813024056579681024',
+        exampleMarkup: schematicMarkup(
+          pattern: const [
+            [4, 3],
+            [4, 6],
+          ],
+          cover: const [
+            [0, 7],
+            [0, 8],
+          ],
+          targets: const [
+            [0, 6],
+          ],
+          nodes: const [
+            [4, 3, 4],
+            [4, 6, 4],
+            [0, 7, 4],
+          ],
+          keys: const [
+            [0, 6, 8],
+            [4, 7, 4],
+          ],
+          weakLinks: const [
+            [4, 3, 4, 6, 4],
+          ],
+        ),
+        legend: _finnedFishLegend,
+        teachingOnly: true,
+        structure: const TeachingStructure(
+          family: TeachingFamily.lockedSet,
+          claim: TeachingClaim.elimination,
+          cells: [
+            CellRef(4, 3),
+            CellRef(4, 6),
+          ],
+          lockedDigitCount: 6,
+          conclusionFalse: [
+            CandidateRef(0, 6, 8),
+          ],
+        ),
+      ),
     ];
